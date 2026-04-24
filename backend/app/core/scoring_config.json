@@ -1,0 +1,651 @@
+﻿{
+    "bound":  {
+                  "min":  0,
+                  "max":  100
+              },
+    "decision":  {
+                     "matiere":  "Valorisation matiere (charbon actif, refonte...)",
+                     "energetique":  "Valorisation energetique (biogaz, combustible, electricite...)",
+                     "vente":  "Vente directe sur marketplace"
+                 },
+    "confiance":  {
+                      "high_min_score":  75,
+                      "high_min_gap":  20,
+                      "medium_min_gap":  10
+                  },
+    "thresholds":  {
+                       "quantite_energie":  [
+                                                {
+                                                    "min":  1500,
+                                                    "score":  25
+                                                },
+                                                {
+                                                    "min":  700,
+                                                    "score":  18
+                                                },
+                                                {
+                                                    "min":  300,
+                                                    "score":  10
+                                                }
+                                            ],
+                       "quantite_vente":  [
+                                              {
+                                                  "min":  2000,
+                                                  "score":  18
+                                              },
+                                              {
+                                                  "min":  1000,
+                                                  "score":  10
+                                              },
+                                              {
+                                                  "min":  500,
+                                                  "score":  5
+                                              }
+                                          ],
+                       "pci_mj_kg":  [
+                                         {
+                                             "min":  16,
+                                             "score":  40
+                                         },
+                                         {
+                                             "min":  12,
+                                             "score":  30
+                                         },
+                                         {
+                                             "min":  8,
+                                             "score":  18
+                                         }
+                                     ],
+                       "taux_lignine":  [
+                                            {
+                                                "min":  30,
+                                                "score":  30
+                                            },
+                                            {
+                                                "min":  20,
+                                                "score":  20
+                                            },
+                                            {
+                                                "min":  10,
+                                                "score":  10
+                                            }
+                                        ],
+                       "biogaz_dbo":  [
+                                          {
+                                              "min":  4000,
+                                              "score":  25
+                                          },
+                                          {
+                                              "min":  2000,
+                                              "score":  18
+                                          },
+                                          {
+                                              "min":  1000,
+                                              "score":  0
+                                          }
+                                      ],
+                       "biogaz_dco":  [
+                                          {
+                                              "min":  8000,
+                                              "score":  18
+                                          },
+                                          {
+                                              "min":  4000,
+                                              "score":  12
+                                          },
+                                          {
+                                              "min":  2000,
+                                              "score":  6
+                                          }
+                                      ],
+                       "biogaz_ratio":  [
+                                            {
+                                                "min":  0.4,
+                                                "max":  0.8,
+                                                "score":  12
+                                            },
+                                            {
+                                                "min":  0.3,
+                                                "score":  6
+                                            }
+                                        ],
+                       "biogaz_max_score":  50
+                   },
+    "weights":  {
+                    "categorie":  {
+                                      "metal_matiere":  45,
+                                      "plastic_matiere":  30,
+                                      "paper_matiere":  20,
+                                      "organic_energie":  12
+                                  },
+                    "metaux":  {
+                                   "presence_matiere":  20
+                               },
+                    "waste_type":  {
+                                       "biomasse_matiere":  45,
+                                       "biomasse_energie":  8,
+                                       "boue_energie":  35,
+                                       "huile_energie":  48,
+                                       "huile_vente":  10
+                                   },
+                    "biogaz":  {
+                                   "organic_base":  10,
+                                   "boue_base":  15,
+                                   "vente_penalty_if_high":  5,
+                                   "high_bonus_threshold":  30
+                               },
+                    "industrie":  {
+                                      "agro_biomasse_matiere":  18,
+                                      "agro_organic_energie":  12,
+                                      "metallurgie_metal_matiere":  25,
+                                      "metallurgie_metal_vente":  10,
+                                      "rebar_matiere":  30,
+                                      "rebar_vente_penalty":  5,
+                                      "chimie_huile_energie":  18,
+                                      "energie_calorifique_bonus":  18,
+                                      "energie_calorifique_min":  8
+                                  },
+                    "danger":  {
+                                   "low_vente":  0,
+                                   "medium_vente":  -5,
+                                   "high_vente":  -20,
+                                   "high_matiere":  -5,
+                                   "critical_vente":  -35,
+                                   "critical_matiere":  -10
+                               }
+                },
+    "keywords":  {
+                     "biomasse":  [
+                                      "coque de noix de coco",
+                                      "coques de noix de coco",
+                                      "coco",
+                                      "lignocellulos",
+                                      "bagasse",
+                                      "sciure",
+                                      "paille",
+                                      "biomasse"
+                                  ],
+                     "boue":  [
+                                  "boue",
+                                  "vidange",
+                                  "sludge"
+                              ],
+                     "huile":  [
+                                   "huile usagee",
+                                   "huile usee",
+                                   "huile moteur",
+                                   "lubrifiant use"
+                               ],
+                     "rebar":  [
+                                   "fer a beton",
+                                   "fer beton",
+                                   "acier",
+                                   "rebar"
+                               ],
+                     "textile":  [
+                                     "textile",
+                                     "vetement",
+                                     "tissu",
+                                     "coton",
+                                     "lin",
+                                     "polyester",
+                                     "chiffon"
+                                 ],
+                     "plastique":  [
+                                       "plastique",
+                                       "pet",
+                                       "pehd",
+                                       "pp",
+                                       "pvc",
+                                       "film plastique",
+                                       "emballage"
+                                   ]
+                 },
+    "country_filiere_overrides":  {
+                                      "guinee":  {
+                                                     "boue_de_vidange":  {
+                                                                             "energie":  7,
+                                                                             "matiere":  -2,
+                                                                             "vente":  -5
+                                                                         },
+                                                     "plastique":  {
+                                                                       "energie":  0,
+                                                                       "matiere":  5,
+                                                                       "vente":  -2
+                                                                   },
+                                                     "textile":  {
+                                                                     "energie":  1,
+                                                                     "matiere":  4,
+                                                                     "vente":  -2
+                                                                 },
+                                                     "huile_usagee":  {
+                                                                          "energie":  6,
+                                                                          "matiere":  -2,
+                                                                          "vente":  -5
+                                                                      },
+                                                     "biomasse_lignocellulosique":  {
+                                                                                        "energie":  5,
+                                                                                        "matiere":  2,
+                                                                                        "vente":  -2
+                                                                                    }
+                                                 },
+                                      "gambie":  {
+                                                     "boue_de_vidange":  {
+                                                                             "energie":  7,
+                                                                             "matiere":  -2,
+                                                                             "vente":  -5
+                                                                         },
+                                                     "plastique":  {
+                                                                       "energie":  0,
+                                                                       "matiere":  5,
+                                                                       "vente":  -2
+                                                                   },
+                                                     "textile":  {
+                                                                     "energie":  1,
+                                                                     "matiere":  4,
+                                                                     "vente":  -2
+                                                                 },
+                                                     "huile_usagee":  {
+                                                                          "energie":  6,
+                                                                          "matiere":  -2,
+                                                                          "vente":  -5
+                                                                      },
+                                                     "biomasse_lignocellulosique":  {
+                                                                                        "energie":  4,
+                                                                                        "matiere":  2,
+                                                                                        "vente":  -2
+                                                                                    }
+                                                 },
+                                      "liberia":  {
+                                                      "boue_de_vidange":  {
+                                                                              "energie":  7,
+                                                                              "matiere":  -2,
+                                                                              "vente":  -5
+                                                                          },
+                                                      "plastique":  {
+                                                                        "energie":  0,
+                                                                        "matiere":  5,
+                                                                        "vente":  -2
+                                                                    },
+                                                      "textile":  {
+                                                                      "energie":  1,
+                                                                      "matiere":  4,
+                                                                      "vente":  -2
+                                                                  },
+                                                      "huile_usagee":  {
+                                                                           "energie":  6,
+                                                                           "matiere":  -2,
+                                                                           "vente":  -5
+                                                                       },
+                                                      "biomasse_lignocellulosique":  {
+                                                                                         "energie":  4,
+                                                                                         "matiere":  2,
+                                                                                         "vente":  -2
+                                                                                     }
+                                                  },
+                                      "default":  {
+                                                      "boue_de_vidange":  {
+                                                                              "energie":  6,
+                                                                              "matiere":  -2,
+                                                                              "vente":  -4
+                                                                          },
+                                                      "plastique":  {
+                                                                        "energie":  0,
+                                                                        "matiere":  5,
+                                                                        "vente":  -1
+                                                                    },
+                                                      "textile":  {
+                                                                      "energie":  1,
+                                                                      "matiere":  4,
+                                                                      "vente":  -2
+                                                                  },
+                                                      "huile_usagee":  {
+                                                                           "energie":  5,
+                                                                           "matiere":  -3,
+                                                                           "vente":  -5
+                                                                       },
+                                                      "biomasse_lignocellulosique":  {
+                                                                                         "energie":  4,
+                                                                                         "matiere":  2,
+                                                                                         "vente":  -1
+                                                                                     }
+                                                  },
+                                      "togo":  {
+                                                   "boue_de_vidange":  {
+                                                                           "energie":  7,
+                                                                           "matiere":  -3,
+                                                                           "vente":  -5
+                                                                       },
+                                                   "plastique":  {
+                                                                     "energie":  0,
+                                                                     "matiere":  6,
+                                                                     "vente":  -2
+                                                                 },
+                                                   "textile":  {
+                                                                   "energie":  1,
+                                                                   "matiere":  5,
+                                                                   "vente":  -2
+                                                               },
+                                                   "huile_usagee":  {
+                                                                        "energie":  6,
+                                                                        "matiere":  -2,
+                                                                        "vente":  -5
+                                                                    },
+                                                   "biomasse_lignocellulosique":  {
+                                                                                      "energie":  5,
+                                                                                      "matiere":  3,
+                                                                                      "vente":  -2
+                                                                                  }
+                                               },
+                                      "sierra leone":  {
+                                                           "boue_de_vidange":  {
+                                                                                   "energie":  7,
+                                                                                   "matiere":  -2,
+                                                                                   "vente":  -5
+                                                                               },
+                                                           "plastique":  {
+                                                                             "energie":  0,
+                                                                             "matiere":  5,
+                                                                             "vente":  -2
+                                                                         },
+                                                           "textile":  {
+                                                                           "energie":  1,
+                                                                           "matiere":  4,
+                                                                           "vente":  -2
+                                                                       },
+                                                           "huile_usagee":  {
+                                                                                "energie":  6,
+                                                                                "matiere":  -2,
+                                                                                "vente":  -5
+                                                                            },
+                                                           "biomasse_lignocellulosique":  {
+                                                                                              "energie":  4,
+                                                                                              "matiere":  2,
+                                                                                              "vente":  -2
+                                                                                          }
+                                                       },
+                                      "benin":  {
+                                                    "boue_de_vidange":  {
+                                                                            "energie":  11,
+                                                                            "matiere":  -5,
+                                                                            "vente":  -9
+                                                                        },
+                                                    "plastique":  {
+                                                                      "energie":  2,
+                                                                      "matiere":  9,
+                                                                      "vente":  -5
+                                                                  },
+                                                    "textile":  {
+                                                                    "energie":  2,
+                                                                    "matiere":  9,
+                                                                    "vente":  -6
+                                                                },
+                                                    "huile_usagee":  {
+                                                                         "energie":  10,
+                                                                         "matiere":  -4,
+                                                                         "vente":  -9
+                                                                     },
+                                                    "biomasse_lignocellulosique":  {
+                                                                                       "energie":  10,
+                                                                                       "matiere":  7,
+                                                                                       "vente":  -6
+                                                                                   }
+                                                },
+                                      "burkina faso":  {
+                                                           "boue_de_vidange":  {
+                                                                                   "energie":  8,
+                                                                                   "matiere":  -3,
+                                                                                   "vente":  -6
+                                                                               },
+                                                           "plastique":  {
+                                                                             "energie":  0,
+                                                                             "matiere":  5,
+                                                                             "vente":  -3
+                                                                         },
+                                                           "textile":  {
+                                                                           "energie":  1,
+                                                                           "matiere":  4,
+                                                                           "vente":  -3
+                                                                       },
+                                                           "huile_usagee":  {
+                                                                                "energie":  6,
+                                                                                "matiere":  -2,
+                                                                                "vente":  -6
+                                                                            },
+                                                           "biomasse_lignocellulosique":  {
+                                                                                              "energie":  5,
+                                                                                              "matiere":  2,
+                                                                                              "vente":  -3
+                                                                                          }
+                                                       },
+                                      "cote d\u0027ivoire":  {
+                                                                 "boue_de_vidange":  {
+                                                                                         "energie":  7,
+                                                                                         "matiere":  -3,
+                                                                                         "vente":  -5
+                                                                                     },
+                                                                 "plastique":  {
+                                                                                   "energie":  0,
+                                                                                   "matiere":  5,
+                                                                                   "vente":  -1
+                                                                               },
+                                                                 "textile":  {
+                                                                                 "energie":  1,
+                                                                                 "matiere":  5,
+                                                                                 "vente":  -2
+                                                                             },
+                                                                 "huile_usagee":  {
+                                                                                      "energie":  6,
+                                                                                      "matiere":  -2,
+                                                                                      "vente":  -5
+                                                                                  },
+                                                                 "biomasse_lignocellulosique":  {
+                                                                                                    "energie":  5,
+                                                                                                    "matiere":  3,
+                                                                                                    "vente":  -2
+                                                                                                }
+                                                             },
+                                      "mali":  {
+                                                   "boue_de_vidange":  {
+                                                                           "energie":  8,
+                                                                           "matiere":  -3,
+                                                                           "vente":  -6
+                                                                       },
+                                                   "plastique":  {
+                                                                     "energie":  0,
+                                                                     "matiere":  5,
+                                                                     "vente":  -3
+                                                                 },
+                                                   "textile":  {
+                                                                   "energie":  1,
+                                                                   "matiere":  4,
+                                                                   "vente":  -3
+                                                               },
+                                                   "huile_usagee":  {
+                                                                        "energie":  6,
+                                                                        "matiere":  -2,
+                                                                        "vente":  -6
+                                                                    },
+                                                   "biomasse_lignocellulosique":  {
+                                                                                      "energie":  5,
+                                                                                      "matiere":  2,
+                                                                                      "vente":  -3
+                                                                                  }
+                                               },
+                                      "guinee-bissau":  {
+                                                            "boue_de_vidange":  {
+                                                                                    "energie":  7,
+                                                                                    "matiere":  -2,
+                                                                                    "vente":  -6
+                                                                                },
+                                                            "plastique":  {
+                                                                              "energie":  0,
+                                                                              "matiere":  5,
+                                                                              "vente":  -3
+                                                                          },
+                                                            "textile":  {
+                                                                            "energie":  1,
+                                                                            "matiere":  4,
+                                                                            "vente":  -3
+                                                                        },
+                                                            "huile_usagee":  {
+                                                                                 "energie":  6,
+                                                                                 "matiere":  -2,
+                                                                                 "vente":  -6
+                                                                             },
+                                                            "biomasse_lignocellulosique":  {
+                                                                                               "energie":  4,
+                                                                                               "matiere":  2,
+                                                                                               "vente":  -3
+                                                                                           }
+                                                        },
+                                      "nigeria":  {
+                                                      "boue_de_vidange":  {
+                                                                              "energie":  8,
+                                                                              "matiere":  -2,
+                                                                              "vente":  -5
+                                                                          },
+                                                      "plastique":  {
+                                                                        "energie":  1,
+                                                                        "matiere":  5,
+                                                                        "vente":  0
+                                                                    },
+                                                      "textile":  {
+                                                                      "energie":  2,
+                                                                      "matiere":  4,
+                                                                      "vente":  -1
+                                                                  },
+                                                      "huile_usagee":  {
+                                                                           "energie":  7,
+                                                                           "matiere":  -2,
+                                                                           "vente":  -5
+                                                                       },
+                                                      "biomasse_lignocellulosique":  {
+                                                                                         "energie":  6,
+                                                                                         "matiere":  2,
+                                                                                         "vente":  -1
+                                                                                     }
+                                                  },
+                                      "cap-vert":  {
+                                                       "boue_de_vidange":  {
+                                                                               "energie":  7,
+                                                                               "matiere":  -3,
+                                                                               "vente":  -6
+                                                                           },
+                                                       "plastique":  {
+                                                                         "energie":  0,
+                                                                         "matiere":  5,
+                                                                         "vente":  -3
+                                                                     },
+                                                       "textile":  {
+                                                                       "energie":  1,
+                                                                       "matiere":  4,
+                                                                       "vente":  -3
+                                                                   },
+                                                       "huile_usagee":  {
+                                                                            "energie":  6,
+                                                                            "matiere":  -2,
+                                                                            "vente":  -6
+                                                                        },
+                                                       "biomasse_lignocellulosique":  {
+                                                                                          "energie":  5,
+                                                                                          "matiere":  2,
+                                                                                          "vente":  -3
+                                                                                      }
+                                                   },
+                                      "niger":  {
+                                                    "boue_de_vidange":  {
+                                                                            "energie":  8,
+                                                                            "matiere":  -3,
+                                                                            "vente":  -6
+                                                                        },
+                                                    "plastique":  {
+                                                                      "energie":  0,
+                                                                      "matiere":  5,
+                                                                      "vente":  -3
+                                                                  },
+                                                    "textile":  {
+                                                                    "energie":  1,
+                                                                    "matiere":  4,
+                                                                    "vente":  -3
+                                                                },
+                                                    "huile_usagee":  {
+                                                                         "energie":  6,
+                                                                         "matiere":  -2,
+                                                                         "vente":  -6
+                                                                     },
+                                                    "biomasse_lignocellulosique":  {
+                                                                                       "energie":  5,
+                                                                                       "matiere":  2,
+                                                                                       "vente":  -3
+                                                                                   }
+                                                },
+                                      "senegal":  {
+                                                      "boue_de_vidange":  {
+                                                                              "energie":  8,
+                                                                              "matiere":  -3,
+                                                                              "vente":  -5
+                                                                          },
+                                                      "plastique":  {
+                                                                        "energie":  0,
+                                                                        "matiere":  6,
+                                                                        "vente":  -2
+                                                                    },
+                                                      "textile":  {
+                                                                      "energie":  1,
+                                                                      "matiere":  5,
+                                                                      "vente":  -2
+                                                                  },
+                                                      "huile_usagee":  {
+                                                                           "energie":  6,
+                                                                           "matiere":  -2,
+                                                                           "vente":  -5
+                                                                       },
+                                                      "biomasse_lignocellulosique":  {
+                                                                                         "energie":  5,
+                                                                                         "matiere":  3,
+                                                                                         "vente":  -2
+                                                                                     }
+                                                  },
+                                      "ghana":  {
+                                                    "boue_de_vidange":  {
+                                                                            "energie":  8,
+                                                                            "matiere":  -3,
+                                                                            "vente":  -5
+                                                                        },
+                                                    "plastique":  {
+                                                                      "energie":  1,
+                                                                      "matiere":  6,
+                                                                      "vente":  -1
+                                                                  },
+                                                    "textile":  {
+                                                                    "energie":  1,
+                                                                    "matiere":  5,
+                                                                    "vente":  -1
+                                                                },
+                                                    "huile_usagee":  {
+                                                                         "energie":  6,
+                                                                         "matiere":  -2,
+                                                                         "vente":  -5
+                                                                     },
+                                                    "biomasse_lignocellulosique":  {
+                                                                                       "energie":  5,
+                                                                                       "matiere":  3,
+                                                                                       "vente":  -1
+                                                                                   }
+                                                }
+                                  },
+    "deployment_strategy":  {
+                                "scope":  "CEDEAO",
+                                "objective":  "Couverture regionale avec demarrage prioritaire au Benin",
+                                "phase_1_priority_country":  "benin",
+                                "phase_2_scale_countries":  [
+                                                                "cote d\u0027ivoire",
+                                                                "senegal",
+                                                                "nigeria",
+                                                                "ghana",
+                                                                "togo"
+                                                            ]
+                            }
+}
+

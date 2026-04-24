@@ -1,0 +1,114 @@
+﻿{
+  "version": "cedeao-impact-v1-template",
+  "scope": "CEDEAO",
+  "default": {
+    "generated_multiplier": 1.0,
+    "avoided_multiplier": 1.0,
+    "transport_penalty_multiplier": 1.0,
+    "source": "Source baseline (IPCC/UNEP/IEA/WB)"
+  },
+  "countries": {
+    "benin": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "burkina faso": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "cap-vert": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "cote d'ivoire": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "gambie": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "ghana": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "guinee": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "guinee-bissau": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "liberia": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "mali": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "niger": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "nigeria": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "senegal": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "sierra leone": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    },
+    "togo": {
+      "generated_multiplier": 1.0,
+      "avoided_multiplier": 1.0,
+      "transport_penalty_multiplier": 1.0,
+      "source": "A renseigner: etude/source + annee"
+    }
+  },
+  "references": [
+    "IPCC Guidelines (edition + chapitre + page)",
+    "UNEP/IRP (titre + annee)",
+    "IEA (jeu de donnees + annee)",
+    "World Bank Data (indicateur + annee)",
+    "Etude locale CEDEAO (institution + annee)"
+  ],
+  "notes_methodo": [
+    "Remplir les multiplicateurs > 0",
+    "Conserver des sources traceables par pays",
+    "Appliquer un controle qualite avant import API"
+  ]
+}

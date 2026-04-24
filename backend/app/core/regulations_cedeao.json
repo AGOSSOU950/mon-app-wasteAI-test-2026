@@ -1,0 +1,459 @@
+{
+    "version":  "reg-ceDEAO-v3",
+    "scope":  "CEDEAO",
+    "countries":  [
+                      "benin",
+                      "burkina faso",
+                      "cap-vert",
+                      "cabo verde",
+                      "cote d\u0027ivoire",
+                      "gambie",
+                      "ghana",
+                      "guinee",
+                      "guinee-bissau",
+                      "liberia",
+                      "mali",
+                      "niger",
+                      "nigeria",
+                      "senegal",
+                      "sierra leone",
+                      "togo"
+                  ],
+    "sous_regions":  {
+                         "uemoa":  [
+                                       "benin",
+                                       "burkina faso",
+                                       "cote d\u0027ivoire",
+                                       "guinee-bissau",
+                                       "mali",
+                                       "niger",
+                                       "senegal",
+                                       "togo"
+                                   ],
+                         "anglophone":  [
+                                            "ghana",
+                                            "nigeria",
+                                            "liberia",
+                                            "sierra leone",
+                                            "gambie"
+                                        ],
+                         "lusophone":  [
+                                           "cap-vert",
+                                           "cabo verde",
+                                           "guinee-bissau"
+                                       ]
+                     },
+    "references_generales":  [
+                                 {
+                                     "title":  "Convention de Bale",
+                                     "article":  "Art. 4",
+                                     "source":  "UNEP, 1989",
+                                     "summary":  "Controle strict des mouvements transfrontieres de dechets dangereux.",
+                                     "severity":  "high"
+                                 },
+                                 {
+                                     "title":  "Convention de Bamako",
+                                     "article":  "Art. 4",
+                                     "source":  "OUA/UA, 1991",
+                                     "summary":  "Interdiction de l\u0027importation de dechets dangereux en Afrique.",
+                                     "severity":  "critical"
+                                 },
+                                 {
+                                     "title":  "Amendement d\u0027interdiction de Bale",
+                                     "article":  "Basel Ban Amendment",
+                                     "source":  "Conference des Parties",
+                                     "summary":  "Restriction des exportations de dechets dangereux vers pays a capacite de traitement insuffisante.",
+                                     "severity":  "high"
+                                 },
+                                 {
+                                     "title":  "Cadre CEDEAO/CEREEC",
+                                     "article":  "Lignes directrices regionales",
+                                     "source":  "CEDEAO-CEREEC",
+                                     "summary":  "Conformite environnementale des filieres de traitement/valorisation.",
+                                     "severity":  "medium"
+                                 }
+                             ],
+    "regles_screening":  [
+                             {
+                                 "id":  "ecowas_danger_market",
+                                 "label":  "Interdiction vente directe dechets dangereux",
+                                 "severity":  "high",
+                                 "article":  "Principe de precaution",
+                                 "source":  "Cadres nationaux environnement + Bamako/Bale"
+                             },
+                             {
+                                 "id":  "ecowas_pvc_energy",
+                                 "label":  "PVC/chlore: energie reservee a filiere autorisee",
+                                 "severity":  "high",
+                                 "article":  "Controle des emissions de polluants acides/chlore",
+                                 "source":  "BAT cimenterie + cadres nationaux ICPE"
+                             },
+                             {
+                                 "id":  "ecowas_hazardous_transfer",
+                                 "label":  "Flux dangereux vers operateur agree",
+                                 "severity":  "high",
+                                 "article":  "Gestion des dechets dangereux",
+                                 "source":  "Cadres nationaux dechets dangereux"
+                             },
+                             {
+                                 "id":  "ecowas_textile_hm",
+                                 "label":  "Textiles contamines metaux lourds: depollution",
+                                 "severity":  "medium",
+                                 "article":  "Mise sur le marche sous conditions",
+                                 "source":  "Cadres nationaux produits/dechets"
+                             },
+                             {
+                                 "id":  "ecowas_international_hazardous_ban",
+                                 "label":  "Restriction commerce international dechets dangereux",
+                                 "severity":  "critical",
+                                 "article":  "Bamako/Bale mouvements transfrontieres",
+                                 "source":  "Conventions internationales"
+                             },
+                             {
+                                 "id":  "benin_scrap_export_restriction",
+                                 "label":  "Restriction export ferrailles Benin",
+                                 "severity":  "high",
+                                 "article":  "Mesures nationales commerce ferrailles",
+                                 "source":  "Cadre national Benin"
+                             },
+                             {
+                                 "id":  "ecowas_huile_vente_directe",
+                                 "label":  "Huiles usagees: vente directe interdite",
+                                 "severity":  "high",
+                                 "article":  "Gestion des huiles usees",
+                                 "source":  "Cadres nationaux + CEDEAO"
+                             },
+                             {
+                                 "id":  "ecowas_chemical_secure_disposal",
+                                 "label":  "Dechets chimiques dangereux: elimination securisee",
+                                 "severity":  "critical",
+                                 "article":  "Gestion dechets dangereux",
+                                 "source":  "Bamako/Bale + cadres nationaux"
+                             }
+                         ],
+    "filieres_autorisees_par_type":  {
+                                         "huile_usagee":  {
+                                                              "interdit":  [
+                                                                               "vente"
+                                                                           ],
+                                                              "message_interdit":  "Huiles usagees: vente directe interdite, regeneration ou filiere energetique controlee obligatoire.",
+                                                              "rule_id":  "ecowas_huile_vente_directe"
+                                                          },
+                                         "chimique_dangereux":  {
+                                                                    "interdit":  [
+                                                                                     "vente",
+                                                                                     "matiere",
+                                                                                     "energetique"
+                                                                                 ],
+                                                                    "message_interdit":  "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire.",
+                                                                    "rule_id":  "ecowas_chemical_secure_disposal"
+                                                                },
+                                         "boue_de_vidange":  {
+                                                                 "interdit":  [
+                                                                                  "vente"
+                                                                              ],
+                                                                 "message_interdit":  "Boues de vidange: vente directe interdite, traitement encadre obligatoire.",
+                                                                 "rule_id":  "ecowas_hazardous_transfer"
+                                                             }
+                                     },
+    "restrictions_export_par_pays":  {
+                                         "benin":  [
+                                                       {
+                                                           "id":  "benin_scrap_export_restriction",
+                                                           "waste_categories":  [
+                                                                                    "metal"
+                                                                                ],
+                                                           "waste_types":  [
+                                                                               "autre"
+                                                                           ],
+                                                           "mode":  "local_sale_only",
+                                                           "message":  "Au Benin, l\u0027exportation des ferrailles est restreinte: vente locale a operateur certifie uniquement.",
+                                                           "severity":  "high"
+                                                       },
+                                                       {
+                                                           "id":  "ecowas_international_hazardous_ban",
+                                                           "waste_categories":  [
+                                                                                    "chimique"
+                                                                                ],
+                                                           "waste_types":  [
+                                                                               "huile_usagee",
+                                                                               "boue_de_vidange"
+                                                                           ],
+                                                           "mode":  "local_authorized_only",
+                                                           "message":  "Au Benin, les flux dangereux (huiles/boues/chimiques) sont soumis a autorisation stricte; priorite aux operateurs locaux agrees.",
+                                                           "severity":  "high"
+                                                       }
+                                                   ],
+                                         "burkina faso":  [
+                                                              {
+                                                                  "id":  "ecowas_international_hazardous_ban",
+                                                                  "waste_categories":  [
+                                                                                           "chimique"
+                                                                                       ],
+                                                                  "waste_types":  [
+                                                                                      "huile_usagee",
+                                                                                      "boue_de_vidange"
+                                                                                  ],
+                                                                  "mode":  "local_authorized_only",
+                                                                  "message":  "Au Burkina Faso, les dechets dangereux ne doivent pas etre exportes sans procedure transfrontiere complete (Bamako/Bale).",
+                                                                  "severity":  "high"
+                                                              }
+                                                          ],
+                                         "cabo verde":  [
+                                                            {
+                                                                "id":  "ecowas_international_hazardous_ban",
+                                                                "waste_categories":  [
+                                                                                         "chimique"
+                                                                                     ],
+                                                                "waste_types":  [
+                                                                                    "huile_usagee",
+                                                                                    "boue_de_vidange"
+                                                                                ],
+                                                                "mode":  "local_authorized_only",
+                                                                "message":  "Au Cabo Verde, les flux dangereux exigent autorisation prealable et tracabilite complete avant tout transfert international.",
+                                                                "severity":  "high"
+                                                            }
+                                                        ],
+                                         "cote d\u0027ivoire":  [
+                                                                    {
+                                                                        "id":  "ecowas_international_hazardous_ban",
+                                                                        "waste_categories":  [
+                                                                                                 "chimique"
+                                                                                             ],
+                                                                        "waste_types":  [
+                                                                                            "huile_usagee",
+                                                                                            "boue_de_vidange"
+                                                                                        ],
+                                                                        "mode":  "local_authorized_only",
+                                                                        "message":  "En Cote d\u0027Ivoire, les exportations de dechets dangereux sont strictement encadrees; traitement local autorise en priorite.",
+                                                                        "severity":  "high"
+                                                                    }
+                                                                ],
+                                         "gambie":  [
+                                                        {
+                                                            "id":  "ecowas_international_hazardous_ban",
+                                                            "waste_categories":  [
+                                                                                     "chimique"
+                                                                                 ],
+                                                            "waste_types":  [
+                                                                                "huile_usagee",
+                                                                                "boue_de_vidange"
+                                                                            ],
+                                                            "mode":  "local_authorized_only",
+                                                            "message":  "En Gambie, les dechets dangereux ne peuvent faire l objet de vente internationale sans autorisation competente.",
+                                                            "severity":  "high"
+                                                        }
+                                                    ],
+                                         "ghana":  [
+                                                       {
+                                                           "id":  "ecowas_international_hazardous_ban",
+                                                           "waste_categories":  [
+                                                                                    "chimique"
+                                                                                ],
+                                                           "waste_types":  [
+                                                                               "huile_usagee",
+                                                                               "boue_de_vidange"
+                                                                           ],
+                                                           "mode":  "local_authorized_only",
+                                                           "message":  "Au Ghana, controle strict des mouvements transfrontieres des dechets dangereux (Act 917 + Bamako/Bale).",
+                                                           "severity":  "high"
+                                                       }
+                                                   ],
+                                         "guinee":  [
+                                                        {
+                                                            "id":  "ecowas_international_hazardous_ban",
+                                                            "waste_categories":  [
+                                                                                     "chimique"
+                                                                                 ],
+                                                            "waste_types":  [
+                                                                                "huile_usagee",
+                                                                                "boue_de_vidange"
+                                                                            ],
+                                                            "mode":  "local_authorized_only",
+                                                            "message":  "En Guinee, tout transfert international de flux dangereux requiert autorisation et conformite documentaire integrale.",
+                                                            "severity":  "high"
+                                                        }
+                                                    ],
+                                         "guinee-bissau":  [
+                                                               {
+                                                                   "id":  "ecowas_international_hazardous_ban",
+                                                                   "waste_categories":  [
+                                                                                            "chimique"
+                                                                                        ],
+                                                                   "waste_types":  [
+                                                                                       "huile_usagee",
+                                                                                       "boue_de_vidange"
+                                                                                   ],
+                                                                   "mode":  "local_authorized_only",
+                                                                   "message":  "En Guinee-Bissau, les flux dangereux sont traites sous regime d autorisation stricte, avec priorite locale.",
+                                                                   "severity":  "high"
+                                                               }
+                                                           ],
+                                         "liberia":  [
+                                                         {
+                                                             "id":  "ecowas_international_hazardous_ban",
+                                                             "waste_categories":  [
+                                                                                      "chimique"
+                                                                                  ],
+                                                             "waste_types":  [
+                                                                                 "huile_usagee",
+                                                                                 "boue_de_vidange"
+                                                                             ],
+                                                             "mode":  "local_authorized_only",
+                                                             "message":  "Au Liberia, les exportations de dechets dangereux sont soumises a controles renforces et consentement prealable.",
+                                                             "severity":  "high"
+                                                         }
+                                                     ],
+                                         "mali":  [
+                                                      {
+                                                          "id":  "ecowas_international_hazardous_ban",
+                                                          "waste_categories":  [
+                                                                                   "chimique"
+                                                                               ],
+                                                          "waste_types":  [
+                                                                              "huile_usagee",
+                                                                              "boue_de_vidange"
+                                                                          ],
+                                                          "mode":  "local_authorized_only",
+                                                          "message":  "Au Mali, la vente internationale de dechets dangereux est restreinte; privilegier filieres nationales agreees.",
+                                                          "severity":  "high"
+                                                      }
+                                                  ],
+                                         "niger":  [
+                                                       {
+                                                           "id":  "ecowas_international_hazardous_ban",
+                                                           "waste_categories":  [
+                                                                                    "chimique"
+                                                                                ],
+                                                           "waste_types":  [
+                                                                               "huile_usagee",
+                                                                               "boue_de_vidange"
+                                                                           ],
+                                                           "mode":  "local_authorized_only",
+                                                           "message":  "Au Niger, mouvements transfrontieres de dechets dangereux conditionnes a autorisation et tracabilite complete.",
+                                                           "severity":  "high"
+                                                       }
+                                                   ],
+                                         "nigeria":  [
+                                                         {
+                                                             "id":  "ecowas_international_hazardous_ban",
+                                                             "waste_categories":  [
+                                                                                      "chimique"
+                                                                                  ],
+                                                             "waste_types":  [
+                                                                                 "huile_usagee",
+                                                                                 "boue_de_vidange"
+                                                                             ],
+                                                             "mode":  "local_authorized_only",
+                                                             "message":  "Au Nigeria, flux dangereux regules: export transfrontiere sous autorisation stricte, traitement local prioritaire.",
+                                                             "severity":  "high"
+                                                         }
+                                                     ],
+                                         "senegal":  [
+                                                         {
+                                                             "id":  "ecowas_international_hazardous_ban",
+                                                             "waste_categories":  [
+                                                                                      "chimique"
+                                                                                  ],
+                                                             "waste_types":  [
+                                                                                 "huile_usagee",
+                                                                                 "boue_de_vidange"
+                                                                             ],
+                                                             "mode":  "local_authorized_only",
+                                                             "message":  "Au Senegal, export de dechets dangereux sous regime d autorisation; valorisation locale encadree privilegiee.",
+                                                             "severity":  "high"
+                                                         }
+                                                     ],
+                                         "sierra leone":  [
+                                                              {
+                                                                  "id":  "ecowas_international_hazardous_ban",
+                                                                  "waste_categories":  [
+                                                                                           "chimique"
+                                                                                       ],
+                                                                  "waste_types":  [
+                                                                                      "huile_usagee",
+                                                                                      "boue_de_vidange"
+                                                                                  ],
+                                                                  "mode":  "local_authorized_only",
+                                                                  "message":  "En Sierra Leone, commerce international des flux dangereux soumis a controle strict et consentement prealable.",
+                                                                  "severity":  "high"
+                                                              }
+                                                          ],
+                                         "togo":  [
+                                                      {
+                                                          "id":  "ecowas_international_hazardous_ban",
+                                                          "waste_categories":  [
+                                                                                   "chimique"
+                                                                               ],
+                                                          "waste_types":  [
+                                                                              "huile_usagee",
+                                                                              "boue_de_vidange"
+                                                                          ],
+                                                          "mode":  "local_authorized_only",
+                                                          "message":  "Au Togo, les dechets dangereux ne peuvent etre exportes qu avec autorisation; preference aux filieres locales.",
+                                                          "severity":  "high"
+                                                      }
+                                                  ]
+                                     },
+    "references_par_pays":  {
+                                "senegal":  [
+                                                {
+                                                    "title":  "Code de l\u0027Environnement",
+                                                    "article":  "Loi ndeg2001-01, dispositions dechets",
+                                                    "source":  "Republique du Senegal",
+                                                    "summary":  "Encadrement des installations de traitement et valorisation.",
+                                                    "severity":  "high"
+                                                },
+                                                {
+                                                    "title":  "Regime ICPE",
+                                                    "article":  "Textes d\u0027application",
+                                                    "source":  "Autorite environnementale",
+                                                    "summary":  "Autorisations prealables pour valorisation thermique/co-incineration.",
+                                                    "severity":  "high"
+                                                }
+                                            ],
+                                "cote d\u0027ivoire":  [
+                                                           {
+                                                               "title":  "Code de l\u0027Environnement",
+                                                               "article":  "Dispositions dechets dangereux",
+                                                               "source":  "Republique de Cote d\u0027Ivoire",
+                                                               "summary":  "Transport, traitement et elimination soumis a autorisation.",
+                                                               "severity":  "high"
+                                                           }
+                                                       ],
+                                "ghana":  [
+                                              {
+                                                  "title":  "Hazardous and Electronic Waste Control and Management Act",
+                                                  "article":  "Act 917",
+                                                  "source":  "Parliament of Ghana",
+                                                  "summary":  "Cadre legal de gestion et valorisation de flux dangereux.",
+                                                  "severity":  "high"
+                                              }
+                                          ],
+                                "nigeria":  [
+                                                {
+                                                    "title":  "NESREA Environmental Regulations",
+                                                    "article":  "Waste and emission controls",
+                                                    "source":  "NESREA",
+                                                    "summary":  "Conformite obligatoire des operations de traitement et co-processing.",
+                                                    "severity":  "high"
+                                                }
+                                            ],
+                                "benin":  [
+                                              {
+                                                  "title":  "Code de l\u0027Environnement",
+                                                  "article":  "Dispositions dechets/risques industriels",
+                                                  "source":  "Republique du Benin",
+                                                  "summary":  "Exige autorisation et tracabilite pour filieres a risque.",
+                                                  "severity":  "medium"
+                                              },
+                                              {
+                                                  "title":  "Mesures nationales commerce des ferrailles",
+                                                  "article":  "Restriction export ferrailles",
+                                                  "source":  "Regulation commerciale nationale",
+                                                  "summary":  "Orientation vers valorisation locale et limitation de l\u0027export des ferrailles.",
+                                                  "severity":  "high"
+                                              }
+                                          ]
+                            }
+}

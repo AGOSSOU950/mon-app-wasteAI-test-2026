@@ -1,0 +1,188 @@
+﻿{
+  "version": "litterature-v4",
+  "entries": [
+    {
+      "id": "bois_generique",
+      "keywords": ["bois", "copeaux de bois", "sciure", "residus ligneux"],
+      "defaults": {
+        "pci_mj_kg": 29.0,
+        "taux_lignine_pct": 25.0,
+        "type_dechet": "biomasse_lignocellulosique"
+      },
+      "source": "Valeurs typiques publiees en litterature sur biomasse lignocellulosique",
+      "references": [
+        {
+          "id": "mckendry_2002",
+          "citation": "McKendry P. (2002). Energy production from biomass (part 1): overview of biomass. Bioresource Technology, 83(1), 37-46. https://doi.org/10.1016/S0960-8524(01)00118-3"
+        },
+        {
+          "id": "demirbas_2004",
+          "citation": "Demirbas A. (2004). Combustion characteristics of different biomass fuels. Progress in Energy and Combustion Science, 30(2), 219-230. https://doi.org/10.1016/j.pecs.2003.10.004"
+        }
+      ],
+      "field_references": {
+        "pci_mj_kg": ["mckendry_2002", "demirbas_2004"],
+        "taux_lignine_pct": ["mckendry_2002"],
+        "type_dechet": ["mckendry_2002"]
+      }
+    },
+    {
+      "id": "coques_noix_coco",
+      "keywords": ["coque de noix de coco", "coques de noix de coco", "coco"],
+      "defaults": {
+        "pci_mj_kg": 29.0,
+        "taux_lignine_pct": 30.0,
+        "type_dechet": "biomasse_lignocellulosique"
+      },
+      "source": "Valeurs de reference litterature pour residus de coco",
+      "references": [
+        {
+          "id": "ioannidou_2007",
+          "citation": "Ioannidou O., Zabaniotou A. (2007). Agricultural residues as precursors for activated carbon production-A review. Renewable and Sustainable Energy Reviews, 11(9), 1966-2005. https://doi.org/10.1016/j.rser.2006.03.013"
+        },
+        {
+          "id": "guo_lua_1991",
+          "citation": "Guo J., Lua A.C. (1991). Factors affecting the preparation of activated carbons from coconut shell catalized by potassium. Carbon, 29(8), 1165-1175. https://doi.org/10.1016/0008-6223(91)90173-G"
+        }
+      ],
+      "field_references": {
+        "pci_mj_kg": ["ioannidou_2007", "guo_lua_1991"],
+        "taux_lignine_pct": ["ioannidou_2007"],
+        "type_dechet": ["ioannidou_2007"]
+      }
+    },
+    {
+      "id": "effluents_agro",
+      "keywords": ["effluent agro", "effluent organique", "eaux usees agro", "vinasse"],
+      "defaults": {
+        "dbo_mg_l": 3000.0,
+        "dco_mg_l": 6000.0
+      },
+      "source": "Plages typiques DBO/DCO rapportees pour effluents agroalimentaires",
+      "references": [
+        {
+          "id": "metcalf_eddy_2014",
+          "citation": "Metcalf & Eddy, AECOM (2014). Wastewater Engineering: Treatment and Resource Recovery (5th ed.). McGraw-Hill Education. ISBN: 978-0073401188"
+        },
+        {
+          "id": "agro_review_2006",
+          "citation": "Ramos-Cormenzana A., Juarez-Jimenez B., Garcia-Pareja M.P. (2007). Agro-industrial waste materials and wastewater sludge for rhizobial inoculant production: A review. Bioresource Technology, 98(7), 1418-1424. https://doi.org/10.1016/j.biortech.2006.11.066"
+        },
+        {
+          "id": "biogas_gac_2023",
+          "citation": "Romero-Garcia L.I., Solera R., Lopez J.C., Perez M. (2023). Granular activated carbon stimulates biogas production in pilot-scale anaerobic digester treating agro-industrial wastewater. Bioresource Technology, 380, 128908. https://doi.org/10.1016/j.biortech.2023.128908"
+        }
+      ],
+      "field_references": {
+        "dbo_mg_l": ["metcalf_eddy_2014", "agro_review_2006"],
+        "dco_mg_l": ["metcalf_eddy_2014", "agro_review_2006"]
+      }
+    },
+    {
+      "id": "boue_station",
+      "keywords": ["boue", "boue de station", "boue de vidange", "sludge"],
+      "defaults": {
+        "dbo_mg_l": 3500.0,
+        "dco_mg_l": 7000.0,
+        "type_dechet": "boue_de_vidange"
+      },
+      "source": "Donnees typiques de boues en litterature technique",
+      "references": [
+        {
+          "id": "metcalf_eddy_2014",
+          "citation": "Metcalf & Eddy, AECOM (2014). Wastewater Engineering: Treatment and Resource Recovery (5th ed.). McGraw-Hill Education. ISBN: 978-0073401188"
+        },
+        {
+          "id": "tyagi_2011",
+          "citation": "Tyagi V.K., Lo S.-L. (2011). Sludge: A waste or renewable source for energy and resources recovery? Renewable and Sustainable Energy Reviews, 15(8), 3734-3758. https://doi.org/10.1016/j.rser.2011.06.010"
+        },
+        {
+          "id": "appels_2008",
+          "citation": "Appels L., Baeyens J., Degreve J., Dewil R. (2008). Principles and potential of the anaerobic digestion of waste-activated sludge. Progress in Energy and Combustion Science, 34(6), 755-781. https://doi.org/10.1016/j.pecs.2008.06.002"
+        }
+      ],
+      "field_references": {
+        "dbo_mg_l": ["metcalf_eddy_2014", "appels_2008"],
+        "dco_mg_l": ["metcalf_eddy_2014", "appels_2008"],
+        "type_dechet": ["tyagi_2011", "appels_2008"]
+      }
+    },
+    {
+      "id": "huile_usagee",
+      "keywords": ["huile usagee", "huile usee", "huile moteur", "lubrifiant use"],
+      "defaults": {
+        "pci_mj_kg": 40.0,
+        "type_dechet": "huile_usagee"
+      },
+      "source": "Valeurs energetiques usuelles des huiles usees en litterature",
+      "references": [
+        {
+          "id": "rani_2021",
+          "citation": "Rani S., Rout P.R., Udayan A., Singh R.K. (2021). Pyrolysis of waste lubricating oil/waste motor oil to generate high-grade fuel oil: A comprehensive review. Renewable and Sustainable Energy Reviews, 150, 111446. https://doi.org/10.1016/j.rser.2021.111446"
+        },
+        {
+          "id": "singh_2000",
+          "citation": "Singh R.K., Shoji T., Murakata T., et al. (2000). Pyrolysis kinetics of waste automobile lubricating oil. Fuel, 79(15), 1811-1819. https://doi.org/10.1016/S0016-2361(00)00028-4"
+        }
+      ],
+      "field_references": {
+        "pci_mj_kg": ["rani_2021", "singh_2000"],
+        "type_dechet": ["rani_2021"]
+      }
+    },
+    {
+      "id": "textiles_melanges",
+      "keywords": ["textile", "vetement use", "chiffon", "tissu", "coton", "lin", "polyester"],
+      "defaults": {
+        "pci_mj_kg": 16.5,
+        "type_dechet": "textile"
+      },
+      "source": "Valeurs PCI et filieres de valorisation des dechets textiles (reemploi, recyclage, co-processing cimenterie)",
+      "references": [
+        {
+          "id": "sandin_peters_2018",
+          "citation": "Sandin G., Peters G.M. (2018). Environmental impact of textile reuse and recycling - A review. Journal of Cleaner Production, 184, 353-365. https://doi.org/10.1016/j.jclepro.2018.02.266"
+        },
+        {
+          "id": "mckendry_2002_textile_pci",
+          "citation": "McKendry P. (2002). Energy production from biomass (part 1): overview of biomass. Bioresource Technology, 83(1), 37-46. https://doi.org/10.1016/S0960-8524(01)00118-3"
+        },
+        {
+          "id": "ec_jrc_cement_2013",
+          "citation": "European Commission JRC (2013). Best Available Techniques (BAT) Reference Document for the Production of Cement, Lime and Magnesium Oxide. Industrial Emissions Directive 2010/75/EU."
+        }
+      ],
+      "field_references": {
+        "pci_mj_kg": ["mckendry_2002_textile_pci", "ec_jrc_cement_2013"],
+        "type_dechet": ["sandin_peters_2018"]
+      }
+    },
+    {
+      "id": "plastiques_melanges",
+      "keywords": ["plastique", "pet", "pehd", "pp", "pvc", "emballage plastique", "film plastique"],
+      "defaults": {
+        "pci_mj_kg": 32.0,
+        "type_dechet": "plastique"
+      },
+      "source": "Valeurs PCI et filieres de valorisation des plastiques (recyclage matiere et co-processing cimenterie)",
+      "references": [
+        {
+          "id": "hopewell_2009",
+          "citation": "Hopewell J., Dvorak R., Kosior E. (2009). Plastics recycling: challenges and opportunities. Philosophical Transactions of the Royal Society B, 364(1526), 2115-2126. https://doi.org/10.1098/rstb.2008.0311"
+        },
+        {
+          "id": "al-salem_2017",
+          "citation": "Al-Salem S.M., Lettieri P., Baeyens J. (2017). Recycling and recovery routes of plastic solid waste (PSW): A review. Waste Management, 29(10), 2625-2643. https://doi.org/10.1016/j.wasman.2009.06.004"
+        },
+        {
+          "id": "ec_jrc_cement_2013_plastic",
+          "citation": "European Commission JRC (2013). Best Available Techniques (BAT) Reference Document for the Production of Cement, Lime and Magnesium Oxide. Industrial Emissions Directive 2010/75/EU."
+        }
+      ],
+      "field_references": {
+        "pci_mj_kg": ["al-salem_2017", "ec_jrc_cement_2013_plastic"],
+        "type_dechet": ["hopewell_2009"]
+      }
+    }
+  ]
+}

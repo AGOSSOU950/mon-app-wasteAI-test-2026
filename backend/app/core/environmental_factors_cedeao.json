@@ -1,0 +1,33 @@
+﻿{
+  "version": "cedeao-impact-v1",
+  "scope": "CEDEAO",
+  "default": {
+    "generated_multiplier": 1.0,
+    "avoided_multiplier": 1.0,
+    "transport_penalty_multiplier": 1.0,
+    "source": "Default CEDEAO baseline"
+  },
+  "countries": {
+    "benin": {"generated_multiplier": 0.98, "avoided_multiplier": 1.02, "transport_penalty_multiplier": 1.02, "source": "WB climate indicators + regional logistics proxy"},
+    "burkina faso": {"generated_multiplier": 1.05, "avoided_multiplier": 1.03, "transport_penalty_multiplier": 1.08, "source": "WB climate indicators + regional logistics proxy"},
+    "cap-vert": {"generated_multiplier": 1.04, "avoided_multiplier": 1.01, "transport_penalty_multiplier": 1.06, "source": "Island logistics proxy + WB indicators"},
+    "cote d'ivoire": {"generated_multiplier": 0.96, "avoided_multiplier": 1.05, "transport_penalty_multiplier": 1.01, "source": "WB indicators + industrial mix proxy"},
+    "gambie": {"generated_multiplier": 1.01, "avoided_multiplier": 1.01, "transport_penalty_multiplier": 1.03, "source": "WB climate indicators + regional logistics proxy"},
+    "ghana": {"generated_multiplier": 0.95, "avoided_multiplier": 1.06, "transport_penalty_multiplier": 1.0, "source": "WB indicators + industrial mix proxy"},
+    "guinee": {"generated_multiplier": 1.03, "avoided_multiplier": 1.02, "transport_penalty_multiplier": 1.07, "source": "WB indicators + logistics proxy"},
+    "guinee-bissau": {"generated_multiplier": 1.04, "avoided_multiplier": 1.01, "transport_penalty_multiplier": 1.09, "source": "WB indicators + logistics proxy"},
+    "liberia": {"generated_multiplier": 1.02, "avoided_multiplier": 1.02, "transport_penalty_multiplier": 1.07, "source": "WB indicators + logistics proxy"},
+    "mali": {"generated_multiplier": 1.06, "avoided_multiplier": 1.02, "transport_penalty_multiplier": 1.1, "source": "Landlocked logistics proxy + WB indicators"},
+    "niger": {"generated_multiplier": 1.07, "avoided_multiplier": 1.01, "transport_penalty_multiplier": 1.11, "source": "Landlocked logistics proxy + WB indicators"},
+    "nigeria": {"generated_multiplier": 0.97, "avoided_multiplier": 1.04, "transport_penalty_multiplier": 1.02, "source": "WB indicators + industrial mix proxy"},
+    "senegal": {"generated_multiplier": 0.96, "avoided_multiplier": 1.05, "transport_penalty_multiplier": 1.0, "source": "WB indicators + industrial mix proxy"},
+    "sierra leone": {"generated_multiplier": 1.03, "avoided_multiplier": 1.02, "transport_penalty_multiplier": 1.08, "source": "WB indicators + logistics proxy"},
+    "togo": {"generated_multiplier": 0.99, "avoided_multiplier": 1.03, "transport_penalty_multiplier": 1.02, "source": "WB indicators + logistics proxy"}
+  },
+  "references": [
+    "World Bank Data - CO2 emissions, electric power consumption, energy use per capita (latest available years)",
+    "IEA regional power-system and fuel mix snapshots (West Africa)",
+    "UNEP International Resource Panel - material recovery and substitution factors",
+    "IPCC Guidelines - stationary combustion and waste treatment default factors"
+  ]
+}
