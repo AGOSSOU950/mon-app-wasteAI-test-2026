@@ -2,9 +2,9 @@
 import os
 import re
 import unicodedata
-import urllib.error
-import urllib.request
 from typing import Any
+
+from app.core.llm_client import chat_completion_text
 
 from app.core.analytics_store import get_learning_adjustments
 from app.core.environmental_factors_db import get_country_environmental_profile
@@ -427,34 +427,24 @@ def _req(conds: list[str]) -> str:
     return "; ".join(dict.fromkeys(conds)) if conds else "Aucune condition specifique identifiee."
 
 
-def _claude(payload: dict[str, Any]) -> str | None:
-    key = os.getenv("ANTHROPIC_API_KEY")
-    if not key:
-        return None
-    model = os.getenv("ANTHROPIC_MODEL", "claude-3-7-sonnet-latest")
-    use_thinking = os.getenv("USE_CLAUDE_EXTENDED_THINKING", "1") == "1"
-    prompt = "Enrichis ce resultat WasteAi CEDEAO/Benin (6-8 lignes max), sans changer la filiere:\n\n" + json.dumps(payload, ensure_ascii=False)
-    body: dict[str, Any] = {
-        "model": model,
-        "max_tokens": 500,
-        "messages": [{"role": "user", "content": [{"type": "text", "text": prompt}]}],
-    }
-    if use_thinking:
-        body["thinking"] = {"type": "enabled", "budget_tokens": 1024}
-    req = urllib.request.Request(
-        "https://api.anthropic.com/v1/messages",
-        data=json.dumps(body).encode("utf-8"),
-        method="POST",
-        headers={"Content-Type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01"},
+def _llm_enrichment(payload: dict[str, Any]) -> str | None:
+    system_prompt = (
+        "Tu es un ingenieur industriel senior specialise en valorisation des dechets en Afrique de l'Ouest. "
+        "Tu enrichis un resultat existant sans changer la filiere retenue."
     )
-    try:
-        with urllib.request.urlopen(req, timeout=20) as r:
-            parsed = json.loads(r.read().decode("utf-8"))
-        chunks = [c.get("text", "") for c in parsed.get("content", []) if isinstance(c, dict) and c.get("type") == "text"]
-        txt = "\n".join([t.strip() for t in chunks if t and t.strip()]).strip()
-        return txt or None
-    except (urllib.error.URLError, urllib.error.HTTPError, TimeoutError, ValueError, json.JSONDecodeError):
-        return None
+    user_prompt = (
+        "Enrichis ce resultat WasteAi CEDEAO/Benin en 6-8 lignes maximum. "
+        "Reste concret (faisabilite, risques, prochaine action) et ne modifie pas la decision principale.\n\n"
+        + json.dumps(payload, ensure_ascii=False)
+    )
+    return chat_completion_text(
+        system_prompt=system_prompt,
+        user_prompt=user_prompt,
+        model=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"),
+        max_tokens=420,
+        temperature=0.2,
+        timeout_s=20,
+    )
 
 
 def analyser_dechet(waste: WasteInput) -> DecisionResult:
@@ -497,7 +487,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     for fr in (regulatory.get("filiere_restrictions") or []):
         warnings.append(str(fr))
 
-    claude_text = _claude({
+    llm_text = _llm_enrichment({
         "decision_principale": chosen["filiere"],
         "pays": waste.pays_cedeao or "Benin",
         "type_dechet": wt.value,
@@ -505,8 +495,8 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         "alternatives": alternatives,
         "reglementation": reg_refs[:5],
     })
-    if not claude_text:
-        warnings.append("Enrichissement Claude indisponible (cle/API absente ou inaccessible).")
+    if not llm_text:
+        warnings.append("Enrichissement IA indisponible (cle/API absente ou inaccessible).")
 
     score_global = _b(chosen["global_score"])
     confiance = "elevee" if score_global >= 75 else "moyenne" if score_global >= 55 else "faible"
@@ -550,8 +540,8 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
             },
         },
     }
-    if claude_text:
-        exp_payload["enrichissement_claude"] = claude_text
+    if llm_text:
+        exp_payload["enrichissement_ia"] = llm_text
 
     return DecisionResult(
         decision=decision_legacy,

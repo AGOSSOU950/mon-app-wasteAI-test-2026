@@ -371,6 +371,8 @@ export default function App() {
                   </div>
                   <p className="price">Prix estimé: <strong>{m.estimated_price_per_tonne}</strong> / tonne</p>
                   <p className="muted">{m.explanation}</p>
+                  {m.ai_insight && <p><strong>Insight IA:</strong> {m.ai_insight}</p>}
+                  {m.recommended_action && <p className="muted"><strong>Action suggérée:</strong> {m.recommended_action}</p>}
                 </article>
               ))}
             </div>
@@ -460,5 +462,6 @@ export default function App() {
     </div>
   )
 }
+
 
 

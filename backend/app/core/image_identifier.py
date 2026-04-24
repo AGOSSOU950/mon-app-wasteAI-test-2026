@@ -1,11 +1,8 @@
-﻿import base64
 import json
-import os
 import re
 import unicodedata
 
-import anthropic
-
+from app.core.llm_client import vision_completion_json
 from app.models.waste import WasteCategory, WasteType
 
 MAX_IMAGE_SIZE_BYTES = 6 * 1024 * 1024
@@ -106,10 +103,6 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
     if media_type not in ALLOWED_MEDIA_TYPES:
         raise ValueError("Format non supporte. Utilise JPEG, PNG ou WEBP.")
 
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if not api_key:
-        return _heuristic_from_filename(filename)
-
     prompt = (
         "Tu es un classificateur de dechets industriels. "
         "Observe l'image et retourne UNIQUEMENT un JSON valide, sans texte autour, "
@@ -122,35 +115,14 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
     )
 
     try:
-        encoded = base64.b64encode(image_bytes).decode("utf-8")
-        client = anthropic.Anthropic(api_key=api_key)
-        message = client.messages.create(
-            model="claude-sonnet-4-20250514",
+        parsed = vision_completion_json(
+            instruction=prompt,
+            image_bytes=image_bytes,
+            media_type=media_type,
+            model="gpt-4.1-mini",
             max_tokens=280,
-            temperature=0,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": prompt},
-                        {
-                            "type": "image",
-                            "source": {
-                                "type": "base64",
-                                "media_type": media_type,
-                                "data": encoded,
-                            },
-                        },
-                    ],
-                }
-            ],
+            timeout_s=30,
         )
-
-        response_text = ""
-        if message.content and getattr(message.content[0], "text", None):
-            response_text = message.content[0].text
-
-        parsed = _extract_json_block(response_text)
         if not parsed:
             return _heuristic_from_filename(filename)
 
