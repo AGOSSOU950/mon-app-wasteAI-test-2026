@@ -1,4 +1,4 @@
-﻿import axios from "axios"
+import axios from "axios"
 
 const API_URL = "https://wasteai-api.wasteai-gildas.workers.dev"
 const API_BASE = (import.meta.env.VITE_API_BASE || API_URL).replace(/\/$/, "")
@@ -12,118 +12,161 @@ const http = axios.create({
   },
 })
 
+const DECISION_LABELS = {
+  material: "Valorisation matiere",
+  energetic: "Valorisation energetique",
+  reuse_sale: "Reemploi / vente encadree",
+  specialized: "Traitement specialise",
+}
+
+const SPECIFIC_ROUTE_LABELS = {
+  recyclage_mecanique_plastique: "Recyclage mecanique du plastique (tri-lavage-extrusion)",
+  pyrolyse_plastique: "Pyrolyse des plastiques melanges",
+  co_incineration_cimenterie: "Co-incineration en cimenterie autorisee",
+  charbon_actif: "Valorisation matiere en charbon actif",
+  refonte_metaux: "Refonte metallurgique (fonderie/acierie)",
+  reemploi_pieces_metalliques: "Reemploi de pieces metalliques",
+  methanisation_biogaz: "Methanisation avec production de biogaz",
+  regeneration_huiles: "Regeneration des huiles usagees",
+  effilochage_textile: "Effilochage textile en fibres techniques",
+  reemploi_textile: "Reemploi textile avec tri qualite",
+  recyclage_papetier: "Recyclage papetier",
+  compostage: "Compostage",
+  epandage_agricole: "Epandage agricole conforme",
+  elimination_securisee: "Elimination securisee",
+}
+
+const CEDEAO_REFERENCES = [
+  "Convention de Bamako: interdiction d'importation de dechets dangereux et gestion ecologiquement rationnelle.",
+  "Cadre CEDEAO: controle des flux transfrontaliers, tracabilite et autorisation des operateurs.",
+]
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value))
 }
 
-function normalizeDecisionLabel(rawDecision) {
-  const raw = String(rawDecision || "").trim()
-  if (!raw) return "Valorisation matiere (charbon actif, refonte...)"
+function normalizeText(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+}
 
-  const key = raw.toLowerCase()
-  if (key.includes("ener")) return "Valorisation energetique (biogaz, combustible, electricite...)"
-  if (key.includes("market") || key.includes("vente")) return "Vente directe sur marketplace"
-  if (key.includes("special") || key.includes("dang")) return "Traitement specialise"
-  if (key.includes("mati") || key.includes("recycl")) return "Valorisation matiere (charbon actif, refonte...)"
+function inferDecisionKey(rawDecision) {
+  const key = normalizeText(rawDecision)
+  if (!key) return "material"
+  if (key.includes("ener")) return "energetic"
+  if (key.includes("reemploi") || key.includes("reuse") || key.includes("market") || key.includes("vente")) return "reuse_sale"
+  if (key.includes("special") || key.includes("dang") || key.includes("inciner")) return "specialized"
+  if (key.includes("mati") || key.includes("recycl") || key.includes("refonte") || key.includes("charbon_actif")) return "material"
+  return "material"
+}
+
+function normalizeDecisionLabel(rawDecision) {
+  return DECISION_LABELS[inferDecisionKey(rawDecision)] || DECISION_LABELS.material
+}
+
+function toDecisionDisplayLabel(rawDecision) {
+  const raw = String(rawDecision || "").trim()
+  if (!raw) return normalizeDecisionLabel(rawDecision)
+  const normalized = normalizeText(raw)
+  if (SPECIFIC_ROUTE_LABELS[normalized]) return SPECIFIC_ROUTE_LABELS[normalized]
+  if (raw.includes("_")) {
+    const pretty = raw.replaceAll("_", " ")
+    return pretty.charAt(0).toUpperCase() + pretty.slice(1)
+  }
   return raw
 }
 
-function buildRegulatoryContext(payload, decision) {
-  const danger = String(payload?.niveau_danger || "faible").toLowerCase()
-  const country = String(payload?.pays_cedeao || "").toLowerCase()
+function computeRegulatoryGate(payload, decisionKey) {
+  const danger = normalizeText(payload?.niveau_danger || "faible")
+  const category = normalizeText(payload?.categorie)
+  const type = normalizeText(payload?.type_dechet)
+  const chlorine = payload?.presence_chlore === true
+  const contamination = Number(payload?.taux_contamination_pct || 0)
 
-  let status = "preliminaire_conforme"
-  let severity = "medium"
-  let risk = 35
+  let blocked = false
+  let riskDelta = 0
+  const warnings = []
 
-  if (danger === "eleve") {
-    status = "vigilance_renforcee"
-    severity = "high"
-    risk = 65
+  if (danger === "critique" && decisionKey !== "specialized") {
+    blocked = true
+    warnings.push("Flux critique: traitement specialise requis.")
+    riskDelta += 35
+  } else if (danger === "eleve" && (decisionKey === "reuse_sale" || decisionKey === "material")) {
+    blocked = true
+    warnings.push("Flux a risque eleve: voie directe non conforme sans pretraitement.")
+    riskDelta += 22
   }
 
-  if (danger === "critique") {
-    status = "controle_renforce"
-    severity = "high"
-    risk = 85
+  if ((type.includes("boue") || category.includes("chimique")) && decisionKey === "reuse_sale") {
+    blocked = true
+    warnings.push("Flux liquide/chimique: vente directe non conforme.")
+    riskDelta += 20
   }
 
-  const references = [
-    "Cadre CEDEAO: harmonisation de la gestion des dechets et controle des flux transfrontaliers.",
-    "Convention de Bamako: interdiction d'importation de dechets dangereux en Afrique.",
-  ]
-
-  if (country.includes("benin")) {
-    references.push("Benin: verification des autorisations ANGED/structures habilitees pour collecte, transport et traitement.")
+  if (chlorine && decisionKey === "energetic") {
+    blocked = true
+    warnings.push("Presence de chlore: voie energetique bloquee sans depollution adaptee.")
+    riskDelta += 20
   }
 
-  if (decision.includes("energetique")) {
-    references.push("Valorisation energetique: verifier emissions, filtres et tracabilite des residus ultimes.")
+  if (contamination >= 35 && decisionKey !== "specialized") {
+    blocked = true
+    warnings.push("Contamination elevee: traitement specialise requis.")
+    riskDelta += 24
   }
 
-  if (decision.includes("matiere")) {
-    references.push("Valorisation matiere: prioriser tri, qualite de flux et conformite des filieres de recyclage.")
+  return {
+    blocked,
+    riskDelta,
+    warnings,
+    references: CEDEAO_REFERENCES,
+    scope: "CEDEAO",
   }
+}
 
-  if (decision.includes("specialise")) {
-    references.push("Traitement specialise: requis pour flux a danger eleve/critique ou contamination significative.")
-  }
+function buildRegulatoryContext(payload, decisionKey) {
+  const gate = computeRegulatoryGate(payload, decisionKey)
+  const danger = normalizeText(payload?.niveau_danger || "faible")
+
+  let baseRisk = 34
+  if (danger === "eleve") baseRisk += 18
+  if (danger === "critique") baseRisk += 32
+
+  const risk = clamp(baseRisk + gate.riskDelta, 8, 95)
+  const status = gate.blocked ? "non_conforme" : risk >= 70 ? "vigilance_renforcee" : "preliminaire_conforme"
 
   return {
     conformite_reglementaire: {
       status,
-      max_severity: severity,
+      max_severity: risk >= 80 ? "high" : risk >= 45 ? "medium" : "low",
       risk_score: risk,
-      scope: country.includes("benin") ? "CEDEAO + Benin" : "CEDEAO",
-      warnings: status === "preliminaire_conforme" ? [] : ["Controle documentaire et operateur agree recommandes avant execution."],
+      scope: gate.scope,
+      warnings: gate.warnings,
+      authorised: !gate.blocked,
     },
-    references_reglementaires: references,
+    references_reglementaires: gate.references,
   }
 }
 
 function computeOfflineAnalysis(payload) {
-  const quantity = Number(payload.quantite_kg || 0)
-  const danger = String(payload.niveau_danger || "faible")
-  const type = String(payload.type_dechet || "autre")
-  const category = String(payload.categorie || "autre")
-
-  let score = 60
-  let decision = "Valorisation matiere (charbon actif, refonte...)"
-  const factors = []
-
-  if (type === "plastique" || category === "plastique") {
-    score += 12
-    factors.push("Flux plastique compatible avec une filiere de recyclage.")
-  }
-
-  if (danger === "eleve" || danger === "critique") {
-    score -= 18
-    decision = "Traitement specialise"
-    factors.push("Niveau de danger eleve: traitement specialise recommande.")
-  }
-
-  if (quantity > 5000) {
-    score += 8
-    factors.push("Volume important: economie d'echelle favorable a la valorisation.")
-  } else if (quantity > 0 && quantity < 200) {
-    score -= 6
-    factors.push("Petit volume: cout logistique proportionnellement plus eleve.")
-  }
-
-  score = clamp(score, 5, 95)
-
-  const confidence = score >= 80 ? "elevee" : score >= 60 ? "moyenne" : "faible"
-  const regs = buildRegulatoryContext(payload, decision)
+  const quantity = Number(payload?.quantite_kg || 0)
+  const decision = "Valorisation matiere"
+  const regs = buildRegulatoryContext(payload, "material")
 
   return {
     decision,
+    decision_principale: decision,
     mode_valorisation_propose: decision,
-    score,
-    confiance: confidence,
-    explication: "Resultat estime localement (mode hors-ligne) avec verification reglementaire preliminaire.",
-    resume_choix: factors.join(" ") || "Evaluation locale par regles heuristiques.",
-    facteurs_cles: factors,
+    score: 62,
+    confiance: "moyenne",
+    explication: "Resultat local: fallback hors-ligne avec controle reglementaire CEDEAO.",
+    resume_choix: "Analyse heuristique locale en attendant la reponse API.",
+    facteurs_cles: ["Mode hors-ligne"],
     options_bloquees: [],
+    alternatives: [],
     ...regs,
     impact_environnemental: {
       bilan_net_recommande_kgco2e: Number((quantity * 0.18).toFixed(2)),
@@ -131,54 +174,81 @@ function computeOfflineAnalysis(payload) {
   }
 }
 
+function enforceRegulatoryDecision(payload, suggestedDecision) {
+  const key = inferDecisionKey(suggestedDecision)
+  const gate = computeRegulatoryGate(payload, key)
+
+  if (!gate.blocked) {
+    return {
+      finalDecision: String(suggestedDecision || "").trim() || normalizeDecisionLabel(suggestedDecision),
+      enforced: false,
+      blockedReason: "",
+      key,
+    }
+  }
+
+  return {
+    finalDecision: "elimination_securisee",
+    enforced: true,
+    blockedReason: gate.warnings.join(" ") || "Voie initiale non conforme.",
+    key: "specialized",
+  }
+}
+
 function normalizeApiResult(payload, apiData) {
   const base = computeOfflineAnalysis(payload)
-  const compactDecision = normalizeDecisionLabel(apiData?.recommandation || apiData?.decision || apiData?.mode_valorisation)
-  const regs = buildRegulatoryContext(payload, compactDecision)
+  const suggestedDecisionRaw =
+    apiData?.decision_principale ||
+    apiData?.mode_valorisation_propose ||
+    apiData?.recommandation ||
+    apiData?.decision ||
+    apiData?.mode_valorisation
 
-  const mergedScore = typeof apiData?.score === "number"
-    ? clamp(apiData.score, 0, 100)
-    : clamp(base.score + 5, 0, 100)
+  const policy = enforceRegulatoryDecision(payload, suggestedDecisionRaw)
+  const finalDecisionRaw = policy.finalDecision
+  const finalKey = inferDecisionKey(finalDecisionRaw)
+  const finalRegs = buildRegulatoryContext(payload, finalKey)
+
+  const mergedScore = typeof apiData?.score === "number" ? clamp(apiData.score, 0, 100) : clamp(base.score + 5, 0, 100)
+  const finalScore = policy.enforced ? Math.min(mergedScore, 55) : mergedScore
 
   return {
     ...base,
     ...apiData,
-    decision: compactDecision,
-    mode_valorisation_propose: compactDecision,
-    score: mergedScore,
+    decision: toDecisionDisplayLabel(finalDecisionRaw),
+    decision_principale: toDecisionDisplayLabel(finalDecisionRaw),
+    mode_valorisation_propose: toDecisionDisplayLabel(finalDecisionRaw),
+    score: Number(finalScore.toFixed(1)),
     confiance: apiData?.confiance || base.confiance,
-    explication: apiData?.explication || `Recommendation API: ${compactDecision}. ${base.resume_choix}`,
-    resume_choix: apiData?.resume_choix || base.resume_choix,
-    facteurs_cles: Array.from(new Set([...(base.facteurs_cles || []), "Priorisation basee sur contraintes techniques, risque et filiere locale."])),
-    conformite_reglementaire: apiData?.conformite_reglementaire || regs.conformite_reglementaire,
-    references_reglementaires: apiData?.references_reglementaires || regs.references_reglementaires,
+    resume_choix: policy.enforced
+      ? `Voie initiale ecartee pour conformite. ${policy.blockedReason}`
+      : apiData?.resume_choix || base.resume_choix,
+    conformite_reglementaire: finalRegs.conformite_reglementaire,
+    references_reglementaires: Array.from(new Set([...(apiData?.references_reglementaires || []), ...(finalRegs.references_reglementaires || [])])),
     raw_api: apiData,
   }
 }
 
 function buildAnalyzeWarning(error) {
-  if (!axios.isAxiosError(error)) {
-    return "API indisponible. Analyse locale activee."
-  }
-
-  if (error.code === "ECONNABORTED") {
-    return "Timeout API: delai depasse. Analyse locale activee."
-  }
-
-  if (!error.response) {
-    return "Backend non joignable (verifie que l'API est demarree). Analyse locale activee."
-  }
+  if (!axios.isAxiosError(error)) return "API indisponible. Analyse locale activee."
+  if (error.code === "ECONNABORTED") return "Timeout API: delai depasse. Analyse locale activee."
+  if (!error.response) return "Backend non joignable (verifie que l'API est demarree). Analyse locale activee."
 
   const status = error.response.status
-  if (status === 401 || status === 403) {
-    return "Acces API refuse (401/403). Analyse locale activee."
-  }
-
-  if (status >= 500) {
-    return `Erreur serveur API (${status}). Analyse locale activee.`
-  }
-
+  if (status === 401 || status === 403) return "Acces API refuse (401/403). Analyse locale activee."
+  if (status >= 500) return `Erreur serveur API (${status}). Analyse locale activee.`
   return `Erreur API (${status}). Analyse locale activee.`
+}
+
+function optionalNumber(value) {
+  if (value === "" || value === null || value === undefined) return null
+  const n = Number(value)
+  return Number.isFinite(n) ? n : null
+}
+
+function optionalString(value) {
+  const v = String(value ?? "").trim()
+  return v ? v : null
 }
 
 export function buildAnalyzePayload(input) {
@@ -191,7 +261,14 @@ export function buildAnalyzePayload(input) {
     niveau_danger: String(input.niveau_danger || "faible"),
     description: String(input.description || ""),
     contient_metaux: Boolean(input.contient_metaux),
-    pays_cedeao: input.pays_cedeao ? String(input.pays_cedeao) : null,
+    pays_cedeao: optionalString(input.pays_cedeao),
+    pci_mj_kg: optionalNumber(input.pci_mj_kg),
+    dbo_mg_l: optionalNumber(input.dbo_mg_l),
+    dco_mg_l: optionalNumber(input.dco_mg_l),
+    taux_lignine_pct: optionalNumber(input.taux_lignine_pct),
+    taux_contamination_pct: optionalNumber(input.taux_contamination_pct),
+    type_plastique: optionalString(input.type_plastique),
+    presence_chlore: input.presence_chlore === true ? true : input.presence_chlore === false ? false : null,
   }
 }
 
@@ -210,15 +287,41 @@ export async function analyzeWaste(payload) {
       warning: "Format API compact detecte: enrichissement local applique pour detail operationnel.",
     }
   } catch (error) {
-    const offline = computeOfflineAnalysis(payload)
     return {
       source: "offline",
-      data: offline,
+      data: computeOfflineAnalysis(payload),
       apiBase: API_BASE,
       warning: buildAnalyzeWarning(error),
       error,
     }
   }
+}
+
+export async function identifyWasteFromImage({ imageBase64, mediaType, filename }) {
+  const response = await http.request({
+    method: "post",
+    url: "/api/waste/identify-image",
+    data: {
+      image_base64: imageBase64,
+      media_type: mediaType,
+      filename: filename || null,
+    },
+  })
+  return response.data || {}
+}
+
+export async function getScientificPrefill({ nom, type_dechet, categorie, description }) {
+  const response = await http.request({
+    method: "get",
+    url: "/api/waste/scientific-prefill",
+    params: {
+      nom,
+      type_dechet: type_dechet || null,
+      categorie: categorie || null,
+      description: description || null,
+    },
+  })
+  return response.data || {}
 }
 
 export { API_BASE, API_URL, REMOTE_API_BASE }

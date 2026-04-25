@@ -7,25 +7,29 @@ def _normalize(value: str | None) -> str:
     if not value:
         return ""
     normalized = unicodedata.normalize("NFKD", value)
-    return "".join(ch for ch in normalized if not unicodedata.combining(ch)).lower()
+    return "".join(ch for ch in normalized if not unicodedata.combining(ch)).lower().strip()
 
 
-def _load_db() -> dict:
-    path = Path(__file__).with_name("literature_characteristics.json")
+def _load_json(filename: str, fallback: dict) -> dict:
+    path = Path(__file__).with_name(filename)
     if not path.exists():
-        return {"version": "litterature-missing", "entries": []}
-
+        return fallback
     try:
         return json.loads(path.read_text(encoding="utf-8-sig"))
     except Exception:
-        return {"version": "litterature-invalid", "entries": []}
+        return fallback
 
 
-DB = _load_db()
+LITERATURE_DB = _load_json("literature_characteristics.json", {"version": "litterature-invalid", "entries": []})
+SCIENTIFIC_DB = _load_json("scientific_profiles.json", {"version": "scientific-invalid", "profiles": [], "type_fallbacks": {}})
 
 
 def get_literature_db() -> dict:
-    return DB
+    return LITERATURE_DB
+
+
+def get_scientific_db() -> dict:
+    return SCIENTIFIC_DB
 
 
 def _build_reference_index(entry: dict) -> dict[str, str]:
@@ -38,15 +42,86 @@ def _build_reference_index(entry: dict) -> dict[str, str]:
     return refs
 
 
+def get_scientific_prefill(
+    nom: str,
+    type_dechet: str | None = None,
+    categorie: str | None = None,
+    description: str | None = None,
+) -> dict[str, object]:
+    text = f"{_normalize(nom)} {_normalize(description)}"
+    waste_type = _normalize(type_dechet)
+    waste_cat = _normalize(categorie)
+
+    best_profile = None
+    best_score = -1
+
+    for profile in SCIENTIFIC_DB.get("profiles", []):
+        aliases = profile.get("aliases", [])
+        alias_hits = 0
+        for alias in aliases:
+            alias_n = _normalize(alias)
+            if alias_n and alias_n in text:
+                alias_hits += 1
+
+        p_type = _normalize(profile.get("type_dechet"))
+        p_cat = _normalize(profile.get("categorie"))
+
+        type_match = 1 if (waste_type and p_type and waste_type == p_type) else 0
+        cat_match = 1 if (waste_cat and p_cat and waste_cat == p_cat) else 0
+
+        score = alias_hits * 4 + type_match * 2 + cat_match
+        if score > best_score and score > 0:
+            best_score = score
+            best_profile = profile
+
+    if best_profile:
+        return {
+            "source": "profile",
+            "profile_id": best_profile.get("id"),
+            "defaults": best_profile.get("defaults", {}),
+            "references": best_profile.get("references", []),
+            "score": best_score,
+        }
+
+    if waste_type:
+        fallback = (SCIENTIFIC_DB.get("type_fallbacks") or {}).get(waste_type)
+        if isinstance(fallback, dict):
+            return {
+                "source": "type_fallback",
+                "profile_id": f"type_{waste_type}",
+                "defaults": fallback.get("defaults", {}),
+                "references": fallback.get("references", []),
+                "score": 0,
+            }
+
+    return {
+        "source": "none",
+        "profile_id": None,
+        "defaults": {},
+        "references": [],
+        "score": 0,
+    }
+
+
 def infer_literature_defaults(
     nom: str,
     description: str | None = None,
 ) -> tuple[dict, str | None, str | None, list[str], dict[str, list[str]]]:
+    # Priorite 1: base scientifique centralisee (matching par alias/texte)
+    sci = get_scientific_prefill(nom=nom, description=description)
+    sci_defaults = sci.get("defaults", {}) if isinstance(sci, dict) else {}
+    if sci_defaults:
+        source = f"Base scientifique centralisee ({sci.get('source', 'profile')})"
+        entry_id = str(sci.get("profile_id") or "scientific")
+        references = [str(r) for r in (sci.get("references") or []) if str(r).strip()]
+        return sci_defaults, source, entry_id, references, {}
+
+    # Priorite 2: base litterature historique (retrocompatibilite)
     text = f"{_normalize(nom)} {_normalize(description)}"
     best_entry = None
     best_score = 0
 
-    for entry in DB.get("entries", []):
+    for entry in LITERATURE_DB.get("entries", []):
         score = 0
         for kw in entry.get("keywords", []):
             if _normalize(kw) in text:

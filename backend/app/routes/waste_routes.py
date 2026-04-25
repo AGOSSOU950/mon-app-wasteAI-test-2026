@@ -1,20 +1,21 @@
-﻿import base64
+import base64
 import io
 import os
+import logging
 
 from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from app.core.analytics_store import get_analytics, get_analytics_compact, get_learning_snapshot, record_analysis
-from app.core.decision_engine import analyser_dechet
+from app.core.decision_engine import analyser_dechet, explain_ml_adjustments
 from app.core.environmental_factors_db import (
     get_environmental_factors_db,
     get_environmental_factors_template,
     update_environmental_factors_db,
 )
 from app.core.image_identifier import identify_waste_from_image
-from app.core.literature_db import get_literature_db
+from app.core.literature_db import get_literature_db, get_scientific_prefill
 from app.core.regulation_db import get_regulation_db
 from app.core.reporting import build_analytics_pdf, send_analytics_report_email
 from app.models.waste import (
@@ -25,6 +26,7 @@ from app.models.waste import (
 )
 
 router = APIRouter(prefix="/api/waste", tags=["waste"])
+logger = logging.getLogger(__name__)
 
 
 class ReportEmailRequest(BaseModel):
@@ -58,7 +60,20 @@ def analyze_waste(waste: WasteInput):
 
 @router.get("/analytics")
 def get_dashboard_analytics(limit: int = Query(default=100, ge=1, le=1000)):
-    return get_analytics(limit=limit)
+    try:
+        return get_analytics(limit=limit)
+    except Exception:
+        logger.exception("Analytics endpoint failed")
+        return {
+            "summary": {
+                "total_analyses": 0,
+                "tonnes_valorisees": 0.0,
+                "revenus_generes_eur": 0.0,
+                "co2_evite_kg": 0.0,
+            },
+            "history": [],
+            "meta": {"fallback": True, "reason": "analytics_store_unavailable"},
+        }
 
 
 @router.get("/analytics/learning")
@@ -182,6 +197,21 @@ def get_references():
     return get_literature_db()
 
 
+@router.get("/scientific-prefill")
+def get_scientific_prefill_payload(
+    nom: str = Query(..., min_length=1),
+    type_dechet: str | None = Query(default=None),
+    categorie: str | None = Query(default=None),
+    description: str | None = Query(default=None),
+):
+    return get_scientific_prefill(
+        nom=nom,
+        type_dechet=type_dechet,
+        categorie=categorie,
+        description=description,
+    )
+
+
 @router.get("/regulations")
 def get_regulations():
     return get_regulation_db()
@@ -218,9 +248,37 @@ def get_documentation():
 
 
 
+
+
+@router.post("/analytics/ml-explain")
+def explain_ml_for_waste(
+    waste: WasteInput,
+    lookback_limit: int = Query(default=1200, ge=50, le=5000),
+):
+    return explain_ml_adjustments(waste, lookback_limit=lookback_limit)
+
 @router.get("/analytics/compact")
 def get_dashboard_analytics_compact(
     recent_limit: int = Query(default=20, ge=1, le=200),
     summary_window: int = Query(default=400, ge=20, le=5000),
 ):
-    return get_analytics_compact(recent_limit=recent_limit, summary_window=summary_window)
+    try:
+        return get_analytics_compact(recent_limit=recent_limit, summary_window=summary_window)
+    except Exception:
+        logger.exception("Compact analytics endpoint failed")
+        return {
+            "summary": {
+                "total_analyses": 0,
+                "tonnes_valorisees": 0.0,
+                "revenus_generes_eur": 0.0,
+                "co2_evite_kg": 0.0,
+            },
+            "history": [],
+            "meta": {
+                "recent_limit": recent_limit,
+                "summary_window": summary_window,
+                "summary_total_records": 0,
+                "fallback": True,
+                "reason": "analytics_store_unavailable",
+            },
+        }

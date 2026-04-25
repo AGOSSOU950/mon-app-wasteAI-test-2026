@@ -1,0 +1,144 @@
+﻿{
+  "version": "scientific-profiles-v1",
+  "profiles": [
+    {
+      "id": "charbon_bois",
+      "aliases": ["charbon de bois", "charbon", "biochar"],
+      "type_dechet": "biomasse_lignocellulosique",
+      "categorie": "organique",
+      "defaults": {
+        "pci_mj_kg": 28.0,
+        "taux_lignine_pct": 30.0
+      },
+      "references": [
+        "FAO bioenergy datasets: charcoal HHV commonly ~27-30 MJ/kg.",
+        "Biomass composition literature: woody feedstocks with lignin around 25-35%."
+      ]
+    },
+    {
+      "id": "coques_palmiste_coco",
+      "aliases": ["coque", "coques", "palmiste", "coco", "coconut shell"],
+      "type_dechet": "biomasse_lignocellulosique",
+      "categorie": "organique",
+      "defaults": {
+        "pci_mj_kg": 18.5,
+        "taux_lignine_pct": 32.0
+      },
+      "references": [
+        "Agro-residue energy studies in West Africa: shells often 17-20 MJ/kg.",
+        "Lignocellulosic characterization datasets for nutshell and shell biomass."
+      ]
+    },
+    {
+      "id": "bagasse_canne",
+      "aliases": ["bagasse", "canne", "sugarcane bagasse"],
+      "type_dechet": "biomasse_lignocellulosique",
+      "categorie": "organique",
+      "defaults": {
+        "pci_mj_kg": 16.5,
+        "taux_lignine_pct": 22.0
+      },
+      "references": [
+        "Sugarcane bagasse references: dry-basis energy typically 15-18 MJ/kg."
+      ]
+    },
+    {
+      "id": "boue_vidange",
+      "aliases": ["boue", "boue de vidange", "fecal sludge", "sludge"],
+      "type_dechet": "boue_de_vidange",
+      "categorie": "organique",
+      "defaults": {
+        "dbo_mg_l": 1400.0,
+        "dco_mg_l": 2600.0,
+        "pci_mj_kg": 5.0
+      },
+      "references": [
+        "Sanitation engineering datasets for fecal sludge characteristics.",
+        "Anaerobic treatment literature with typical DBO/DCO ranges for raw sludge."
+      ]
+    },
+    {
+      "id": "huile_usagee",
+      "aliases": ["huile usagee", "huile usee", "lubrifiant", "waste oil"],
+      "type_dechet": "huile_usagee",
+      "categorie": "chimique",
+      "defaults": {
+        "pci_mj_kg": 38.0
+      },
+      "references": [
+        "Waste lubricant/oil recovery studies: high calorific potential around 37-40 MJ/kg."
+      ]
+    },
+    {
+      "id": "plastiques_melanges",
+      "aliases": ["plastique", "pet", "pehd", "pp", "polyethylene", "polypropylene"],
+      "type_dechet": "plastique",
+      "categorie": "plastique",
+      "defaults": {
+        "pci_mj_kg": 31.0,
+        "taux_contamination_pct": 15.0
+      },
+      "references": [
+        "Mixed plastics characterization for recycling and energy recovery (28-35 MJ/kg)."
+      ]
+    },
+    {
+      "id": "textiles_melanges",
+      "aliases": ["textile", "tissu", "vetement", "cotton", "polyester"],
+      "type_dechet": "textile",
+      "categorie": "autre",
+      "defaults": {
+        "pci_mj_kg": 17.0
+      },
+      "references": [
+        "Textile waste characterization references for industrial recovery pathways."
+      ]
+    }
+  ],
+  "type_fallbacks": {
+    "biomasse_lignocellulosique": {
+      "defaults": {
+        "pci_mj_kg": 16.5,
+        "taux_lignine_pct": 28.0
+      },
+      "references": [
+        "Generic lignocellulosic biomass ranges from bioenergy databases."
+      ]
+    },
+    "boue_de_vidange": {
+      "defaults": {
+        "dbo_mg_l": 1400.0,
+        "dco_mg_l": 2600.0,
+        "pci_mj_kg": 5.0
+      },
+      "references": [
+        "Typical fecal sludge values from sanitation engineering literature."
+      ]
+    },
+    "huile_usagee": {
+      "defaults": {
+        "pci_mj_kg": 38.0
+      },
+      "references": [
+        "Used oil energetic value from waste oil recovery literature."
+      ]
+    },
+    "plastique": {
+      "defaults": {
+        "pci_mj_kg": 31.0,
+        "taux_contamination_pct": 15.0
+      },
+      "references": [
+        "Mixed plastic default ranges from recycling and WtE studies."
+      ]
+    },
+    "textile": {
+      "defaults": {
+        "pci_mj_kg": 17.0
+      },
+      "references": [
+        "Industrial textile waste characterization references."
+      ]
+    }
+  }
+}

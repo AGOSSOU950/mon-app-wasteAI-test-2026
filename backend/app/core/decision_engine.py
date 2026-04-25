@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 import re
 import unicodedata
@@ -6,7 +6,7 @@ from typing import Any
 
 from app.core.llm_client import chat_completion_text
 
-from app.core.analytics_store import get_learning_adjustments
+from app.core.analytics_store import get_learning_adjustments, get_ml_score_adjustments
 from app.core.environmental_factors_db import get_country_environmental_profile
 from app.core.environmental_impact import calculate_environmental_impact
 from app.core.literature_db import infer_literature_defaults
@@ -17,9 +17,10 @@ from app.models.waste import DecisionResult, WasteCategory, WasteInput, WasteTyp
 CFG = get_scoring_config()
 DECISION_MATIERE = CFG.get("decision", {}).get("matiere", "valorisation_matiere")
 DECISION_ENERGIE = CFG.get("decision", {}).get("energetique", "valorisation_energetique")
+DECISION_REEMPLOI = CFG.get("decision", {}).get("reemploi", "Reemploi / reutilisation industrielle")
 DECISION_VENTE = CFG.get("decision", {}).get("vente", "vente_marketplace")
 DECISION_ELIMINATION = "elimination_securisee"
-HIERARCHY = ["matiere", "energie", "vente"]
+HIERARCHY = ["reemploi", "matiere", "energie", "vente"]
 
 # Priorite technique + reglementaire CEDEAO/Bamako
 WEIGHT_TECH, WEIGHT_ECO, WEIGHT_ENV, WEIGHT_SOCIAL, WEIGHT_REG = 0.35, 0.2, 0.15, 0.1, 0.2
@@ -171,6 +172,10 @@ def _textile_reusable(w: WasteInput) -> bool:
     d = _n(w.description)
     return et in {"bon", "correct", "propre", "triable"} or "bon etat" in d or "seconde main" in d
 
+def _is_export_intent(w: WasteInput) -> bool:
+    txt = " ".join([_n(w.description), _n(w.nom), _n(w.produit_principal)])
+    return any(k in txt for k in ["export", "exportation", "international", "transfrontal", "hors benin"])
+
 
 def _metrics(w: WasteInput, wt: WasteType) -> tuple[dict[str, float], list[str], list[str]]:
     defaults = TYPICAL.get(wt.value, TYPICAL[WasteType.OTHER.value])
@@ -237,13 +242,17 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
             _cand("compostage", "matiere", 60 if m["siccite_pct"] < 30 else 45, "Compostage en fallback si flux humide.", ["plateforme compostage"]),
         ]
     elif w.categorie == WasteCategory.METAL:
+        reusable_metal = m["metaux_pct"] >= 80 and w.niveau_danger in {"faible", "moyen"}
         c += [
+            _cand("reemploi_pieces_metalliques", "reemploi", 82 if reusable_metal else 55, f"Reemploi possible si pieces intactes; teneur metaux estimee a {m['metaux_pct']:.1f}%.", ["tri qualite", "controle integrite", "tracabilite"], feasible=reusable_metal, blocked="Flux metal trop heterogene/risque pour reemploi" if not reusable_metal else None),
             _cand("refonte_metaux", "matiere", 90 if m["metaux_pct"] > 50 else 65, f"Teneur metaux estimee a {m['metaux_pct']:.1f}%.", ["tri metallique", "fonderie/acierie"], feasible=(m["metaux_pct"] > 40), blocked="Teneur metallique insuffisante" if m["metaux_pct"] <= 40 else None),
             _cand("vente_ferrailleur_certifie", "vente", 58, "Dernier recours vers ferrailleur certifie.", ["tracabilite lot", "conformite"]),
         ]
     elif wt == WasteType.PLASTIQUE:
         contamination = float(w.taux_contamination_pct or 15.0)
+        reusable_plastic = contamination <= 10 and w.niveau_danger in {"faible", "moyen"}
         c += [
+            _cand("reemploi_plastique", "reemploi", 80 if reusable_plastic else 50, f"Reemploi si contamination faible ({contamination:.1f}%).", ["tri", "lavage", "controle qualite"], feasible=reusable_plastic, blocked="Contamination trop elevee pour reemploi" if not reusable_plastic else None),
             _cand("recyclage_mecanique_plastique", "matiere", 86 if contamination <= 20 else 62, f"Contamination={contamination:.1f}%, tri et proprete determinants.", ["tri", "lavage", "extrusion"], feasible=(contamination <= 35), blocked="Contamination trop elevee" if contamination > 35 else None),
             _cand("pyrolyse_plastique", "energie", 76 if contamination > 20 else 61, "Pyrolyse pour plastiques melanges/contamines.", ["reacteur pyrolyse", "traitement gaz"]),
             _cand("co_incineration_cimenterie", "energie", 72 if m["pci_mj_kg"] > 15 else 45, f"PCI={m['pci_mj_kg']:.1f} MJ/kg, co-incineration conditionnelle.", ["filiere cimenterie", "controle chlore"], feasible=(m["pci_mj_kg"] > 15 and (not _is_pvc(w) or bool(w.filiere_cimenterie_autorisee))), blocked="PCI<15 ou filiere cimenterie non autorisee pour flux chlore" if not (m["pci_mj_kg"] > 15 and (not _is_pvc(w) or bool(w.filiere_cimenterie_autorisee))) else None),
@@ -261,13 +270,15 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
         ]
     elif wt == WasteType.TEXTILE:
         c += [
-            _cand("reemploi_textile", "matiere", 84 if _textile_reusable(w) else 55, "Reemploi prioritaire si etat correct.", ["tri qualite", "desinfection"], feasible=_textile_reusable(w), blocked="Etat textile insuffisant" if not _textile_reusable(w) else None),
+            _cand("reemploi_textile", "reemploi", 84 if _textile_reusable(w) else 55, "Reemploi prioritaire si etat correct.", ["tri qualite", "desinfection"], feasible=_textile_reusable(w), blocked="Etat textile insuffisant" if not _textile_reusable(w) else None),
             _cand("effilochage_textile", "matiere", 74, "Effilochage en fibres techniques.", ["ligne effilochage"]),
             _cand("co_incineration_cimenterie", "energie", 62, "Reserve aux textiles souilles.", ["cimenterie", "controle emissions"]),
         ]
     elif w.categorie == WasteCategory.PAPER:
         contamination = float(w.taux_contamination_pct or 12.0)
+        reusable_paper = contamination <= 8 and w.niveau_danger in {"faible", "moyen"}
         c += [
+            _cand("reemploi_carton_emballage", "reemploi", 78 if reusable_paper else 50, "Reemploi de cartons/emballages si qualite suffisante.", ["tri", "reconditionnement"], feasible=reusable_paper, blocked="Qualite insuffisante pour reemploi" if not reusable_paper else None),
             _cand("recyclage_papetier", "matiere", 85 if contamination <= 20 else 58, "Recyclage papetier prioritaire.", ["tri papier", "ballage"], feasible=(contamination <= 35), blocked="Contamination trop elevee" if contamination > 35 else None),
             _cand("compostage", "matiere", 63 if m["siccite_pct"] < 30 else 45, "Compostage si humide/contamine.", ["plateforme compostage"]),
             _cand("combustion_gazeification", "energie", 68 if m["pci_mj_kg"] > 15 else 46, f"PCI={m['pci_mj_kg']:.1f}.", ["chaudiere biomasse"], feasible=(m["pci_mj_kg"] > 12), blocked="PCI insuffisant" if m["pci_mj_kg"] <= 12 else None),
@@ -304,13 +315,54 @@ def _env_social(w: WasteInput, f: str, country: str | None) -> tuple[float, floa
     return _b(env), _b(social), max(0.0, avoided)
 
 
-def _evaluate(w: WasteInput, candidates: list[dict[str, Any]], country: str | None) -> list[dict[str, Any]]:
+def _evaluate(
+    w: WasteInput,
+    candidates: list[dict[str, Any]],
+    country: str | None,
+    metrics: dict[str, float],
+    score_adjustments: dict[str, float] | None = None,
+) -> list[dict[str, Any]]:
     qt = max(0.01, float(w.quantite_kg) / 1000.0)
     out: list[dict[str, Any]] = []
     for c in candidates:
         val, treat, roi, eco = _eco(c["filiere"], qt, country)
         env, social, co2 = _env_social(w, c["filiere"], country)
         tech = c["technical_score"] if c.get("feasible", True) else max(5.0, c["technical_score"] - 40.0)
+
+        pci = float(metrics.get("pci_mj_kg", 0.0) or 0.0)
+        lignine = float(metrics.get("taux_lignine_pct", 0.0) or 0.0)
+        dbo = float(metrics.get("dbo_mg_l", 0.0) or 0.0)
+        dco = float(metrics.get("dco_mg_l", 0.0) or 0.0)
+        dco_dbo = (dco / dbo) if dbo > 0 else 99.0
+
+        if c["hierarchy"] == "energie":
+            if pci >= 16:
+                tech += 10.0
+            elif pci < 8:
+                tech -= 18.0
+            if c["filiere"] == "methanisation_biogaz":
+                if dbo >= 1200 and dco_dbo <= 3.0:
+                    tech += 18.0
+                elif dbo < 500:
+                    tech -= 20.0
+
+        if c["filiere"] == "charbon_actif":
+            if lignine >= 25:
+                tech += 12.0
+            elif lignine >= 15:
+                tech += 5.0
+
+        if c["hierarchy"] == "reemploi" and w.niveau_danger in {"eleve", "critique"}:
+            tech -= 25.0
+
+        if _n(country) == "benin" and w.categorie == WasteCategory.METAL and c["hierarchy"] == "vente":
+            tech -= 10.0
+            if _is_export_intent(w):
+                c["feasible"] = False
+                c["blocked_reason"] = "Benin: exportation de ferraille restreinte, vente export non autorisee."
+                tech -= 35.0
+
+        tech = _b(tech)
         g = _b(WEIGHT_TECH * tech + WEIGHT_ECO * eco + WEIGHT_ENV * env + WEIGHT_SOCIAL * social)
         x = dict(c)
         x.update({
@@ -326,23 +378,44 @@ def _evaluate(w: WasteInput, candidates: list[dict[str, Any]], country: str | No
         })
         out.append(x)
 
-    l = get_learning_adjustments(
-        waste_type=getattr(_infer_type(w), "value", str(_infer_type(w))),
-        country=country,
-        decision_labels=[DECISION_MATIERE, DECISION_ENERGIE, DECISION_VENTE],
-    )
-    deltas = l.get("deltas", {}) if isinstance(l, dict) else {}
+    if score_adjustments is None:
+        decision_labels = [DECISION_REEMPLOI, DECISION_MATIERE, DECISION_ENERGIE, DECISION_VENTE]
+
+        l = get_learning_adjustments(
+            waste_type=getattr(_infer_type(w), "value", str(_infer_type(w))),
+            country=country,
+            decision_labels=decision_labels,
+        )
+        deltas = l.get("deltas", {}) if isinstance(l, dict) else {}
+
+        ml = get_ml_score_adjustments(
+            waste_type=getattr(_infer_type(w), "value", str(_infer_type(w))),
+            country=country,
+            quantity_kg=float(w.quantite_kg),
+            decision_labels=decision_labels,
+        )
+        ml_deltas = ml.get("deltas", {}) if isinstance(ml, dict) else {}
+        score_adjustments = {
+            DECISION_REEMPLOI: float(deltas.get(DECISION_REEMPLOI, 0.0)) + float(ml_deltas.get(DECISION_REEMPLOI, 0.0)),
+            DECISION_MATIERE: float(deltas.get(DECISION_MATIERE, 0.0)) + float(ml_deltas.get(DECISION_MATIERE, 0.0)),
+            DECISION_ENERGIE: float(deltas.get(DECISION_ENERGIE, 0.0)) + float(ml_deltas.get(DECISION_ENERGIE, 0.0)),
+            DECISION_VENTE: float(deltas.get(DECISION_VENTE, 0.0)) + float(ml_deltas.get(DECISION_VENTE, 0.0)),
+        }
     for x in out:
-        if x["hierarchy"] == "matiere":
-            x["global_score"] = _b(x["global_score"] + float(deltas.get(DECISION_MATIERE, 0.0)))
+        if x["hierarchy"] == "reemploi":
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_REEMPLOI, 0.0)))
+        elif x["hierarchy"] == "matiere":
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_MATIERE, 0.0)))
         elif x["hierarchy"] == "energie":
-            x["global_score"] = _b(x["global_score"] + float(deltas.get(DECISION_ENERGIE, 0.0)))
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_ENERGIE, 0.0)))
         elif x["hierarchy"] == "vente":
-            x["global_score"] = _b(x["global_score"] + float(deltas.get(DECISION_VENTE, 0.0)))
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_VENTE, 0.0)))
     return out
 
 
 def _label_for_hierarchy(hierarchy: str, labels: dict[str, str]) -> str | None:
+    if hierarchy == "reemploi":
+        return labels["reemploi"]
     if hierarchy == "matiere":
         return labels["matiere"]
     if hierarchy == "energie":
@@ -392,26 +465,60 @@ def _apply_regulatory_priority(evald: list[dict[str, Any]], blocked: dict[str, l
 def _select(evald: list[dict[str, Any]]) -> tuple[dict[str, Any], list[str]]:
     reasons: list[str] = []
     elim = [x for x in evald if x["hierarchy"] == "elimination" and x.get("feasible", True)]
-    if elim:
-        reasons.append("Risque critique/chimique: elimination securisee imposee.")
-        return sorted(elim, key=lambda z: z["global_score"], reverse=True)[0], reasons
+
     by = {g: [x for x in evald if x["hierarchy"] == g and x.get("feasible", True)] for g in HIERARCHY}
+    best = {g: (sorted(by[g], key=lambda z: z["global_score"], reverse=True)[0] if by[g] else None) for g in HIERARCHY}
+
+    # Exception industrielle: si la meilleure option energetique depasse nettement la meilleure matiere,
+    # on la retient malgre la hierarchie (cas PCI/DBO-DCO tres favorables).
+    if best.get("matiere") and best.get("energie"):
+        if float(best["energie"]["global_score"]) >= float(best["matiere"]["global_score"]) + 8.0:
+            reasons.append("Energie retenue: superiority nette sur matiere selon scoring multicriteres.")
+            return best["energie"], reasons
+
     for g in HIERARCHY:
-        if by[g]:
-            chosen = sorted(by[g], key=lambda z: z["global_score"], reverse=True)[0]
-            if g == "matiere":
+        if best.get(g):
+            chosen = best[g]
+            if g == "reemploi":
+                reasons.append("Hierarchie appliquee: reemploi retenu en priorite (sobriete matiere/energie).")
+            elif g == "matiere":
                 reasons.append("Hierarchie appliquee: matiere retenue car faisable.")
             elif g == "energie":
                 reasons.append("Energie retenue car matiere non faisable ou moins robuste.")
             else:
                 reasons.append("Vente retenue en dernier recours seulement.")
             return chosen, reasons
-    reasons.append("Aucune filiere pleinement faisable: fallback multicriteres.")
-    return sorted(evald, key=lambda z: z["global_score"], reverse=True)[0], reasons
 
+    if elim:
+        reasons.append("Aucune voie de valorisation conforme: elimination securisee imposee.")
+        return sorted(elim, key=lambda z: z["global_score"], reverse=True)[0], reasons
 
+    feasible_any = [x for x in evald if x.get("feasible", True)]
+    if feasible_any:
+        reasons.append("Aucune voie prioritaire disponible: meilleure option faisable retenue.")
+        return sorted(feasible_any, key=lambda z: z["global_score"], reverse=True)[0], reasons
+
+    reasons.append("Aucune filiere de valorisation conforme: elimination securisee par precaution.")
+    return {
+        "filiere": DECISION_ELIMINATION,
+        "hierarchy": "elimination",
+        "technical_score": 70.0,
+        "technical_reason": "Fallback de conformite: absence de filiere conforme.",
+        "conditions": ["transport ADR", "centre agree", "bordereau de suivi"],
+        "feasible": True,
+        "blocked_reason": None,
+        "economic_score": 20.0,
+        "environmental_score": 25.0,
+        "social_score": 30.0,
+        "regulatory_score": 85.0,
+        "global_score": 48.0,
+        "market_value_fcfa": 0.0,
+        "treatment_cost_fcfa": 140000.0,
+        "roi": -1.0,
+        "co2_avoided_kg": 0.0,
+    }, reasons
 def _alternatives(chosen: dict[str, Any], evald: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    order = sorted([x for x in evald if x["filiere"] != chosen["filiere"]], key=lambda z: z["global_score"], reverse=True)
+    order = sorted([x for x in evald if x["filiere"] != chosen["filiere"] and x.get("feasible", True)], key=lambda z: z["global_score"], reverse=True)
     out: list[dict[str, Any]] = []
     for x in order[:3]:
         why = "Score global inferieur a la filiere principale."
@@ -459,9 +566,11 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
             refs_appliquees[f] = metrics[f]
 
     candidates, warnings = _build_candidates(waste, wt, metrics)
-    evald = _evaluate(waste, candidates, waste.pays_cedeao or "Benin")
+    ml_explain = explain_ml_adjustments(waste, lookback_limit=1200)
+    combined_deltas = ml_explain.get("combined_deltas", {}) if isinstance(ml_explain, dict) else {}
+    evald = _evaluate(waste, candidates, waste.pays_cedeao or "Benin", metrics, score_adjustments=combined_deltas)
 
-    labels = {"matiere": DECISION_MATIERE, "energetique": DECISION_ENERGIE, "vente": DECISION_VENTE}
+    labels = {"reemploi": DECISION_REEMPLOI, "matiere": DECISION_MATIERE, "energetique": DECISION_ENERGIE, "vente": DECISION_VENTE}
     blocked, regulatory, reg_refs = evaluate_regulatory_compliance(waste, wt.value, labels)
     evald = _apply_regulatory_priority(evald, blocked, regulatory, labels, reg_refs)
 
@@ -500,7 +609,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
 
     score_global = _b(chosen["global_score"])
     confiance = "elevee" if score_global >= 75 else "moyenne" if score_global >= 55 else "faible"
-    decision_legacy = DECISION_MATIERE if chosen["hierarchy"] == "matiere" else DECISION_ENERGIE if chosen["hierarchy"] == "energie" else DECISION_VENTE
+    decision_legacy = DECISION_REEMPLOI if chosen["hierarchy"] == "reemploi" else DECISION_MATIERE if chosen["hierarchy"] == "matiere" else DECISION_ENERGIE if chosen["hierarchy"] == "energie" else DECISION_VENTE
     if chosen["hierarchy"] == "elimination":
         decision_legacy = DECISION_ELIMINATION
 
@@ -525,6 +634,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         "donnees_manquantes_critiques": missing_critical,
         "hypotheses_utilisees": assumptions,
         "references_reglementaires": reg_refs,
+        "ajustements_ml": ml_explain,
         "details_scoring": {
             "technique": round(float(chosen["technical_score"]), 2),
             "economique": round(float(chosen["economic_score"]), 2),
@@ -568,6 +678,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
             "environnement": [{"points": round(chosen["environmental_score"], 2), "regle": f"CO2={chosen['co2_avoided_kg']:.1f} kg/t"}],
             "social": [{"points": round(chosen["social_score"], 2), "regle": "emplois + disponibilite locale"}],
             "reglementaire": [{"points": round(chosen["regulatory_score"], 2), "regle": f"status={regulatory.get('status','unknown')} | risk={regulatory.get('risk_score',0)}"}],
+            "learning_ml": [{"points": 0.0, "regle": json.dumps(ml_explain, ensure_ascii=False)}],
         },
         facteurs_cles=hierarchy_reasons,
         contraintes_appliquees=chosen.get("conditions", []),
@@ -592,6 +703,38 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         donnees_manquantes_critiques=missing_critical,
         hypotheses_utilisees=assumptions,
     )
+
+def explain_ml_adjustments(waste: WasteInput, lookback_limit: int = 1200) -> dict[str, Any]:
+    wt = _infer_type(waste)
+    decision_labels = [DECISION_REEMPLOI, DECISION_MATIERE, DECISION_ENERGIE, DECISION_VENTE]
+
+    learning = get_learning_adjustments(
+        waste_type=wt.value,
+        country=waste.pays_cedeao,
+        decision_labels=decision_labels,
+    )
+
+    ml = get_ml_score_adjustments(
+        waste_type=wt.value,
+        country=waste.pays_cedeao,
+        quantity_kg=float(waste.quantite_kg),
+        decision_labels=decision_labels,
+        lookback_limit=max(50, min(5000, int(lookback_limit))),
+    )
+
+    return {
+        "waste_type_effectif": wt.value,
+        "country": waste.pays_cedeao,
+        "quantity_kg": float(waste.quantite_kg),
+        "decision_labels": decision_labels,
+        "learning_adjustments": learning,
+        "ml_adjustments": ml,
+        "combined_deltas": {
+            label: round(float((learning.get("deltas", {}) or {}).get(label, 0.0)) + float((ml.get("deltas", {}) or {}).get(label, 0.0)), 2)
+            for label in decision_labels
+        },
+    }
+
 
 
 

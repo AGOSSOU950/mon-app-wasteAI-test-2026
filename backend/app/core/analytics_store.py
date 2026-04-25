@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import sqlite3
 import tempfile
@@ -407,6 +408,125 @@ def get_learning_adjustments(
         "decision_counts": selected.get("counts", {}),
     }
 
+
+
+
+def _safe_iso_to_utc(ts: str | None) -> datetime:
+    if not ts:
+        return datetime.now(timezone.utc)
+    raw = str(ts).strip()
+    if raw.endswith("Z"):
+        raw = raw[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(raw)
+    except Exception:
+        return datetime.now(timezone.utc)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
+def get_ml_score_adjustments(
+    *,
+    waste_type: str,
+    country: str | None,
+    quantity_kg: float,
+    decision_labels: list[str],
+    lookback_limit: int = 1200,
+) -> dict:
+    """Lightweight online-ML score adjustment from historical outcomes.
+
+    The model is a recency + quantity-similarity weighted estimator of expected score
+    per decision label. It returns additive deltas in [-8, +8].
+    """
+    safe_labels = [str(x) for x in decision_labels if str(x).strip()]
+    if not safe_labels:
+        return {"source": "ml_empty_labels", "sample_size": 0, "deltas": {}, "confidence": "faible"}
+
+    with _HISTORY_LOCK:
+        local_rows = _fetch_history(limit=lookback_limit, waste_type=waste_type, country=country) if country else []
+        type_rows = _fetch_history(limit=lookback_limit, waste_type=waste_type)
+
+    rows = local_rows if len(local_rows) >= 15 else type_rows
+    source = "ml_pays_filiere" if rows is local_rows and rows else "ml_filiere"
+
+    if not rows:
+        return {
+            "source": "ml_insuffisant",
+            "sample_size": 0,
+            "confidence": "faible",
+            "deltas": {label: 0.0 for label in safe_labels},
+            "weights_by_decision": {label: 0.0 for label in safe_labels},
+        }
+
+    now = datetime.now(timezone.utc)
+    q_ref = max(1.0, float(quantity_kg or 0.0))
+    q_ref_log = math.log1p(q_ref)
+
+    weighted_sum: dict[str, float] = {label: 0.0 for label in safe_labels}
+    weighted_mass: dict[str, float] = {label: 0.0 for label in safe_labels}
+
+    for row in rows:
+        decision = str(row.get("decision") or "")
+        if decision not in weighted_sum:
+            continue
+
+        score = float(row.get("score") or 0.0)
+        q_hist = max(1.0, float(row.get("quantite_kg") or 0.0))
+        q_hist_log = math.log1p(q_hist)
+        q_distance = abs(q_ref_log - q_hist_log)
+
+        # Quantity similarity: decays smoothly as the order of magnitude diverges.
+        w_quantity = math.exp(-q_distance)
+
+        dt = _safe_iso_to_utc(row.get("timestamp"))
+        age_days = max(0.0, (now - dt).total_seconds() / 86400.0)
+
+        # Recency half-life ~ 180 days.
+        w_recency = math.exp(-age_days / 180.0)
+
+        weight = w_quantity * w_recency
+        if weight <= 1e-8:
+            continue
+
+        weighted_sum[decision] += score * weight
+        weighted_mass[decision] += weight
+
+    active_labels = [label for label in safe_labels if weighted_mass[label] > 0]
+    if not active_labels:
+        return {
+            "source": source,
+            "sample_size": len(rows),
+            "confidence": "faible",
+            "deltas": {label: 0.0 for label in safe_labels},
+            "weights_by_decision": weighted_mass,
+        }
+
+    means = {label: (weighted_sum[label] / weighted_mass[label]) for label in active_labels}
+    global_mean = sum(means.values()) / max(1, len(means))
+
+    total_mass = sum(weighted_mass.values())
+    confidence_factor = min(1.0, total_mass / 30.0)
+
+    # Convert expected-score gap into bounded additive score deltas.
+    deltas: dict[str, float] = {label: 0.0 for label in safe_labels}
+    for label in safe_labels:
+        if label not in means:
+            continue
+        raw_delta = (means[label] - global_mean) * 0.28
+        deltas[label] = max(-8.0, min(8.0, raw_delta * confidence_factor))
+
+    confidence = "elevee" if confidence_factor >= 0.75 else "moyenne" if confidence_factor >= 0.4 else "faible"
+
+    return {
+        "source": source,
+        "sample_size": len(rows),
+        "confidence": confidence,
+        "confidence_factor": round(confidence_factor, 3),
+        "deltas": {k: round(float(v), 2) for k, v in deltas.items()},
+        "weights_by_decision": {k: round(float(v), 3) for k, v in weighted_mass.items()},
+        "means_by_decision": {k: round(float(v), 2) for k, v in means.items()},
+    }
 
 def get_learning_snapshot(limit: int = 500) -> dict:
     history = get_history(limit=limit)
