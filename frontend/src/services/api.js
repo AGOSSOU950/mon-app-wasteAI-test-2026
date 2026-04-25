@@ -1,6 +1,7 @@
 import axios from "axios"
 
-const API_BASE = (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001").replace(/\/$/, "")
+const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "")
+const API_URL = "https://wasteai-api.wasteai-gildas.workers.dev"
 const REMOTE_API_BASE = API_BASE
 
 const http = axios.create({
@@ -64,6 +65,31 @@ function computeOfflineAnalysis(payload) {
   }
 }
 
+function buildAnalyzeWarning(error) {
+  if (!axios.isAxiosError(error)) {
+    return "API indisponible. Analyse locale activee."
+  }
+
+  if (error.code === "ECONNABORTED") {
+    return "Timeout API: delai depasse. Analyse locale activee."
+  }
+
+  if (!error.response) {
+    return "Backend non joignable (verifie que l'API est demarree). Analyse locale activee."
+  }
+
+  const status = error.response.status
+  if (status === 401 || status === 403) {
+    return "Acces API refuse (401/403). Analyse locale activee."
+  }
+
+  if (status >= 500) {
+    return `Erreur serveur API (${status}). Analyse locale activee.`
+  }
+
+  return `Erreur API (${status}). Analyse locale activee.`
+}
+
 export function buildAnalyzePayload(input) {
   return {
     nom: String(input.nom || "dechet industriel"),
@@ -93,7 +119,7 @@ export async function analyzeWaste(payload) {
       source: "offline",
       data: offline,
       apiBase: API_BASE,
-      warning: "API indisponible ou bloquee (CORS/reseau). Analyse locale activee.",
+      warning: buildAnalyzeWarning(error),
       error,
     }
   }

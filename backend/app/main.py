@@ -1,4 +1,4 @@
-﻿import os
+import os
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -10,6 +10,21 @@ from app.routes.marketplace_routes import router as marketplace_router
 from app.routes.waste_routes import router as waste_router
 
 load_dotenv()
+
+
+def _load_env_files() -> None:
+    # Support running uvicorn from repo root or from backend/.
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parents[2] / ".env",  # repo root
+        here.parents[1] / ".env",  # backend/
+    ]
+    for env_path in candidates:
+        if env_path.exists():
+            load_dotenv(dotenv_path=env_path, override=False)
+
+
+_load_env_files()
 
 
 def _get_data_dir() -> Path:

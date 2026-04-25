@@ -1,6 +1,7 @@
-﻿import json
+import json
 import os
 import sqlite3
+import tempfile
 from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,7 +11,28 @@ from uuid import uuid4
 from app.models.waste import DecisionResult, WasteInput
 
 _HISTORY_LOCK = Lock()
-_DATA_DIR = Path(os.getenv("WASTEAI_DATA_DIR", str(Path(__file__).resolve().parents[1] / "data"))).expanduser().resolve()
+
+
+def _resolve_data_dir() -> Path:
+    preferred = Path(
+        os.getenv("WASTEAI_DATA_DIR", str(Path(__file__).resolve().parents[1] / "data"))
+    ).expanduser().resolve()
+    fallback = Path(tempfile.gettempdir()).resolve() / "wasteai-data"
+
+    for candidate in (preferred, fallback):
+        try:
+            candidate.mkdir(parents=True, exist_ok=True)
+            probe = candidate / ".write_test"
+            probe.write_text("ok", encoding="utf-8")
+            probe.unlink(missing_ok=True)
+            return candidate
+        except OSError:
+            continue
+
+    return preferred
+
+
+_DATA_DIR = _resolve_data_dir()
 _HISTORY_PATH = _DATA_DIR / "analysis_history.json"
 _HISTORY_DB_PATH = _DATA_DIR / "analytics.db"
 

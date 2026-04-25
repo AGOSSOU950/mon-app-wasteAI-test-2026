@@ -84,6 +84,16 @@ function AnalyzeView() {
     setInfo("")
   }
 
+  function safeJsonPreview(value) {
+    try {
+      return JSON.stringify(value, null, 2)
+    } catch {
+      return "[Resultat non serialisable]"
+    }
+  }
+
+  const resultObj = result && typeof result === "object" ? result : null
+
   return (
     <section className="card">
       <h2>Analyse</h2>
@@ -177,11 +187,11 @@ function AnalyzeView() {
 
       {result ? (
         <div className="result">
-          <p><strong>Decision:</strong> {result.decision || "-"}</p>
-          <p><strong>Score:</strong> {typeof result.score === "number" ? result.score : "-"}</p>
-          <p><strong>Confiance:</strong> {result.confiance || "-"}</p>
-          <p><strong>Resume:</strong> {result.resume_choix || "-"}</p>
-          <pre className="output">{JSON.stringify(result, null, 2)}</pre>
+          <p><strong>Decision:</strong> {resultObj?.decision || "-"}</p>
+          <p><strong>Score:</strong> {typeof resultObj?.score === "number" ? resultObj.score : "-"}</p>
+          <p><strong>Confiance:</strong> {resultObj?.confiance || "-"}</p>
+          <p><strong>Resume:</strong> {resultObj?.resume_choix || "-"}</p>
+          <pre className="output">{safeJsonPreview(result)}</pre>
         </div>
       ) : null}
     </section>
@@ -217,4 +227,3 @@ export default function App() {
     </main>
   )
 }
-

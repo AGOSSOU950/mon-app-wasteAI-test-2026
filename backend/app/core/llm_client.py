@@ -75,7 +75,10 @@ def _post_json(url: str, api_key: str, body: dict[str, Any], timeout_s: int = 25
         method="POST",
         headers={
             "Content-Type": "application/json",
+            "Accept": "application/json",
             "Authorization": f"Bearer {api_key}",
+            # Some API gateways (Cloudflare) block default Python urllib UA.
+            "User-Agent": os.getenv("LLM_USER_AGENT") or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         },
     )
     try:
