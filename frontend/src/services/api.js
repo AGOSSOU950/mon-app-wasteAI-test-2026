@@ -1,9 +1,10 @@
-﻿import axios from "axios"
+import axios from "axios"
 
-const REMOTE_API_BASE = (import.meta.env.VITE_API_BASE || "https://wasteai-api.wasteai-gildas.workers.dev/api").replace(/\/$/, "")
+const API_BASE = (import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001").replace(/\/$/, "")
+const REMOTE_API_BASE = API_BASE
 
 const http = axios.create({
-  baseURL: REMOTE_API_BASE,
+  baseURL: API_BASE,
   timeout: 20000,
   headers: {
     "Content-Type": "application/json",
@@ -79,11 +80,11 @@ export function buildAnalyzePayload(input) {
 
 export async function analyzeWaste(payload) {
   try {
-    const response = await http.post("/waste/analyze", payload)
+    const response = await http.post("/api/waste/analyze", payload)
     return {
       source: "api",
       data: response.data,
-      apiBase: REMOTE_API_BASE,
+      apiBase: API_BASE,
       warning: "",
     }
   } catch (error) {
@@ -91,11 +92,11 @@ export async function analyzeWaste(payload) {
     return {
       source: "offline",
       data: offline,
-      apiBase: REMOTE_API_BASE,
+      apiBase: API_BASE,
       warning: "API indisponible ou bloquee (CORS/reseau). Analyse locale activee.",
       error,
     }
   }
 }
 
-export { REMOTE_API_BASE }
+export { API_BASE, REMOTE_API_BASE }
