@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
-import axios from "axios"
+﻿import { useCallback, useEffect, useMemo, useState } from "react"
+import { API_BASE, apiClient } from "../api"
 
-export const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001"
+export { API_BASE }
 
 const EMPTY_LISTING = {
   titre: "",
@@ -117,7 +117,7 @@ export function useMarketplace() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/users`)
+      const res = await apiClient.get(`/api/marketplace/users`)
       setUsers(res.data?.items || [])
     } catch {
       setMessage("Impossible de charger les vendeurs.")
@@ -131,7 +131,7 @@ export function useMarketplace() {
 
     setLoading(true)
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/listings`, {
+      const res = await apiClient.get(`/api/marketplace/listings`, {
         params: {
           categorie: nextFilters.categorie || undefined,
           localisation: nextFilters.localisation || undefined,
@@ -163,7 +163,7 @@ export function useMarketplace() {
 
     setSellerPager(prev => ({ ...prev, loading: true }))
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/listings`, {
+      const res = await apiClient.get(`/api/marketplace/listings`, {
         params: {
           vendeur_id: sellerId,
           q: nextFilters.q || undefined,
@@ -183,7 +183,7 @@ export function useMarketplace() {
   const fetchDetail = useCallback(async (id) => {
     setLoading(true)
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/listings/${id}`)
+      const res = await apiClient.get(`/api/marketplace/listings/${id}`)
       setSelectedListing(res.data)
       setSelectedId(id)
     } catch {
@@ -203,7 +203,7 @@ export function useMarketplace() {
 
     setLoadingConversations(true)
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/messages/conversations`, {
+      const res = await apiClient.get(`/api/marketplace/messages/conversations`, {
         params: { user_id: id, limit: 100 }
       })
       setConversations(res.data?.items || [])
@@ -219,7 +219,7 @@ export function useMarketplace() {
 
     setLoadingThread(true)
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/messages/thread/${conversationId}`, {
+      const res = await apiClient.get(`/api/marketplace/messages/thread/${conversationId}`, {
         params: { user_id: id }
       })
       setConversationThread(res.data)
@@ -241,7 +241,7 @@ export function useMarketplace() {
       : conversationThread.user_a_id
 
     try {
-      await axios.post(`${API_BASE}/api/marketplace/messages`, {
+      await apiClient.post(`/api/marketplace/messages`, {
         listing_id: conversationThread.listing_id,
         sender_id: messagingUserId,
         recipient_id: recipientId,
@@ -262,7 +262,7 @@ export function useMarketplace() {
       return
     }
     try {
-      const res = await axios.post(`${API_BASE}/api/marketplace/users`, sellerForm)
+      const res = await apiClient.post(`/api/marketplace/users`, sellerForm)
       const created = res.data
       setMessage("Vendeur cree.")
       setSellerForm(EMPTY_SELLER)
@@ -280,7 +280,7 @@ export function useMarketplace() {
       return
     }
     try {
-      await axios.post(`${API_BASE}/api/marketplace/users`, buyerForm)
+      await apiClient.post(`/api/marketplace/users`, buyerForm)
       setMessage("Acheteur cree.")
       setBuyerForm(EMPTY_BUYER)
       await fetchUsers()
@@ -294,7 +294,7 @@ export function useMarketplace() {
     fd.append("photo", file)
     setUploadingPhoto(true)
     try {
-      const res = await axios.post(`${API_BASE}/api/marketplace/upload-photo`, fd, {
+      const res = await apiClient.post(`/api/marketplace/upload-photo`, fd, {
         headers: { "Content-Type": "multipart/form-data" }
       })
       setListingForm(prev => ({ ...prev, photo_url: res.data?.photo_url || "" }))
@@ -313,7 +313,7 @@ export function useMarketplace() {
     }
 
     try {
-      await axios.post(`${API_BASE}/api/marketplace/listings`, {
+      await apiClient.post(`/api/marketplace/listings`, {
         ...listingForm,
         quantite_kg: parseFloat(listingForm.quantite_kg),
         prix_unitaire: parseFloat(listingForm.prix_unitaire),
@@ -355,7 +355,7 @@ export function useMarketplace() {
     }
 
     try {
-      await axios.put(`${API_BASE}/api/marketplace/listings/${editListingId}`, {
+      await apiClient.put(`/api/marketplace/listings/${editListingId}`, {
         titre: editForm.titre,
         categorie: editForm.categorie,
         quantite_kg: parseFloat(editForm.quantite_kg),
@@ -382,7 +382,7 @@ export function useMarketplace() {
     if (!ok) return
 
     try {
-      await axios.delete(`${API_BASE}/api/marketplace/listings/${id}`)
+      await apiClient.delete(`/api/marketplace/listings/${id}`)
       setMessage("Offre supprimee.")
       if (selectedId === id) {
         setSelectedId(null)
@@ -414,7 +414,7 @@ export function useMarketplace() {
       return
     }
     try {
-      const res = await axios.post(`${API_BASE}/api/marketplace/messages`, {
+      const res = await apiClient.post(`/api/marketplace/messages`, {
         listing_id: selectedId,
         sender_id: contactForm.buyer_id,
         recipient_id: selectedListing.vendeur_id,
@@ -447,7 +447,7 @@ export function useMarketplace() {
       return
     }
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/traceability/lots`, { params: { listing_id: listingId, limit: 200 } })
+      const res = await apiClient.get(`/api/marketplace/traceability/lots`, { params: { listing_id: listingId, limit: 200 } })
       const items = res.data?.items || []
       setTraceLots(items)
       if (items.length > 0 && !traceEventForm.lot_id) {
@@ -462,7 +462,7 @@ export function useMarketplace() {
   const fetchTraceabilityTimeline = useCallback(async (lotId) => {
     if (!lotId) return
     try {
-      const res = await axios.get(`${API_BASE}/api/marketplace/traceability/timeline/${lotId}`)
+      const res = await apiClient.get(`/api/marketplace/traceability/timeline/${lotId}`)
       setTraceTimeline(res.data)
     } catch {
       setMessage("Impossible de charger la timeline de tracabilite.")
@@ -475,7 +475,7 @@ export function useMarketplace() {
       return
     }
     try {
-      await axios.post(`${API_BASE}/api/marketplace/traceability/lots`, {
+      await apiClient.post(`/api/marketplace/traceability/lots`, {
         listing_id: traceListingId,
         code_lot: traceLotForm.code_lot,
         quantite_kg: parseFloat(traceLotForm.quantite_kg),
@@ -497,7 +497,7 @@ export function useMarketplace() {
       return
     }
     try {
-      await axios.post(`${API_BASE}/api/marketplace/traceability/events`, {
+      await apiClient.post(`/api/marketplace/traceability/events`, {
         lot_id: traceEventForm.lot_id,
         event_type: traceEventForm.event_type,
         location: traceEventForm.location,
@@ -506,7 +506,7 @@ export function useMarketplace() {
         proof_ref: traceEventForm.proof_ref || null,
         note: traceEventForm.note || null
       })
-      const timelineRes = await axios.get(`${API_BASE}/api/marketplace/traceability/timeline/${traceEventForm.lot_id}`)
+      const timelineRes = await apiClient.get(`/api/marketplace/traceability/timeline/${traceEventForm.lot_id}`)
       setTraceTimeline(timelineRes.data)
       setMessage("Etape traceabilite enregistree.")
     } catch (err) {
@@ -520,13 +520,13 @@ export function useMarketplace() {
       return
     }
     try {
-      await axios.post(`${API_BASE}/api/marketplace/traceability/final-disposal`, {
+      await apiClient.post(`/api/marketplace/traceability/final-disposal`, {
         ...traceFinalForm,
         compliance_doc_ref: traceFinalForm.compliance_doc_ref || null,
         note: traceFinalForm.note || null,
         disposed_at: new Date().toISOString()
       })
-      const timelineRes = await axios.get(`${API_BASE}/api/marketplace/traceability/timeline/${traceFinalForm.lot_id}`)
+      const timelineRes = await apiClient.get(`/api/marketplace/traceability/timeline/${traceFinalForm.lot_id}`)
       setTraceTimeline(timelineRes.data)
       setMessage("Elimination finale enregistree.")
     } catch (err) {
@@ -640,3 +640,6 @@ export function useMarketplace() {
     selectTraceLot
   }
 }
+
+
+

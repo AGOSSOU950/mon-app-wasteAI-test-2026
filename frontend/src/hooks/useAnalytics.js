@@ -1,5 +1,5 @@
 ﻿import { useCallback, useState } from "react"
-import axios from "axios"
+import { apiClient } from "../api"
 
 const EMPTY_PAYLOAD = {
   summary: null,
@@ -7,20 +7,20 @@ const EMPTY_PAYLOAD = {
   meta: { recent_limit: 20, summary_window: 400, summary_total_records: 0 }
 }
 
-export default function useAnalytics(apiBase, onError) {
+export default function useAnalytics(onError) {
   const [analytics, setAnalytics] = useState(EMPTY_PAYLOAD)
   const [dashboardLoading, setDashboardLoading] = useState(false)
 
   const refreshAnalytics = useCallback(async () => {
     setDashboardLoading(true)
     try {
-      const compactRes = await axios.get(`${apiBase}/api/waste/analytics/compact`, {
+      const compactRes = await apiClient.get(`/api/waste/analytics/compact`, {
         params: { recent_limit: 20, summary_window: 400 }
       })
       setAnalytics(compactRes.data || EMPTY_PAYLOAD)
     } catch (compactErr) {
       try {
-        const fallbackRes = await axios.get(`${apiBase}/api/waste/analytics`, {
+        const fallbackRes = await apiClient.get(`/api/waste/analytics`, {
           params: { limit: 100 }
         })
         const rows = Array.isArray(fallbackRes.data) ? fallbackRes.data : []
@@ -54,7 +54,7 @@ export default function useAnalytics(apiBase, onError) {
     } finally {
       setDashboardLoading(false)
     }
-  }, [apiBase, onError])
+  }, [onError])
 
   return {
     analytics,
@@ -62,4 +62,8 @@ export default function useAnalytics(apiBase, onError) {
     refreshAnalytics,
   }
 }
+
+
+
+
 

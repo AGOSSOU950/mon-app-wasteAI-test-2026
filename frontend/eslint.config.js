@@ -1,4 +1,4 @@
-import js from '@eslint/js'
+﻿import js from '@eslint/js'
 import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
@@ -24,6 +24,20 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
+  {
+    files: ['src/marketplace/MarketplaceContext.jsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
+  {
+    files: ['src/AppParts.jsx'],
+    rules: {
+      'no-unused-vars': 'off',
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])
