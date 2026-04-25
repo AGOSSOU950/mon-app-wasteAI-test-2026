@@ -40,9 +40,7 @@ function AnalyzeView() {
   const [error, setError] = useState("")
   const [info, setInfo] = useState("")
 
-  const canAnalyze = useMemo(() => {
-    return form.nom.trim().length > 1 && Number(form.quantite_kg) > 0
-  }, [form.nom, form.quantite_kg])
+  const canAnalyze = useMemo(() => form.nom.trim().length > 1 && Number(form.quantite_kg) > 0, [form.nom, form.quantite_kg])
 
   async function handleAnalyze() {
     setLoading(true)
@@ -57,7 +55,7 @@ function AnalyzeView() {
       if (response.source === "offline") {
         setInfo(response.warning)
       } else {
-        setInfo(`Analyse realisee via API distante (${response.apiBase}).`)
+        setInfo(response.warning || `Analyse realisee via API distante (${response.apiBase}).`)
       }
     } catch (err) {
       setResult(null)
@@ -93,6 +91,7 @@ function AnalyzeView() {
   }
 
   const resultObj = result && typeof result === "object" ? result : null
+  const compliance = resultObj?.conformite_reglementaire
 
   return (
     <section className="card">
@@ -100,84 +99,44 @@ function AnalyzeView() {
       <p className="subtitle">Analyse API + fallback hors-ligne automatique.</p>
 
       <div className="grid">
-        <label>
-          Nom
-          <input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} />
-        </label>
-        <label>
-          Quantite (kg)
-          <input type="number" value={form.quantite_kg} onChange={(e) => setForm({ ...form, quantite_kg: e.target.value })} />
-        </label>
+        <label>Nom<input value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></label>
+        <label>Quantite (kg)<input type="number" value={form.quantite_kg} onChange={(e) => setForm({ ...form, quantite_kg: e.target.value })} /></label>
         <label>
           Categorie
           <select value={form.categorie} onChange={(e) => setForm({ ...form, categorie: e.target.value })}>
-            <option value="metal">metal</option>
-            <option value="organique">organique</option>
-            <option value="chimique">chimique</option>
-            <option value="plastique">plastique</option>
-            <option value="electronique">electronique</option>
-            <option value="papier">papier</option>
-            <option value="verre">verre</option>
-            <option value="autre">autre</option>
+            <option value="metal">metal</option><option value="organique">organique</option><option value="chimique">chimique</option><option value="plastique">plastique</option><option value="electronique">electronique</option><option value="papier">papier</option><option value="verre">verre</option><option value="autre">autre</option>
           </select>
         </label>
         <label>
           Type dechet
           <select value={form.type_dechet} onChange={(e) => setForm({ ...form, type_dechet: e.target.value })}>
-            <option value="biomasse_lignocellulosique">biomasse_lignocellulosique</option>
-            <option value="boue_de_vidange">boue_de_vidange</option>
-            <option value="huile_usagee">huile_usagee</option>
-            <option value="textile">textile</option>
-            <option value="plastique">plastique</option>
-            <option value="autre">autre</option>
+            <option value="biomasse_lignocellulosique">biomasse_lignocellulosique</option><option value="boue_de_vidange">boue_de_vidange</option><option value="huile_usagee">huile_usagee</option><option value="textile">textile</option><option value="plastique">plastique</option><option value="autre">autre</option>
           </select>
         </label>
         <label>
           Industrie
           <select value={form.type_industrie} onChange={(e) => setForm({ ...form, type_industrie: e.target.value })}>
-            <option value="agroalimentaire">agroalimentaire</option>
-            <option value="metallurgie">metallurgie</option>
-            <option value="chimie">chimie</option>
-            <option value="textile">textile</option>
-            <option value="automobile">automobile</option>
-            <option value="construction">construction</option>
-            <option value="energie">energie</option>
-            <option value="autre">autre</option>
+            <option value="agroalimentaire">agroalimentaire</option><option value="metallurgie">metallurgie</option><option value="chimie">chimie</option><option value="textile">textile</option><option value="automobile">automobile</option><option value="construction">construction</option><option value="energie">energie</option><option value="autre">autre</option>
           </select>
         </label>
         <label>
           Niveau danger
           <select value={form.niveau_danger} onChange={(e) => setForm({ ...form, niveau_danger: e.target.value })}>
-            <option value="faible">faible</option>
-            <option value="moyen">moyen</option>
-            <option value="eleve">eleve</option>
-            <option value="critique">critique</option>
+            <option value="faible">faible</option><option value="moyen">moyen</option><option value="eleve">eleve</option><option value="critique">critique</option>
           </select>
         </label>
       </div>
 
-      <label>
-        Description
-        <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-      </label>
+      <label>Description<textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} /></label>
 
       <div className="checks">
-        <label className="check-inline">
-          <input type="checkbox" checked={form.contient_metaux} onChange={(e) => setForm({ ...form, contient_metaux: e.target.checked })} />
-          Contient metaux
-        </label>
+        <label className="check-inline"><input type="checkbox" checked={form.contient_metaux} onChange={(e) => setForm({ ...form, contient_metaux: e.target.checked })} />Contient metaux</label>
       </div>
 
       <div className="actions">
-        <button className="btn primary" onClick={handleAnalyze} disabled={!canAnalyze || loading}>
-          {loading ? "Analyse en cours..." : "Analyser"}
-        </button>
-        <button className="btn" type="button" onClick={handleQuickPlastic}>
-          Exemple plastique
-        </button>
-        <button className="btn" type="button" onClick={handleReset}>
-          Reinitialiser
-        </button>
+        <button className="btn primary" onClick={handleAnalyze} disabled={!canAnalyze || loading}>{loading ? "Analyse en cours..." : "Analyser"}</button>
+        <button className="btn" type="button" onClick={handleQuickPlastic}>Exemple plastique</button>
+        <button className="btn" type="button" onClick={handleReset}>Reinitialiser</button>
       </div>
 
       <p className="endpoint">Endpoint API: {API_BASE}/api/waste/analyze</p>
@@ -185,13 +144,26 @@ function AnalyzeView() {
       {info ? <div className="notice">{info}</div> : null}
       {error ? <div className="output error">{error}</div> : null}
 
-      {result ? (
+      {resultObj ? (
         <div className="result">
-          <p><strong>Decision:</strong> {resultObj?.decision || "-"}</p>
-          <p><strong>Score:</strong> {typeof resultObj?.score === "number" ? resultObj.score : "-"}</p>
-          <p><strong>Confiance:</strong> {resultObj?.confiance || "-"}</p>
-          <p><strong>Resume:</strong> {resultObj?.resume_choix || "-"}</p>
-          <pre className="output">{safeJsonPreview(result)}</pre>
+          <p><strong>Mode de valorisation propose:</strong> {resultObj.mode_valorisation_propose || resultObj.decision || "-"}</p>
+          <p><strong>Score global:</strong> {typeof resultObj.score === "number" ? `${resultObj.score}/100` : "-"}</p>
+          <p><strong>Confiance:</strong> {resultObj.confiance || "-"}</p>
+          <p><strong>Explication detaillee:</strong> {resultObj.explication || resultObj.resume_choix || "-"}</p>
+          {compliance ? <p><strong>Conformite CEDEAO/Benin:</strong> {compliance.status || "-"} | risque {compliance.risk_score ?? "-"}/100 | severite {compliance.max_severity || "-"}</p> : null}
+          {Array.isArray(resultObj.references_reglementaires) && resultObj.references_reglementaires.length > 0 ? (
+            <div>
+              <p><strong>References reglementaires:</strong></p>
+              <ul>{resultObj.references_reglementaires.map((ref, idx) => <li key={idx}>{ref}</li>)}</ul>
+            </div>
+          ) : null}
+          {Array.isArray(resultObj.facteurs_cles) && resultObj.facteurs_cles.length > 0 ? (
+            <div>
+              <p><strong>Facteurs cles:</strong></p>
+              <ul>{resultObj.facteurs_cles.map((factor, idx) => <li key={idx}>{factor}</li>)}</ul>
+            </div>
+          ) : null}
+          <pre className="output">{safeJsonPreview(resultObj)}</pre>
         </div>
       ) : null}
     </section>
@@ -217,9 +189,7 @@ export default function App() {
 
       {view === "marketplace" && (
         <Suspense fallback={<section className="card"><p>Chargement marketplace...</p></section>}>
-          <section className="card">
-            <LazyMarketplacePanel />
-          </section>
+          <section className="card"><LazyMarketplacePanel /></section>
         </Suspense>
       )}
 
