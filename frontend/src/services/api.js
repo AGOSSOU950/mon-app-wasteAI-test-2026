@@ -1,16 +1,46 @@
 import axios from "axios"
 
-const API_URL = "https://wasteai-api.wasteai-gildas.workers.dev"
-const API_BASE = (import.meta.env.VITE_API_BASE || API_URL).replace(/\/$/, "")
-const REMOTE_API_BASE = API_URL
+const API_URL = import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev"
+const API_BASE = API_URL.replace(/\/$/, "")
+const REMOTE_API_BASE = "https://wasteai-api.wasteai-gildas.workers.dev"
+const REMOTE_API_URL = REMOTE_API_BASE.replace(/\/$/, "")
+const SHOULD_TRY_REMOTE_FALLBACK = API_BASE !== REMOTE_API_URL && /(^https?:\/\/(127\.0\.0\.1|localhost))|(^https?:\/\/\[::1\])/.test(API_BASE)
+
+console.log("API URL:", API_URL)
+console.log("Mode:", import.meta.env.MODE)
 
 const http = axios.create({
   baseURL: API_BASE,
-  timeout: 20000,
+  timeout: 60000,
   headers: {
     "Content-Type": "application/json",
   },
 })
+
+const remoteHttp = axios.create({
+  baseURL: REMOTE_API_URL,
+  timeout: 60000,
+  headers: {
+    "Content-Type": "application/json",
+  },
+})
+
+function shouldFallbackToRemote(error) {
+  if (!SHOULD_TRY_REMOTE_FALLBACK) return false
+  if (!axios.isAxiosError(error)) return false
+  if (error.code === "ECONNABORTED") return true
+  if (!error.response) return true
+  return error.response.status >= 500
+}
+
+async function requestWithFallback(config) {
+  try {
+    return await http.request(config)
+  } catch (error) {
+    if (!shouldFallbackToRemote(error)) throw error
+    return remoteHttp.request(config)
+  }
+}
 
 const DECISION_LABELS = {
   material: "Valorisation matiere",
@@ -115,13 +145,13 @@ function computeRegulatoryGate(payload, decisionKey) {
 
   if (chlorineSensitive && decisionKey === "energetic") {
     blocked = true
-    warnings.push("Flux chloré sensible (PVC/chimique): voie energetique bloquee sans depollution adaptee.")
+    warnings.push("Flux chlorÃƒÆ’Ã‚Â© sensible (PVC/chimique): voie energetique bloquee sans depollution adaptee.")
     riskDelta += 20
   }
 
 
   if (chlorine && !chlorineSensitive && decisionKey === "energetic") {
-    warnings.push("Presence de chlore signalee mais flux non chloré sensible (ex: biomasse lignocellulosique): verifier en laboratoire avant arbitrage final.")
+    warnings.push("Presence de chlore signalee mais flux non chlorÃƒÆ’Ã‚Â© sensible (ex: biomasse lignocellulosique): verifier en laboratoire avant arbitrage final.")
     riskDelta += 2
   }
   if (contamination >= 35 && decisionKey !== "specialized") {
@@ -163,26 +193,46 @@ function buildRegulatoryContext(payload, decisionKey) {
   }
 }
 
-function computeOfflineAnalysis(payload) {
-  const quantity = Number(payload?.quantite_kg || 0)
-  const decision = "Valorisation matiere"
-  const regs = buildRegulatoryContext(payload, "material")
+export function analyzeLocally(formData) {
+  const scores = {
+    plastique: { score: 75, valeur: 20000 },
+    textile: { score: 80, valeur: 15000 },
+    papier: { score: 70, valeur: 10000 },
+    metal: { score: 85, valeur: 35000 },
+    biomasse: { score: 65, valeur: 8000 },
+    autre: { score: 60, valeur: 5000 },
+  }
+
+  const rawCategory = normalizeText(formData?.categorie)
+  const filiere = rawCategory === "organique" ? "biomasse" : (rawCategory || "autre")
+  const data = scores[filiere] || scores.autre
 
   return {
-    decision,
-    decision_principale: decision,
-    mode_valorisation_propose: decision,
-    score: 62,
+    decision: "recyclage",
+    decision_principale: "recyclage",
+    mode_valorisation_propose: "recyclage",
+    score: data.score,
     confiance: "moyenne",
-    explication: "Resultat local: fallback hors-ligne avec controle reglementaire CEDEAO.",
-    resume_choix: "Analyse heuristique locale en attendant la reponse API.",
+    resume: `Analyse locale - ${filiere} recyclable`,
+    resume_choix: `Analyse locale - ${filiere} recyclable`,
+    valorisation: "Recyclage recommande",
+    valeur_fcfa: data.valeur,
+    source: "local",
+    note: "Analyse IA indisponible - resultat estime",
+  }
+}
+
+function computeOfflineAnalysis(payload) {
+  const local = analyzeLocally(payload)
+  const regs = buildRegulatoryContext(payload, inferDecisionKey(local.decision_principale))
+
+  return {
+    ...local,
+    explication: local.note,
     facteurs_cles: ["Mode hors-ligne"],
     options_bloquees: [],
     alternatives: [],
     ...regs,
-    impact_environnemental: {
-      bilan_net_recommande_kgco2e: Number((quantity * 0.18).toFixed(2)),
-    },
   }
 }
 
@@ -307,45 +357,70 @@ export function buildAnalyzePayload(input) {
 }
 
 export async function analyzeWaste(payload) {
-  try {
-    const response = await http.request({
-      method: "post",
-      url: "/api/waste/analyze",
-      data: payload,
-    })
+  const response = await requestWithFallback({
+    method: "post",
+    url: "/api/waste/analyze",
+    data: payload,
+    timeout: 60000,
+  })
 
-    return {
-      source: "api",
-      data: normalizeApiResult(payload, response.data || {}),
-      apiBase: API_BASE,
-      warning: "Format API compact detecte: enrichissement local applique pour detail operationnel.",
-    }
-  } catch (error) {
-    return {
-      source: "offline",
-      data: computeOfflineAnalysis(payload),
-      apiBase: API_BASE,
-      warning: buildAnalyzeWarning(error),
-      error,
-    }
+  return {
+    source: "api",
+    data: normalizeApiResult(payload, response.data || {}),
+    apiBase: API_BASE,
+    warning: "Format API compact detecte: enrichissement local applique pour detail operationnel.",
   }
 }
 
-export async function identifyWasteFromImage({ imageBase64, mediaType, filename }) {
-  const response = await http.request({
+export async function identifyWasteFromImage({ imageBase64, mediaType, filename, file }) {
+  const requestWithRetry = async (config, retries = 1) => {
+    let lastError = null
+    for (let i = 0; i <= retries; i += 1) {
+      try {
+        const response = await requestWithFallback(config)
+        return response.data || {}
+      } catch (error) {
+        lastError = error
+        if (i < retries) {
+          await new Promise((resolve) => setTimeout(resolve, 1200))
+        }
+      }
+    }
+    throw lastError
+  }
+
+  const postJson = async () => requestWithRetry({
     method: "post",
     url: "/api/waste/identify-image",
+    timeout: 45000,
     data: {
       image_base64: imageBase64,
       media_type: mediaType,
       filename: filename || null,
     },
   })
-  return response.data || {}
+
+  if (!file) return postJson()
+
+  const formData = new FormData()
+  formData.append("image", file, filename || file.name || "waste.jpg")
+  if (filename) formData.append("filename", filename)
+
+  try {
+    return await requestWithRetry({
+      method: "post",
+      url: "/api/waste/identify-image",
+      timeout: 45000,
+      data: formData,
+    })
+  } catch (error) {
+    if (imageBase64) return postJson()
+    throw error
+  }
 }
 
 export async function getScientificPrefill({ nom, type_dechet, categorie, description }) {
-  const response = await http.request({
+  const response = await requestWithFallback({
     method: "get",
     url: "/api/waste/scientific-prefill",
     params: {
@@ -358,9 +433,23 @@ export async function getScientificPrefill({ nom, type_dechet, categorie, descri
   return response.data || {}
 }
 
+export async function pingApi() {
+  try {
+    await requestWithFallback({
+      method: "get",
+      url: "/api/waste/database/benin",
+      timeout: 8000,
+      params: { limit: 1 },
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export { API_BASE, API_URL, REMOTE_API_BASE }
 export async function getBeninWasteDatabase() {
-  const response = await http.request({
+  const response = await requestWithFallback({
     method: "get",
     url: "/api/waste/database/benin",
   })
@@ -368,13 +457,21 @@ export async function getBeninWasteDatabase() {
 }
 
 export async function submitIdentificationCorrection(payload) {
-  const response = await http.request({
+  const response = await requestWithFallback({
     method: "post",
     url: "/api/waste/identify-image/corrections",
     data: payload,
   })
   return response.data || { status: "ok" }
 }
+
+
+
+
+
+
+
+
 
 
 

@@ -8,6 +8,8 @@
   --brand-dark: #1b5e20;
   --brand: #4caf50;
   --accent: #f9a825;
+  --gold-strong: #c48809;
+  --ink-strong: #0f2a22;
   --danger: #c62828;
   --radius: 16px;
   --shadow: 0 10px 26px rgba(27, 94, 32, 0.08);
@@ -105,7 +107,7 @@ a {
   top: 0;
   z-index: 30;
   backdrop-filter: blur(8px);
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  background: color-mix(in srgb, var(--bg) 78%, rgba(255, 255, 255, 0.12));
   border-bottom: 1px solid var(--line);
 }
 
@@ -728,3 +730,6 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.presentation-item { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
+.presentation-item:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); box-shadow: 0 14px 26px rgba(27,94,32,0.08); }

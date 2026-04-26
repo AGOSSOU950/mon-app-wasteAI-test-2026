@@ -177,6 +177,55 @@ def _is_export_intent(w: WasteInput) -> bool:
     return any(k in txt for k in ["export", "exportation", "international", "transfrontal", "hors benin"])
 
 
+def _is_combustion_route(filiere: str) -> bool:
+    return filiere in {
+        "combustion_gazeification",
+        "co_incineration_cimenterie",
+        "pyrolyse_plastique",
+        "biodiesel_combustible",
+        "combustible_solide_recupere",
+        "valorisation_energetique_generique",
+        "methanisation_biogaz",
+    }
+
+
+def _combustion_pollution_risk(w: WasteInput, metrics: dict[str, float]) -> tuple[bool, str]:
+    if w.categorie == WasteCategory.CHEMICAL and w.niveau_danger in {"eleve", "critique"}:
+        return True, "Risque chimique eleve: combustion/energie interdite."
+
+    if bool(w.presence_metaux_lourds):
+        return True, "Presence de metaux lourds: voie combustible/thermique ecartee (risque emissions toxiques)."
+
+    if bool(w.presence_chlore):
+        return True, "Presence de chlore/PVC: voie combustible ecartee (risque dioxines/acides)."
+
+    if bool(w.presence_additifs) and w.categorie in {WasteCategory.CHEMICAL, WasteCategory.PLASTIC}:
+        return True, "Additifs a risque sur flux chimique/plastique: voie combustible ecartee."
+
+    contamination = float(w.taux_contamination_pct or metrics.get("metaux_pct", 0.0) or 0.0)
+    if contamination >= 35 and w.categorie in {WasteCategory.CHEMICAL, WasteCategory.PLASTIC, WasteCategory.TEXTILE}:
+        return True, "Contamination elevee: voie combustible non retenue sans depollution prealable."
+
+    return False, ""
+
+
+def _apply_combustion_safety_constraints(candidates: list[dict[str, Any]], w: WasteInput, metrics: dict[str, float], warnings: list[str]) -> None:
+    at_risk, reason = _combustion_pollution_risk(w, metrics)
+    if not at_risk:
+        return
+
+    blocked_any = False
+    for cand in candidates:
+        if not _is_combustion_route(str(cand.get("filiere") or "")):
+            continue
+        cand["feasible"] = False
+        existing = str(cand.get("blocked_reason") or "").strip()
+        cand["blocked_reason"] = f"{existing} | {reason}" if existing else reason
+        blocked_any = True
+
+    if blocked_any:
+        warnings.append(reason)
+
 def _metrics(w: WasteInput, wt: WasteType) -> tuple[dict[str, float], list[str], list[str]]:
     defaults = TYPICAL.get(wt.value, TYPICAL[WasteType.OTHER.value])
     assumptions: list[str] = []
@@ -285,11 +334,12 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
         ]
     else:
         c += [
-            _cand("recyclage_matiere_generique", "matiere", 55, "Tri/valorisation matiere generique.", ["tri source", "controle qualite"]),
-            _cand("valorisation_energetique_generique", "energie", 52, "Energie si matiere impossible.", ["installation thermique"]),
+            _cand("tri_preparation_matiere", "matiere", 58, "Tri avance et preparation matiere avant orientation filiere locale.", ["tri source", "broyage", "controle qualite"]),
+            _cand("combustible_solide_recupere", "energie", 54, "Production de combustible solide de recuperation si conformite emissions.", ["preparation CSR", "controle emissions", "autorisation installation"]),
             _cand("vente_marketplace", "vente", 42, "Vente en dernier recours.", ["certificat qualite"]),
         ]
 
+    _apply_combustion_safety_constraints(c, w, m, warnings)
     return c, warnings
 
 
@@ -534,23 +584,31 @@ def _req(conds: list[str]) -> str:
     return "; ".join(dict.fromkeys(conds)) if conds else "Aucune condition specifique identifiee."
 
 
-def _llm_enrichment(payload: dict[str, Any]) -> str | None:
-    system_prompt = (
-        "Tu es un ingenieur industriel senior specialise en valorisation des dechets en Afrique de l'Ouest. "
-        "Tu enrichis un resultat existant sans changer la filiere retenue."
-    )
-    user_prompt = (
-        "Enrichis ce resultat WasteAi CEDEAO/Benin en 6-8 lignes maximum. "
-        "Reste concret (faisabilite, risques, prochaine action) et ne modifie pas la decision principale.\n\n"
-        + json.dumps(payload, ensure_ascii=False)
+def _llm_enrichment(waste: WasteInput) -> str | None:
+    system_prompt = "Expert dechets Benin. Analyse uniquement a partir des donnees fournies. Retourne du JSON valide uniquement."
+    prompt = (
+        "Expert dechets Benin. Analyse ce dechet.\n"
+        f"Nom: {waste.nom}, Categorie: {waste.categorie}\n"
+        f"Type: {waste.type_dechet}, Quantite: {waste.quantite_kg}kg\n\n"
+        "Retourne JSON uniquement:\n"
+        "{\n"
+        "  \"decision\": \"recyclage|valorisation|elimination\",\n"
+        "  \"score\": 0-100,\n"
+        "  \"confiance\": \"haute|moyenne|faible\",\n"
+        "  \"resume\": \"2 phrases max\",\n"
+        "  \"valorisation\": \"methode recommandee\",\n"
+        "  \"valeur_fcfa\": 0,\n"
+        "  \"acheteurs\": [\"acheteur1\", \"acheteur2\"],\n"
+        "  \"co2_evite\": 0\n"
+        "}"
     )
     return chat_completion_text(
         system_prompt=system_prompt,
-        user_prompt=user_prompt,
+        user_prompt=prompt,
         model=os.getenv("OPENAI_MODEL", "gpt-5.4"),
-        max_tokens=420,
-        temperature=0.2,
-        timeout_s=20,
+        max_tokens=500,
+        temperature=0.1,
+        timeout_s=35,
     )
 
 
@@ -596,14 +654,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     for fr in (regulatory.get("filiere_restrictions") or []):
         warnings.append(str(fr))
 
-    llm_text = _llm_enrichment({
-        "decision_principale": chosen["filiere"],
-        "pays": waste.pays_cedeao or "Benin",
-        "type_dechet": wt.value,
-        "justifications": [just_tech, just_eco, just_env, just_social],
-        "alternatives": alternatives,
-        "reglementation": reg_refs[:5],
-    })
+    llm_text = _llm_enrichment(waste)
     if not llm_text:
         warnings.append("Enrichissement IA indisponible (cle/API absente ou inaccessible).")
 
@@ -734,6 +785,9 @@ def explain_ml_adjustments(waste: WasteInput, lookback_limit: int = 1200) -> dic
             for label in decision_labels
         },
     }
+
+
+
 
 
 

@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 
 function WasteAiMark() {
   return (
@@ -27,7 +27,7 @@ export default function Header({ view, setView, apiOnline, theme, onToggleTheme 
           <WasteAiMark />
           <div>
             <h1 className="brand-title">WasteAI</h1>
-            <p className="brand-sub">L'intelligence au service de vos dechets</p>
+            <p className="brand-sub">Parce que les dechets valent de l'or</p>
           </div>
         </div>
 

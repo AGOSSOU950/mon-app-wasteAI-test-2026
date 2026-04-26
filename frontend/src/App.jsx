@@ -1,11 +1,13 @@
-﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
+  analyzeLocally,
   buildAnalyzePayload,
   identifyWasteFromImage,
   getScientificPrefill,
   getBeninWasteDatabase,
+  pingApi,
   submitIdentificationCorrection,
 } from "./services/api"
 import useAnalytics from "./hooks/useAnalytics"
@@ -40,12 +42,83 @@ const INITIAL_FORM = {
   presence_chlore: "",
 }
 
+
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
     reader.onload = () => resolve(String(reader.result || ""))
     reader.onerror = () => reject(new Error("Lecture image impossible"))
     reader.readAsDataURL(file)
+  })
+}
+
+function buildLocalIdentificationFallback(form, file) {
+  const nom = String(form?.nom || file?.name || "dechet industriel")
+  const filiere = String(form?.filiere || form?.categorie || "autre")
+  return {
+    nom_exact: nom,
+    filiere,
+    sous_type: String(form?.type_dechet || "autre"),
+    origine_probable: String(form?.type_industrie || "industrie"),
+    confiance_identification: 62,
+    confiance: "moyenne",
+    valorisation_1: {
+      methode: "Tri et valorisation adaptee",
+      description: "Resultat local provisoire car l'identification IA distante n'a pas repondu a temps.",
+      valeur_fcfa_tonne: 0,
+    },
+    explication: "Mode resilient active: l'application fournit une proposition exploitable meme en cas d'indisponibilite temporaire de l'API image.",
+  }
+}
+
+async function compressImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas")
+        const ctx = canvas.getContext("2d")
+        if (!ctx) {
+          URL.revokeObjectURL(objectUrl)
+          resolve(file)
+          return
+        }
+
+        let width = img.width
+        let height = img.height
+
+        if (width > 800 || height > 800) {
+          if (width > height) {
+            height = (height * 800) / width
+            width = 800
+          } else {
+            width = (width * 800) / height
+            height = 800
+          }
+        }
+
+        canvas.width = Math.max(1, Math.round(width))
+        canvas.height = Math.max(1, Math.round(height))
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+        canvas.toBlob((blob) => {
+          URL.revokeObjectURL(objectUrl)
+          resolve(blob || file)
+        }, "image/jpeg", 0.7)
+      } catch (err) {
+        URL.revokeObjectURL(objectUrl)
+        reject(err)
+      }
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      resolve(file)
+    }
+
+    img.src = objectUrl
   })
 }
 
@@ -120,6 +193,7 @@ export default function App() {
   const [imagePreview, setImagePreview] = useState("")
   const [identifyLoading, setIdentifyLoading] = useState(false)
   const [identifyError, setIdentifyError] = useState("")
+  const [identifyLoadingMessage, setIdentifyLoadingMessage] = useState("")
 
   const [aiProposal, setAiProposal] = useState(null)
   const [analysisResult, setAnalysisResult] = useState(null)
@@ -137,6 +211,7 @@ export default function App() {
 
   const formRef = useRef(null)
   const touchStartRef = useRef({ x: 0, y: 0 })
+  const apiPingFailuresRef = useRef(0)
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme)
@@ -161,13 +236,19 @@ export default function App() {
 
   useEffect(() => {
     const ping = async () => {
-      try {
-        await getScientificPrefill({ nom: "test", type_dechet: "autre", categorie: "autre", description: "status" })
+      const ok = await pingApi()
+      if (ok) {
+        apiPingFailuresRef.current = 0
         setApiOnline(true)
-      } catch {
+        return
+      }
+
+      apiPingFailuresRef.current += 1
+      if (apiPingFailuresRef.current >= 2) {
         setApiOnline(false)
       }
     }
+
     ping()
     const id = setInterval(ping, 20000)
     return () => clearInterval(id)
@@ -186,7 +267,7 @@ export default function App() {
       URL.revokeObjectURL(imagePreview)
     }
   }, [imagePreview])
-  const resultCard = useMemo(() => normalizeResultToCard(aiProposal || analysisResult), [aiProposal, analysisResult])
+  const resultCard = useMemo(() => normalizeResultToCard(analysisResult || aiProposal), [analysisResult, aiProposal])
 
 
   function handleTouchStart(event) {
@@ -219,36 +300,68 @@ export default function App() {
     setImageFile(file)
     setAiProposal(null)
     setIdentifyError("")
+    setIdentifyLoadingMessage("")
     if (!file) {
       setImagePreview("")
       return
     }
+
     setImagePreview(URL.createObjectURL(file))
+    void handleIdentifyImage(file)
   }
 
-  async function handleIdentifyImage() {
-    if (!imageFile) return
+  async function handleIdentifyImage(fileOverride = imageFile) {
+    if (!fileOverride) return
+
     setIdentifyLoading(true)
     setIdentifyError("")
+    setIdentifyLoadingMessage("Identification automatique en cours...")
     setCorrectionStatus("")
     setShowCorrectionPanel(false)
     setCorrectionChoice("")
     setCorrectionComment("")
+
     try {
-      const imageBase64 = await fileToBase64(imageFile)
-      const identified = await identifyWasteFromImage({
-        imageBase64,
-        mediaType: imageFile.type || "image/jpeg",
-        filename: imageFile.name,
-      })
+      const compressed = await compressImage(fileOverride)
+      const uploadFile = compressed instanceof File
+        ? compressed
+        : new File([compressed], fileOverride.name || "waste.jpg", { type: compressed.type || "image/jpeg" })
+      const imageBase64 = await fileToBase64(uploadFile)
+
+      let identified = null
+      let lastError = null
+
+      for (let attempt = 1; attempt <= 2; attempt += 1) {
+        try {
+          if (attempt > 1) setIdentifyLoadingMessage(`Nouvelle tentative (${attempt}/2)...`)
+          identified = await identifyWasteFromImage({
+            file: uploadFile,
+            imageBase64,
+            mediaType: uploadFile.type || "image/jpeg",
+            filename: fileOverride.name,
+          })
+          break
+        } catch (err) {
+          lastError = err
+        }
+      }
+
+      if (!identified) {
+        throw lastError || new Error("Identification image indisponible")
+      }
+
       setAiProposal(identified)
-      setToast("Photo analysee")
-    } catch (err) {
-      setAiProposal(null)
-      setIdentifyError(err?.message || "Identification image indisponible")
-      setToast("Erreur identification")
+      setApiOnline(true)
+      setIdentifyLoadingMessage("Nom du dechet propose. Merci de valider ou corriger.")
+      setToast("Identification photo terminee")
+    } catch {
+      const localFallback = buildLocalIdentificationFallback(form, fileOverride)
+      setAiProposal(localFallback)
+      setBanner("API image temporairement indisponible. Proposition locale fournie pour continuer.")
+      setToast("Analyse locale de secours activee")
     } finally {
       setIdentifyLoading(false)
+      setIdentifyLoadingMessage("")
     }
   }
 
@@ -275,10 +388,10 @@ export default function App() {
       setProgress((v) => (v >= 92 ? v : v + 6))
     }, 180)
 
-    try {
-      let workingForm = { ...form }
-      let scientificApplied = 0
+    let workingForm = { ...form }
+    let scientificApplied = 0
 
+    try {
       const missingPhysico = PHYSICO_FIELDS.filter((field) => isBlankValue(workingForm[field]))
       if (missingPhysico.length > 0) {
         const profile = await getScientificPrefill({
@@ -301,23 +414,39 @@ export default function App() {
       const payload = buildAnalyzePayload(workingForm)
       const response = await analyzeWaste(payload)
       setAnalysisResult(response.data)
+      setApiOnline(true)
 
-      const sourceMessage = response.source === "offline" ? "Analyse locale activee" : "Analyse API terminee"
       const userProvided = PHYSICO_FIELDS.some((field) => !isBlankValue(form[field]))
-
       let dataMessage = ""
+
       if (scientificApplied > 0 && userProvided) {
         dataMessage = "Donnees utilisateur prioritaires + base scientifique pour champs manquants."
       } else if (scientificApplied > 0) {
         dataMessage = "Caracteristiques completees automatiquement via la base scientifique."
       }
 
+      const sourceMessage = "Analyse API terminee"
       setBanner(dataMessage ? `${sourceMessage}. ${dataMessage}` : sourceMessage)
       setToast("Analyse terminee")
-    } catch {
-      setAnalysisResult(null)
-      setError("Analyse indisponible pour le moment")
-      setToast("Erreur analyse")
+    } catch (error) {
+      const localResult = analyzeLocally(workingForm)
+      setAnalysisResult(localResult)
+      setBanner("Ã¢Å¡Â Ã¯Â¸Â Analyse estimee (IA temporairement indisponible)")
+      setApiOnline(false)
+
+      if (error?.code === "ECONNABORTED") {
+        setError("Ã¢ÂÂ±Ã¯Â¸Â Delai depasse. Reessayez.")
+      } else if (error?.response?.status === 401) {
+        setError("Cle API invalide.")
+      } else if (error?.response?.status === 429) {
+        setError("Ã¢Å¡Â Ã¯Â¸Â Trop de requetes. Attendez 1 minute.")
+      } else if (error?.response?.status === 500) {
+        setError("Erreur serveur. Contactez le support.")
+      } else {
+        setError(`Ã¢ÂÅ’ Erreur: ${error?.message || "Erreur inconnue"}`)
+      }
+
+      setToast("Analyse locale de secours activee")
     } finally {
       clearInterval(timer)
       setProgress(100)
@@ -335,6 +464,7 @@ export default function App() {
     setImageFile(null)
     setImagePreview("")
     setIdentifyError("")
+    setIdentifyLoadingMessage("")
     setShowCorrectionPanel(false)
     setCorrectionMode("correct")
     setCorrectionChoice("")
@@ -452,6 +582,7 @@ export default function App() {
                 setForm={setForm}
                 imagePreview={imagePreview}
                 identifyLoading={identifyLoading}
+                identifyLoadingMessage={identifyLoadingMessage}
                 loading={loading}
                 progress={progress}
                 onImageChange={handleImageChange}
@@ -486,6 +617,7 @@ export default function App() {
               correctionStatus={correctionStatus}
               onOpenMarketplace={() => setView("marketplace")}
               onSave={handleSaveResult}
+              compactMode={Boolean(aiProposal && !analysisResult)}
             />
 
             <div className="actions-row" style={{ marginTop: 10 }}>
@@ -523,6 +655,43 @@ export default function App() {
     </main>
   )
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

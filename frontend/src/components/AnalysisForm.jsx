@@ -5,6 +5,7 @@ export default function AnalysisForm({
   setForm,
   imagePreview,
   identifyLoading,
+  identifyLoadingMessage,
   loading,
   progress,
   onImageChange,
@@ -23,11 +24,12 @@ export default function AnalysisForm({
         <p><strong>Glissez votre photo ici</strong> ou cliquez pour choisir</p>
         <small>Formats: JPG, PNG, WEBP</small>
         <label htmlFor="waste-photo" className="sr-only">Photo du dechet</label>
-        <input id="waste-photo" type="file" accept="image/*" capture="environment" onChange={onImageChange} />
+        <input id="waste-photo" type="file" accept="image/*" onChange={onImageChange} />
         {imagePreview ? <img className="photo-preview" src={imagePreview} alt="Apercu" loading="lazy" decoding="async" /> : null}
         <div className="actions-row">
-          <button className="btn" type="button" onClick={onIdentify} disabled={identifyLoading}>{identifyLoading ? "Identification..." : "Identifier avec IA"}</button>
+          <button className="btn" type="button" onClick={onIdentify} disabled={identifyLoading}>{identifyLoading ? "Identification..." : "Relancer identification"}</button>
         </div>
+        <div style={{ marginTop: 10 }}><small>{identifyLoading ? (identifyLoadingMessage || "Analyse en cours...") : "Identification automatique au telechargement. Verifiez puis validez/corrigez."}</small></div>
       </div>
 
       <h3 className="step-title" style={{ marginTop: 16 }}>Etape 2 - Informations complementaires</h3>
@@ -82,3 +84,5 @@ export default function AnalysisForm({
     </section>
   )
 }
+
+

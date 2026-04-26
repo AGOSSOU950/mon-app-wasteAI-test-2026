@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useState } from "react"
+import React, { useEffect, useState } from "react"
 
 export default function HeroSection({ onAnalyzeNow }) {
   const [values, setValues] = useState({ a: 0, b: 0, c: 0 })
@@ -21,8 +21,8 @@ export default function HeroSection({ onAnalyzeNow }) {
   return (
     <section className="hero card">
       <div>
-        <h2>Transformez vos dechets en opportunites</h2>
-        <p>IA au service de toutes les industries, de tous les recycleurs et de tous les pays de la CEDEAO.</p>
+        <h2>Parce que les dechets valent de l'or</h2>
+        <p>WasteAI transforme vos flux de dechets en decisions actionnables, rentables et conformes dans toute la CEDEAO.</p>
 
         <div className="hero-stats">
           <div className="hero-stat">

@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 
 const FEATURES = [
   {
@@ -30,10 +30,8 @@ const FEATURES = [
 export default function PresentationSection({ onGoAnalyze }) {
   return (
     <section className="card presentation-wrap">
-      <h2>Presentation de WasteAI</h2>
-      <p className="presentation-subtitle">
-        WasteAI est un outil d'aide a la decision pour toutes les industries, tous les recycleurs et tous les pays de la CEDEAO.
-      </p>
+      <h2>Parce que les dechets valent de l'or</h2>
+      <p className="presentation-subtitle">WasteAI est une plateforme d intelligence industrielle qui transforme les dechets en valeur economique, environnementale et sociale pour la CEDEAO.</p>
 
       <div className="presentation-grid">
         {FEATURES.map((item) => (

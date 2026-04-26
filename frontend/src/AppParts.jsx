@@ -1,10 +1,10 @@
-﻿import heroImage from "./assets/hero.png"
+import heroImage from "./assets/hero.png"
 import wastePlasticImage from "./assets/waste-plastic.svg"
 import wasteTextileImage from "./assets/waste-textile.svg"
 import wasteOrganicImage from "./assets/waste-organic.svg"
 
 
-const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8001"
+const API_BASE = (import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev").replace(/\/$/, "")
 
 const WASTE_TYPES = [
   { value: "biomasse_lignocellulosique", label: "biomasse lignocellulosique" },
@@ -417,4 +417,5 @@ export {
   visualText,
   visualTitle,
 }
+
 
