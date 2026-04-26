@@ -30,7 +30,7 @@ def get_llm_base_url() -> str | None:
     return _normalize_base_url(os.getenv("OPENAI_BASE_URL") or os.getenv("DATABASE_URL"))
 
 
-def get_llm_model(default: str = "gpt-5.4-mini") -> str:
+def get_llm_model(default: str = "gpt-5.4") -> str:
     return (os.getenv("OPENAI_MODEL") or default).strip()
 
 
@@ -188,7 +188,7 @@ def vision_completion_json(
 
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     body = {
-        "model": model or get_llm_model(default="gpt-4.1-mini"),
+        "model": model or (os.getenv("OPENAI_VISION_MODEL") or get_llm_model(default="gpt-5.4")).strip(),
         "max_tokens": max_tokens,
         "temperature": 0,
         "messages": [

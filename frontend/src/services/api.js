@@ -106,12 +106,24 @@ function computeRegulatoryGate(payload, decisionKey) {
     riskDelta += 20
   }
 
-  if (chlorine && decisionKey === "energetic") {
+  const chlorineSensitive = chlorine && (
+    type.includes("plastique") ||
+    category.includes("plastique") ||
+    category.includes("chimique") ||
+    normalizeText(payload?.type_plastique).includes("pvc")
+  )
+
+  if (chlorineSensitive && decisionKey === "energetic") {
     blocked = true
-    warnings.push("Presence de chlore: voie energetique bloquee sans depollution adaptee.")
+    warnings.push("Flux chloré sensible (PVC/chimique): voie energetique bloquee sans depollution adaptee.")
     riskDelta += 20
   }
 
+
+  if (chlorine && !chlorineSensitive && decisionKey === "energetic") {
+    warnings.push("Presence de chlore signalee mais flux non chloré sensible (ex: biomasse lignocellulosique): verifier en laboratoire avant arbitrage final.")
+    riskDelta += 2
+  }
   if (contamination >= 35 && decisionKey !== "specialized") {
     blocked = true
     warnings.push("Contamination elevee: traitement specialise requis.")
@@ -251,6 +263,15 @@ function optionalString(value) {
   return v ? v : null
 }
 
+function optionalBoolean(value) {
+  if (value === "" || value === null || value === undefined) return null
+  if (value === true || value === false) return value
+  const normalized = String(value).trim().toLowerCase()
+  if (normalized === "true" || normalized === "oui" || normalized === "1") return true
+  if (normalized === "false" || normalized === "non" || normalized === "0") return false
+  return null
+}
+
 export function buildAnalyzePayload(input) {
   return {
     nom: String(input.nom || "dechet industriel"),
@@ -261,14 +282,27 @@ export function buildAnalyzePayload(input) {
     niveau_danger: String(input.niveau_danger || "faible"),
     description: String(input.description || ""),
     contient_metaux: Boolean(input.contient_metaux),
+
     pays_cedeao: optionalString(input.pays_cedeao),
+    sous_region_cedeao: optionalString(input.sous_region_cedeao),
+
     pci_mj_kg: optionalNumber(input.pci_mj_kg),
     dbo_mg_l: optionalNumber(input.dbo_mg_l),
     dco_mg_l: optionalNumber(input.dco_mg_l),
     taux_lignine_pct: optionalNumber(input.taux_lignine_pct),
     taux_contamination_pct: optionalNumber(input.taux_contamination_pct),
+
+    produit_principal: optionalString(input.produit_principal),
+    composition_textile: optionalString(input.composition_textile),
+    etat_textile: optionalString(input.etat_textile),
+    origine_flux: optionalString(input.origine_flux),
+
     type_plastique: optionalString(input.type_plastique),
-    presence_chlore: input.presence_chlore === true ? true : input.presence_chlore === false ? false : null,
+    presence_metaux_lourds: optionalBoolean(input.presence_metaux_lourds),
+    presence_colorants: optionalBoolean(input.presence_colorants),
+    presence_additifs: optionalBoolean(input.presence_additifs),
+    presence_chlore: optionalBoolean(input.presence_chlore),
+    filiere_cimenterie_autorisee: optionalBoolean(input.filiere_cimenterie_autorisee),
   }
 }
 
@@ -325,3 +359,22 @@ export async function getScientificPrefill({ nom, type_dechet, categorie, descri
 }
 
 export { API_BASE, API_URL, REMOTE_API_BASE }
+export async function getBeninWasteDatabase() {
+  const response = await http.request({
+    method: "get",
+    url: "/api/waste/database/benin",
+  })
+  return response.data || { dechets: [] }
+}
+
+export async function submitIdentificationCorrection(payload) {
+  const response = await http.request({
+    method: "post",
+    url: "/api/waste/identify-image/corrections",
+    data: payload,
+  })
+  return response.data || { status: "ok" }
+}
+
+
+

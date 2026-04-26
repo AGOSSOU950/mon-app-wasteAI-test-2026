@@ -1,0 +1,942 @@
+{
+    "country":  "Benin",
+    "currency":  "FCFA",
+    "version":  "2026-04-26",
+    "wastes":  [
+                   {
+                       "nom_local":  {
+                                         "fr":  "Coques de coton",
+                                         "local":  "Fon: ko eko; Yoruba: epo owu"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Combustible biomasse, briquettes, biochar",
+                       "valeur_fcfa_par_tonne":  32000,
+                       "acheteurs_types_benin":  [
+                                                     "Usines de briquettes",
+                                                     "Cimenteries",
+                                                     "Transformateurs thermiques"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Borgou",
+                                                        "Alibori",
+                                                        "Atacora"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Tiges de coton",
+                                         "local":  "Fon: tige owu; Bariba: suku baru"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Compostage, briquettes, paillage",
+                       "valeur_fcfa_par_tonne":  22000,
+                       "acheteurs_types_benin":  [
+                                                     "Agriculteurs",
+                                                     "Unites de compost",
+                                                     "Producteurs de briquettes"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Borgou",
+                                                        "Alibori",
+                                                        "Donga"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Coques de karite",
+                                         "local":  "Fon: ko karite; Dendi: karite boro"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Biochar, combustible solide, amendement",
+                       "valeur_fcfa_par_tonne":  38000,
+                       "acheteurs_types_benin":  [
+                                                     "Unites de beurre de karite",
+                                                     "Producteurs de charbon vert",
+                                                     "Transformateurs agro"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Atacora",
+                                                        "Donga",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Tourteaux de karite",
+                                         "local":  "Fon: residue karite; Bariba: karite kpara"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Combustible, compostage, co-substrat methanisation",
+                       "valeur_fcfa_par_tonne":  30000,
+                       "acheteurs_types_benin":  [
+                                                     "Composteurs",
+                                                     "Unites biogaz",
+                                                     "Producteurs d\u0027energie thermique"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Atacora",
+                                                        "Donga"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Bagasse de canne a sucre",
+                                         "local":  "Fon: bagasi; Yoruba: igi suga residue"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Cogeneration, panneaux, compost",
+                       "valeur_fcfa_par_tonne":  28000,
+                       "acheteurs_types_benin":  [
+                                                     "Sucreries",
+                                                     "Fabricants de panneaux",
+                                                     "Unites energetiques"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Atlantique",
+                                                        "Zou",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Rafles de mais",
+                                         "local":  "Fon: ko mais; Yoruba: igi agbado"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Briquettes, compostage, alimentation animale secondaire",
+                       "valeur_fcfa_par_tonne":  18000,
+                       "acheteurs_types_benin":  [
+                                                     "Producteurs de combustibles solides",
+                                                     "Eleveurs",
+                                                     "Composteurs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Collines",
+                                                        "Zou",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Balles de riz",
+                                         "local":  "Fon: balle riz; Dendi: kibi riz"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Combustion controlee, silice, amendement",
+                       "valeur_fcfa_par_tonne":  26000,
+                       "acheteurs_types_benin":  [
+                                                     "Rizeries",
+                                                     "Cimenteries",
+                                                     "Producteurs d\u0027amendements"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Alibori",
+                                                        "Borgou",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Coques de riz",
+                                         "local":  "Fon: ko riz; Bariba: bori riz"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Biochar, cendre siliceuse, combustible",
+                       "valeur_fcfa_par_tonne":  24000,
+                       "acheteurs_types_benin":  [
+                                                     "Rizeries",
+                                                     "Producteurs de briquettes",
+                                                     "Materiaux de construction"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Alibori",
+                                                        "Borgou",
+                                                        "Mono"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Coques d\u0027arachide",
+                                         "local":  "Fon: ko arachide; Yoruba: epo epa"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Briquettes, compostage, biochar",
+                       "valeur_fcfa_par_tonne":  25000,
+                       "acheteurs_types_benin":  [
+                                                     "Transformateurs d\u0027arachide",
+                                                     "Composteurs",
+                                                     "Unites de charbon vert"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Atacora",
+                                                        "Donga",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Coques de noix de cajou",
+                                         "local":  "Fon: ko cajou; Bariba: kaju kpara"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Huile CNSL, combustible industriel",
+                       "valeur_fcfa_par_tonne":  45000,
+                       "acheteurs_types_benin":  [
+                                                     "Usines cajou",
+                                                     "Industriels thermiques",
+                                                     "Exportateurs regionaux"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Collines",
+                                                        "Borgou",
+                                                        "Atacora"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Cabosses de cacao",
+                                         "local":  "Fon: ecorce cacao; Yoruba: apo koko"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Compostage, biochar, alimentation animale limitee",
+                       "valeur_fcfa_par_tonne":  15000,
+                       "acheteurs_types_benin":  [
+                                                     "Producteurs de compost",
+                                                     "Cooperatives agricoles"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Plateau",
+                                                        "Oueme",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Fibres de palmier",
+                                         "local":  "Fon: fibre palmier; Yoruba: okun ope"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Paillage, compostage, materiaux bio-composites",
+                       "valeur_fcfa_par_tonne":  21000,
+                       "acheteurs_types_benin":  [
+                                                     "Palmeraies",
+                                                     "Composteurs",
+                                                     "Artisans composites"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Oueme",
+                                                        "Atlantique",
+                                                        "Mono"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Noyaux de palme",
+                                         "local":  "Fon: noye palmier; Yoruba: inu ope"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Combustible, charbon actif, pyrolyse",
+                       "valeur_fcfa_par_tonne":  40000,
+                       "acheteurs_types_benin":  [
+                                                     "Huileries",
+                                                     "Unites pyrolyse",
+                                                     "Cimenteries"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Oueme",
+                                                        "Mono",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Coques de palmiste",
+                                         "local":  "Fon: ko palmiste; Yoruba: apo palm kernel"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Combustible chaudiere, biochar",
+                       "valeur_fcfa_par_tonne":  42000,
+                       "acheteurs_types_benin":  [
+                                                     "Huileries",
+                                                     "Unites d\u0027energie",
+                                                     "Producteurs de charbon vert"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Oueme",
+                                                        "Atlantique",
+                                                        "Mono"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Epluchures de manioc",
+                                         "local":  "Fon: peaux manioc; Yoruba: eepo gbaguda"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Compostage, alimentation animale traitee, biogaz",
+                       "valeur_fcfa_par_tonne":  12000,
+                       "acheteurs_types_benin":  [
+                                                     "Eleveurs",
+                                                     "Methaniseurs",
+                                                     "Composteurs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Zou",
+                                                        "Collines",
+                                                        "Plateau"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "DrÃªches de brasserie",
+                                         "local":  "Fon: residue biere; Yoruba: idoti oti"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Alimentation animale, methanisation",
+                       "valeur_fcfa_par_tonne":  35000,
+                       "acheteurs_types_benin":  [
+                                                     "Brasseries",
+                                                     "Eleveurs",
+                                                     "Unites biogaz"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Marcs d\u0027ananas",
+                                         "local":  "Fon: residue ananas; Yoruba: eeku ope oyinbo"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Compostage, alimentation animale, biogaz",
+                       "valeur_fcfa_par_tonne":  17000,
+                       "acheteurs_types_benin":  [
+                                                     "Transformateurs jus",
+                                                     "Eleveurs",
+                                                     "Composteurs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Atlantique",
+                                                        "Oueme",
+                                                        "Plateau"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Sciure de bois",
+                                         "local":  "Fon: poussiere bois; Yoruba: eruku igi"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Briquettes, pellets, panneaux",
+                       "valeur_fcfa_par_tonne":  27000,
+                       "acheteurs_types_benin":  [
+                                                     "Scieries",
+                                                     "Fabricants de briquettes",
+                                                     "Menuiseries"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Atlantique",
+                                                        "Littoral",
+                                                        "Zou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Chutes de bois",
+                                         "local":  "Fon: morceau bois; Yoruba: apakan igi"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Panneaux agglomeres, energie thermique",
+                       "valeur_fcfa_par_tonne":  23000,
+                       "acheteurs_types_benin":  [
+                                                     "Scieries",
+                                                     "Fabricants panneaux",
+                                                     "Industriels thermiques"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Atlantique",
+                                                        "Collines",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Poussiere de charbon",
+                                         "local":  "Fon: poudre charbon; Yoruba: eruku eedu"
+                                     },
+                       "categorie":  "biomasse",
+                       "filiere_valorisation":  "Briquettes de charbon vert",
+                       "valeur_fcfa_par_tonne":  36000,
+                       "acheteurs_types_benin":  [
+                                                     "Producteurs de combustibles domestiques",
+                                                     "Revendeurs energie"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Cartons ondures",
+                                         "local":  "Fon: carton use; Yoruba: paali atijo"
+                                     },
+                       "categorie":  "papier",
+                       "filiere_valorisation":  "Recyclage papier-carton",
+                       "valeur_fcfa_par_tonne":  55000,
+                       "acheteurs_types_benin":  [
+                                                     "Collecteurs",
+                                                     "Papeteries regionales",
+                                                     "Exportateurs CEDEAO"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Papiers de bureau uses",
+                                         "local":  "Fon: papier bureau; Yoruba: iwe atijo"
+                                     },
+                       "categorie":  "papier",
+                       "filiere_valorisation":  "Recyclage papier",
+                       "valeur_fcfa_par_tonne":  60000,
+                       "acheteurs_types_benin":  [
+                                                     "Collecteurs formels",
+                                                     "Unites de tri",
+                                                     "Papeteries"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Parakou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Bouteilles PET",
+                                         "local":  "Fon: boutey plastik; Yoruba: igo PET"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Recyclage mecanique en paillettes",
+                       "valeur_fcfa_par_tonne":  150000,
+                       "acheteurs_types_benin":  [
+                                                     "Centres de tri",
+                                                     "Recycleurs plastiques",
+                                                     "Transformateurs de preformes"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme",
+                                                        "Zou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Flacons PEHD",
+                                         "local":  "Fon: bidon plastik; Yoruba: igo PEHD"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Lavage-broyage-regranulation",
+                       "valeur_fcfa_par_tonne":  170000,
+                       "acheteurs_types_benin":  [
+                                                     "Recycleurs PEHD",
+                                                     "Fabricants de seaux",
+                                                     "Injecteurs plastiques"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Sachets PEBD",
+                                         "local":  "Fon: sache plastik; Yoruba: apo nylon"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Recyclage films, granules PE",
+                       "valeur_fcfa_par_tonne":  95000,
+                       "acheteurs_types_benin":  [
+                                                     "Agregateurs de films",
+                                                     "Recycleries PE",
+                                                     "Fabricants de sacs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Films plastiques agricoles",
+                                         "local":  "Fon: film champ; Yoruba: fiimu oko"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Nettoyage + recyclage PE",
+                       "valeur_fcfa_par_tonne":  85000,
+                       "acheteurs_types_benin":  [
+                                                     "Recycleurs plastiques",
+                                                     "Cooperatives agricoles",
+                                                     "Collecteurs ruraux"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Alibori",
+                                                        "Borgou",
+                                                        "Collines"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Seaux et bacs PP casses",
+                                         "local":  "Fon: bac plastik; Yoruba: awo PP"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Regranulation PP",
+                       "valeur_fcfa_par_tonne":  120000,
+                       "acheteurs_types_benin":  [
+                                                     "Injecteurs PP",
+                                                     "Recycleries",
+                                                     "Fabricants d\u0027objets menagers"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Tuyaux PVC uses",
+                                         "local":  "Fon: tuyau plastik; Yoruba: paipu PVC"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Broyage PVC, extrusion secondaire",
+                       "valeur_fcfa_par_tonne":  110000,
+                       "acheteurs_types_benin":  [
+                                                     "Transformateurs PVC",
+                                                     "Recycleries techniques"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Zou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Filets nylon usages",
+                                         "local":  "Fon: filet nylon; Yoruba: náº¹ti nylon"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Recyclage nylon, granules PA",
+                       "valeur_fcfa_par_tonne":  100000,
+                       "acheteurs_types_benin":  [
+                                                     "Pecheries",
+                                                     "Recycleurs nylon",
+                                                     "Fabricants de cordes"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Mono",
+                                                        "Atlantique",
+                                                        "Littoral"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Bidons plastiques souilles",
+                                         "local":  "Fon: bidon souille; Yoruba: igo idoti"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Decontamination puis recyclage controle",
+                       "valeur_fcfa_par_tonne":  70000,
+                       "acheteurs_types_benin":  [
+                                                     "Operateurs agrees",
+                                                     "Recycleries specialisees"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Collines"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Mousses PU de matelas",
+                                         "local":  "Fon: mousse matelas; Yoruba: foomu"
+                                     },
+                       "categorie":  "plastique",
+                       "filiere_valorisation":  "Rebonding mousse, co-processing cimenterie",
+                       "valeur_fcfa_par_tonne":  50000,
+                       "acheteurs_types_benin":  [
+                                                     "Fabricants matelas",
+                                                     "Cimenteries",
+                                                     "Collecteurs urbains"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Ferraille acier",
+                                         "local":  "Fon: ferraille; Yoruba: irin atijo"
+                                     },
+                       "categorie":  "metal",
+                       "filiere_valorisation":  "Refonte siderurgique locale",
+                       "valeur_fcfa_par_tonne":  185000,
+                       "acheteurs_types_benin":  [
+                                                     "Fonderies",
+                                                     "Acieries regionales",
+                                                     "Negociants metaux"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Chutes de fer a beton",
+                                         "local":  "Fon: fer chantier; Yoruba: irin ikole"
+                                     },
+                       "categorie":  "metal",
+                       "filiere_valorisation":  "Refonte acier",
+                       "valeur_fcfa_par_tonne":  190000,
+                       "acheteurs_types_benin":  [
+                                                     "Chantiers",
+                                                     "Negociants ferraille",
+                                                     "Acieries"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Parakou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Canettes aluminium",
+                                         "local":  "Fon: canette alu; Yoruba: agolo aluminium"
+                                     },
+                       "categorie":  "metal",
+                       "filiere_valorisation":  "Refonte aluminium",
+                       "valeur_fcfa_par_tonne":  420000,
+                       "acheteurs_types_benin":  [
+                                                     "Fonderies aluminium",
+                                                     "Negociants metaux non ferreux"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Profiles aluminium",
+                                         "local":  "Fon: alu profil; Yoruba: profaili alu"
+                                     },
+                       "categorie":  "metal",
+                       "filiere_valorisation":  "Tri alliage et refonte",
+                       "valeur_fcfa_par_tonne":  470000,
+                       "acheteurs_types_benin":  [
+                                                     "Menuiseries alu",
+                                                     "Fonderies",
+                                                     "Exportateurs regionaux"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Zou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Cables cuivre",
+                                         "local":  "Fon: cable cuivre; Yoruba: waya copper"
+                                     },
+                       "categorie":  "metal",
+                       "filiere_valorisation":  "Decapage et recyclage cuivre",
+                       "valeur_fcfa_par_tonne":  2200000,
+                       "acheteurs_types_benin":  [
+                                                     "Affineurs metaux",
+                                                     "Negociants cuivre",
+                                                     "Transformateurs cables"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Pieces en laiton",
+                                         "local":  "Fon: laiton piece; Yoruba: brass"
+                                     },
+                       "categorie":  "metal",
+                       "filiere_valorisation":  "Refonte non ferreux",
+                       "valeur_fcfa_par_tonne":  900000,
+                       "acheteurs_types_benin":  [
+                                                     "Fondeurs",
+                                                     "Negociants metaux"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Inox hors d\u0027usage",
+                                         "local":  "Fon: inox use; Yoruba: irin alagbara"
+                                     },
+                       "categorie":  "metal",
+                       "filiere_valorisation":  "Tri inox et refonte",
+                       "valeur_fcfa_par_tonne":  600000,
+                       "acheteurs_types_benin":  [
+                                                     "Negociants inox",
+                                                     "Fonderies"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Laitier de fonderie",
+                                         "local":  "Fon: laitier fonderie; Yoruba: slag"
+                                     },
+                       "categorie":  "mineral",
+                       "filiere_valorisation":  "Granulat routier, ciment",
+                       "valeur_fcfa_par_tonne":  30000,
+                       "acheteurs_types_benin":  [
+                                                     "BTP",
+                                                     "Cimenteries",
+                                                     "Carriers"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Batteries plomb-acide usees",
+                                         "local":  "Fon: batterie usee; Yoruba: batiri"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Recyclage plomb en filiere agreee",
+                       "valeur_fcfa_par_tonne":  350000,
+                       "acheteurs_types_benin":  [
+                                                     "Collecteurs agrees",
+                                                     "Recycleurs batteries",
+                                                     "Importateurs d\u0027accumulateurs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Borgou",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Cartes electroniques",
+                                         "local":  "Fon: carte e-waste; Yoruba: board"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Demantelement et recuperation metaux",
+                       "valeur_fcfa_par_tonne":  650000,
+                       "acheteurs_types_benin":  [
+                                                     "Demanteleurs agrees",
+                                                     "Negociants e-dechets CEDEAO"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Ordinateurs hors usage",
+                                         "local":  "Fon: ordinateur use; Yoruba: ká»nputa atijo"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Reemploi de pieces, recyclage e-dechets",
+                       "valeur_fcfa_par_tonne":  280000,
+                       "acheteurs_types_benin":  [
+                                                     "Reconditionneurs",
+                                                     "Demanteleurs",
+                                                     "Collecteurs D3E"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Parakou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Telephones hors usage",
+                                         "local":  "Fon: telephone use; Yoruba: foonu atijo"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Reconditionnement et recyclage composants",
+                       "valeur_fcfa_par_tonne":  1200000,
+                       "acheteurs_types_benin":  [
+                                                     "Ateliers reparation",
+                                                     "Reconditionneurs",
+                                                     "Demanteleurs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Ecrans casses",
+                                         "local":  "Fon: ecran casse; Yoruba: iboju fá»"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Demantelement controle, recuperation verre/metaux",
+                       "valeur_fcfa_par_tonne":  80000,
+                       "acheteurs_types_benin":  [
+                                                     "Centres D3E",
+                                                     "Demanteleurs agrees"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Imprimantes hors usage",
+                                         "local":  "Fon: imprimante usee; Yoruba: áº¹rá» titáº¹"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Demantelement, recuperation plastiques/metaux",
+                       "valeur_fcfa_par_tonne":  140000,
+                       "acheteurs_types_benin":  [
+                                                     "Ateliers de maintenance",
+                                                     "Demanteleurs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Cables electriques melanges",
+                                         "local":  "Fon: cable elec; Yoruba: waya elekitiriki"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Granulation cable et separation cuivre/plastique",
+                       "valeur_fcfa_par_tonne":  700000,
+                       "acheteurs_types_benin":  [
+                                                     "Recycleurs cables",
+                                                     "Negociants cuivre"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Borgou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Petits appareils menagers HS",
+                                         "local":  "Fon: appareil use; Yoruba: áº¹rá» ile atijo"
+                                     },
+                       "categorie":  "electronique",
+                       "filiere_valorisation":  "Demantelement et recuperation metaux",
+                       "valeur_fcfa_par_tonne":  100000,
+                       "acheteurs_types_benin":  [
+                                                     "Collecteurs D3E",
+                                                     "Demanteleurs"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Oueme"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Chutes textiles coton",
+                                         "local":  "Fon: tissu coton; Yoruba: aso owu"
+                                     },
+                       "categorie":  "textile",
+                       "filiere_valorisation":  "Effilochage, rembourrage, chiffon industriel",
+                       "valeur_fcfa_par_tonne":  90000,
+                       "acheteurs_types_benin":  [
+                                                     "Ateliers couture",
+                                                     "Repreneurs textile",
+                                                     "Artisans rembourrage"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique",
+                                                        "Zou"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Chutes textiles polyester",
+                                         "local":  "Fon: tissu polyester; Yoruba: aso sintetiki"
+                                     },
+                       "categorie":  "textile",
+                       "filiere_valorisation":  "Recyclage fibre, co-processing",
+                       "valeur_fcfa_par_tonne":  70000,
+                       "acheteurs_types_benin":  [
+                                                     "Ateliers textiles",
+                                                     "Cimenteries",
+                                                     "Recycleries"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Littoral",
+                                                        "Atlantique"
+                                                    ]
+                   },
+                   {
+                       "nom_local":  {
+                                         "fr":  "Sacs de jute uses",
+                                         "local":  "Fon: sac jute; Yoruba: apo jute"
+                                     },
+                       "categorie":  "textile",
+                       "filiere_valorisation":  "Reemploi, fibres secondaires, compostage",
+                       "valeur_fcfa_par_tonne":  50000,
+                       "acheteurs_types_benin":  [
+                                                     "Cooperatives agricoles",
+                                                     "Repreneurs emballages",
+                                                     "Artisans"
+                                                 ],
+                       "regions_production_benin":  [
+                                                        "Borgou",
+                                                        "Alibori",
+                                                        "Collines"
+                                                    ]
+                   }
+               ]
+}

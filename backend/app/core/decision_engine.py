@@ -547,7 +547,7 @@ def _llm_enrichment(payload: dict[str, Any]) -> str | None:
     return chat_completion_text(
         system_prompt=system_prompt,
         user_prompt=user_prompt,
-        model=os.getenv("OPENAI_MODEL", "gpt-5.4-mini"),
+        model=os.getenv("OPENAI_MODEL", "gpt-5.4"),
         max_tokens=420,
         temperature=0.2,
         timeout_s=20,

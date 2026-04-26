@@ -1,3 +1,5 @@
+from pathlib import Path
+import json
 import base64
 import io
 import os
@@ -28,6 +30,9 @@ from app.models.waste import (
 router = APIRouter(prefix="/api/waste", tags=["waste"])
 logger = logging.getLogger(__name__)
 
+_BENIN_WASTE_DB_PATH = Path(__file__).resolve().parents[1] / "core" / "waste_benin_database.json"
+_CORRECTIONS_PATH = Path(__file__).resolve().parents[1] / "core" / "corrections.json"
+
 
 class ReportEmailRequest(BaseModel):
     email: str
@@ -42,6 +47,15 @@ class EnvironmentalFactorsUpdateRequest(BaseModel):
     countries: dict[str, dict[str, object]]
     references: list[str]
 
+
+class IdentificationCorrectionRequest(BaseModel):
+    image_filename: str | None = None
+    prediction: dict[str, object] = {}
+    is_correct: bool
+    corrected_nom_exact: str | None = None
+    corrected_filiere: str | None = None
+    corrected_comment: str | None = None
+    user_context: dict[str, object] = {}
 
 def _check_admin_access(x_admin_key: str | None):
     required = os.getenv("WASTEAI_ADMIN_KEY") or os.getenv("WASTEWISE_ADMIN_KEY")
@@ -138,6 +152,34 @@ def identify_image_waste(payload: WasteImageIdentificationInput):
     )
 
 
+
+@router.post("/identify-image/corrections")
+def save_identification_correction(payload: IdentificationCorrectionRequest):
+    entry = {
+        "timestamp": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "image_filename": payload.image_filename,
+        "prediction": payload.prediction,
+        "is_correct": payload.is_correct,
+        "corrected_nom_exact": payload.corrected_nom_exact,
+        "corrected_filiere": payload.corrected_filiere,
+        "corrected_comment": payload.corrected_comment,
+        "user_context": payload.user_context,
+    }
+
+    try:
+        if _CORRECTIONS_PATH.exists():
+            existing = json.loads(_CORRECTIONS_PATH.read_text(encoding="utf-8"))
+            if not isinstance(existing, list):
+                existing = []
+        else:
+            existing = []
+
+        existing.append(entry)
+        _CORRECTIONS_PATH.write_text(json.dumps(existing, ensure_ascii=False, indent=2), encoding="utf-8")
+        return {"status": "ok", "saved": True, "count": len(existing)}
+    except Exception as exc:
+        logger.exception("Failed to save identification correction")
+        raise HTTPException(status_code=500, detail=f"Echec sauvegarde correction: {exc}") from exc
 @router.get("/categories")
 def get_categories():
     return {
@@ -282,3 +324,19 @@ def get_dashboard_analytics_compact(
                 "reason": "analytics_store_unavailable",
             },
         }
+
+@router.get("/database/benin")
+def get_benin_waste_database():
+    try:
+        payload = json.loads(_BENIN_WASTE_DB_PATH.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            return payload
+    except Exception:
+        logger.exception("Benin waste database endpoint failed")
+
+    return {
+        "country": "Benin",
+        "currency": "FCFA",
+        "version": "fallback",
+        "wastes": [],
+    }

@@ -1,0 +1,1984 @@
+{
+    "dechets":  [
+                    {
+                        "id":  "TXT001",
+                        "nom_exact":  "Chutes de tissu coton",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "fibres naturelles",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  5000,
+                        "valeur_fcfa_max":  15000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  85,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  900,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT002",
+                        "nom_exact":  "Fils usages",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "filature",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  5400,
+                        "valeur_fcfa_max":  15600,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  85,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  920,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT003",
+                        "nom_exact":  "Dechets filature",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "fibres melangees",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  5800,
+                        "valeur_fcfa_max":  16200,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  84,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  940,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT004",
+                        "nom_exact":  "Teintures usees",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "effluents textiles",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  6200,
+                        "valeur_fcfa_max":  16800,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  83,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  960,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "moyen"
+                    },
+                    {
+                        "id":  "TXT005",
+                        "nom_exact":  "Emballages tissus",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "emballages souples",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  6600,
+                        "valeur_fcfa_max":  17400,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  83,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  980,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT006",
+                        "nom_exact":  "Fibres synthetiques",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "fibres synthetiques",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  7000,
+                        "valeur_fcfa_max":  18000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  83,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1000,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT007",
+                        "nom_exact":  "Chiffons industriels",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "textile technique",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  7400,
+                        "valeur_fcfa_max":  18600,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  82,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1020,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT008",
+                        "nom_exact":  "Dechets broderie",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "retailles",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  7800,
+                        "valeur_fcfa_max":  19200,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  81,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1040,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT009",
+                        "nom_exact":  "Retailles cuir",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "cuir et simili",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  8200,
+                        "valeur_fcfa_max":  19800,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  81,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1060,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT010",
+                        "nom_exact":  "Sangles usagees",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "accessoires textiles",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  8600,
+                        "valeur_fcfa_max":  20400,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  81,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1080,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT011",
+                        "nom_exact":  "Filtres textiles",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "textile technique",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  9000,
+                        "valeur_fcfa_max":  21000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  80,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1100,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "moyen"
+                    },
+                    {
+                        "id":  "TXT012",
+                        "nom_exact":  "Non-tisses usages",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "non-tisse",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  9400,
+                        "valeur_fcfa_max":  21600,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  79,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1120,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT013",
+                        "nom_exact":  "Coques graines coton",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "co-produits cotonniers",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  9800,
+                        "valeur_fcfa_max":  22200,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  79,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1140,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT014",
+                        "nom_exact":  "Fibres coton brut",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "fibres naturelles",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  10200,
+                        "valeur_fcfa_max":  22800,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  79,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1160,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "TXT015",
+                        "nom_exact":  "Poussiere coton",
+                        "nom_local_fon":  "A tonton ton do",
+                        "filiere":  "textile",
+                        "sous_categorie":  "poussiere de process",
+                        "origine_industrie":  [
+                                                  "SITEX",
+                                                  "SOBETEX",
+                                                  "ateliers couture"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage tissu",
+                        "valorisations_alternatives":  [
+                                                           "chiffons industriels",
+                                                           "isolation thermique",
+                                                           "compostage"
+                                                       ],
+                        "valeur_fcfa_min":  10600,
+                        "valeur_fcfa_max":  23400,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Ateliers de confection",
+                                                "Industries isolation",
+                                                "Agregateurs textiles Cotonou"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Recycleurs textiles Ghana",
+                                                 "Industries Nigeria",
+                                                 "Trieurs textile Togo"
+                                             ],
+                        "score_valorisation":  78,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Label vert CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1180,
+                        "conseils_stockage":  "Lieu sec, a l abri de l humidite et des huiles.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA001",
+                        "nom_exact":  "PET bouteilles",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "thermoplastique PET",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  35000,
+                        "valeur_fcfa_max":  90000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  88,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  700,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA002",
+                        "nom_exact":  "HDPE conteneurs",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "thermoplastique HDPE",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  38000,
+                        "valeur_fcfa_max":  94500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  88,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  730,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA003",
+                        "nom_exact":  "PVC tuyaux",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "thermoplastique PVC",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  41000,
+                        "valeur_fcfa_max":  99000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  87,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  760,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA004",
+                        "nom_exact":  "Sacs plastique",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "films souples",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  44000,
+                        "valeur_fcfa_max":  103500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  86,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  790,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA005",
+                        "nom_exact":  "Films plastique",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "films industriels",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  47000,
+                        "valeur_fcfa_max":  108000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  86,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  820,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA006",
+                        "nom_exact":  "Bidons industriels",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "emballages rigides",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  50000,
+                        "valeur_fcfa_max":  112500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  86,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  850,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA007",
+                        "nom_exact":  "Mousses polyurethane",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "mousse PU",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  53000,
+                        "valeur_fcfa_max":  117000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  85,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  880,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA008",
+                        "nom_exact":  "Plastiques mixtes",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "melanges multi-polymere",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  56000,
+                        "valeur_fcfa_max":  121500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  84,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  910,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "moyen"
+                    },
+                    {
+                        "id":  "PLA009",
+                        "nom_exact":  "Filets plastique",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "PE/PP",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  59000,
+                        "valeur_fcfa_max":  126000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  84,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  940,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA010",
+                        "nom_exact":  "Emballages alimentaires",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "multicouches",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  62000,
+                        "valeur_fcfa_max":  130500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  84,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  970,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA011",
+                        "nom_exact":  "Plastiques agricoles",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "films agricoles",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  65000,
+                        "valeur_fcfa_max":  135000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  83,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1000,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA012",
+                        "nom_exact":  "Reservoirs usages",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "pieces techniques",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  68000,
+                        "valeur_fcfa_max":  139500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  82,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1030,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA013",
+                        "nom_exact":  "Pieces plastiques",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "injection technique",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  71000,
+                        "valeur_fcfa_max":  144000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  82,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1060,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA014",
+                        "nom_exact":  "Plastiques colores",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "plastique colore",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  74000,
+                        "valeur_fcfa_max":  148500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  82,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1090,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PLA015",
+                        "nom_exact":  "Microplastiques industriels",
+                        "nom_local_fon":  "A vovo ton do",
+                        "filiere":  "plastique",
+                        "sous_categorie":  "residus fins",
+                        "origine_industrie":  [
+                                                  "Recycleurs Cotonou",
+                                                  "Zone Industrielle de Cotonou",
+                                                  "importateurs plastiques"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage plastique",
+                        "valorisations_alternatives":  [
+                                                           "valorisation energetique",
+                                                           "reemploi",
+                                                           "co-processing cimenterie"
+                                                       ],
+                        "valeur_fcfa_min":  77000,
+                        "valeur_fcfa_max":  153000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Recycleurs de Cotonou",
+                                                "Zone Industrielle de Cotonou",
+                                                "Transformateurs plastiques"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Granulateurs Ghana",
+                                                 "Industries Nigeria",
+                                                 "Traders plastiques Togo"
+                                             ],
+                        "score_valorisation":  81,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Conformite CEDEAO"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  1120,
+                        "conseils_stockage":  "Stocker par polymere, a l ombre, sans contamination organique.",
+                        "niveau_danger":  "moyen"
+                    },
+                    {
+                        "id":  "PAP001",
+                        "nom_exact":  "Cartons ondules",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "carton ondulé",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  12000,
+                        "valeur_fcfa_max":  38000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  84,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  500,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP002",
+                        "nom_exact":  "Papier bureau",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "papier blanc",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  13200,
+                        "valeur_fcfa_max":  39500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  84,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  525,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP003",
+                        "nom_exact":  "Journaux usages",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "papier journal",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  14400,
+                        "valeur_fcfa_max":  41000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  83,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  550,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP004",
+                        "nom_exact":  "Papier kraft",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "kraft brun",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  15600,
+                        "valeur_fcfa_max":  42500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  82,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  575,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP005",
+                        "nom_exact":  "Emballages papier",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "emballage souple",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  16800,
+                        "valeur_fcfa_max":  44000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  82,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  600,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP006",
+                        "nom_exact":  "Chutes imprimerie",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "dechets d imprimerie",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  18000,
+                        "valeur_fcfa_max":  45500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  82,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  625,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP007",
+                        "nom_exact":  "Papier couche",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "papier imprime couche",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  19200,
+                        "valeur_fcfa_max":  47000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  81,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  650,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP008",
+                        "nom_exact":  "Archives papier",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "archives administratives",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  20400,
+                        "valeur_fcfa_max":  48500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  80,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  675,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP009",
+                        "nom_exact":  "Papier humide",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "papier degrade humide",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  21600,
+                        "valeur_fcfa_max":  50000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  80,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  700,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP010",
+                        "nom_exact":  "Sachets papier",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "emballages papier",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  22800,
+                        "valeur_fcfa_max":  51500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  80,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  725,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP011",
+                        "nom_exact":  "Papier aluminium",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "complexe papier-alu",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  24000,
+                        "valeur_fcfa_max":  53000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  79,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  750,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "moyen"
+                    },
+                    {
+                        "id":  "PAP012",
+                        "nom_exact":  "Tubes carton",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "mandrins carton",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  25200,
+                        "valeur_fcfa_max":  54500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  78,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  775,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP013",
+                        "nom_exact":  "Registres usages",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "papier relie",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  26400,
+                        "valeur_fcfa_max":  56000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  78,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  800,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    },
+                    {
+                        "id":  "PAP014",
+                        "nom_exact":  "Papier thermique",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "tickets thermiques",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  27600,
+                        "valeur_fcfa_max":  57500,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  78,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  825,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "moyen"
+                    },
+                    {
+                        "id":  "PAP015",
+                        "nom_exact":  "Bois/papier mixte",
+                        "nom_local_fon":  "A we ton do",
+                        "filiere":  "papier",
+                        "sous_categorie":  "melange lignocellulosique",
+                        "origine_industrie":  [
+                                                  "Imprimeries locales",
+                                                  "importateurs carton",
+                                                  "administrations"
+                                              ],
+                        "regions_benin":  [
+                                              "Cotonou",
+                                              "Porto-Novo",
+                                              "Parakou"
+                                          ],
+                        "valorisation_prioritaire":  "recyclage papier-carton",
+                        "valorisations_alternatives":  [
+                                                           "compostage",
+                                                           "CSR en cimenterie",
+                                                           "panneaux fibres"
+                                                       ],
+                        "valeur_fcfa_min":  28800,
+                        "valeur_fcfa_max":  59000,
+                        "unite":  "tonne",
+                        "acheteurs_benin":  [
+                                                "Papeteries locales",
+                                                "Collecteurs carton Benin",
+                                                "Imprimeries de valorisation"
+                                            ],
+                        "acheteurs_cedeao":  [
+                                                 "Papeteries Ghana",
+                                                 "Convertisseurs carton Nigeria",
+                                                 "Collecteurs Lome"
+                                             ],
+                        "score_valorisation":  77,
+                        "certifications_possibles":  [
+                                                         "ISO 14001",
+                                                         "Traçabilité matière"
+                                                     ],
+                        "impact_co2_evite_kg_par_tonne":  850,
+                        "conseils_stockage":  "Conserver sec, sur palette, sans melange avec organique.",
+                        "niveau_danger":  "faible"
+                    }
+                ]
+}

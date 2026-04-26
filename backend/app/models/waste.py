@@ -1,4 +1,4 @@
-﻿from enum import Enum
+from enum import Enum
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -91,6 +91,22 @@ class WasteImageIdentificationResult(BaseModel):
     confiance: str
     description_estimee: Optional[str] = None
     avertissement: Optional[str] = None
+    nom_exact: Optional[str] = None
+    filiere: Optional[str] = None
+    sous_type: Optional[str] = None
+    origine_probable: Optional[str] = None
+    qualite: Optional[str] = None
+    valorisation_1: dict[str, object] = Field(default_factory=dict)
+    valorisation_2: dict[str, object] = Field(default_factory=dict)
+    acheteurs_benin: list[str] = Field(default_factory=list)
+    acheteurs_cedeao: list[str] = Field(default_factory=list)
+    impact_co2_kg: Optional[float] = None
+    conseil_stockage: Optional[str] = None
+    niveau_danger: Optional[str] = None
+    score_valorisation: Optional[int] = None
+    confiance_identification: Optional[int] = None
+    explication: Optional[str] = None
+    hypotheses: list[dict[str, object]] = Field(default_factory=list)
 
 
 class DecisionResult(BaseModel):
