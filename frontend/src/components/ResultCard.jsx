@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react"
+﻿import React, { useEffect, useState } from "react"
 
 function badgeClass(filiere) {
   const key = String(filiere || "autre").toLowerCase()
@@ -78,10 +78,26 @@ export default function ResultCard({
   const score = Number(result.score_valorisation || result.score || 0)
   const confidence = Number(result.confiance_identification || 0)
   const confidenceInfo = confidenceStatus(confidence)
-  const co2 = Number(result.impact_co2_kg || 0)
+  const co2 = Number(result.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0)
   const trees = Math.max(0, Math.round(co2 / 25))
   const carbon = Math.max(0, Math.round((co2 / 1000) * 15000))
   const shortDescription = String(result.description_estimee || result.explication || "").trim()
+
+  const chosenRoute = String(result.decision_principale || result.decision || result?.valorisation_1?.methode || "voie non specifiee")
+  const alternatives = Array.isArray(result.alternatives) ? result.alternatives : []
+  const routeRanking = [
+    { filiere: chosenRoute, score, selected: true },
+    ...alternatives.map((a) => ({
+      filiere: String(a?.filiere || "alternative"),
+      score: Number(a?.score || 0),
+      selected: false,
+      reason: String(a?.pourquoi_pas_prioritaire || ""),
+    })),
+  ]
+
+  const detailScores = result.details_scores || {}
+  const perRouteScores = Array.isArray(result.scores_par_voie) ? result.scores_par_voie : []
+  const whyPriority = String(result.resume_choix || result.justification_technique || result.explication || "").trim()
 
   return (
     <section className="card result-card">
@@ -147,6 +163,44 @@ export default function ResultCard({
               <h4>Securite</h4>
               <p>Stockage: {result.conseil_stockage || "Lieu sec, a l'abri."}</p>
               <p>Danger: {result.niveau_danger || "faible"}</p>
+            </article>
+
+            <article className="result-pane">
+              <h4>Explication de la voie de valorisation</h4>
+              <p><strong>Voie prioritaire:</strong> {chosenRoute}</p>
+              {whyPriority ? <p>{whyPriority}</p> : null}
+              <p><strong>Classement des voies (score global):</strong></p>
+              <ul>
+                {routeRanking.map((r, idx) => (
+                  <li key={`route-${idx}`}>
+                    {r.selected ? "Choisie" : "Alternative"}: {r.filiere} - {Number(r.score || 0).toFixed(1)}/100
+                    {r.reason ? ` (${r.reason})` : ""}
+                  </li>
+                ))}
+              </ul>
+              {Object.keys(detailScores).length > 0 ? (
+                <p>
+                  <strong>Detail criteres (voie prioritaire):</strong> Technique {Number(detailScores.technique || 0).toFixed(1)} | Economique {Number(detailScores.economique || 0).toFixed(1)} |
+                  Environnement {Number(detailScores.environnement || 0).toFixed(1)} | Social {Number(detailScores.social || 0).toFixed(1)} | Reglementaire {Number(detailScores.reglementaire || 0).toFixed(1)}
+                </p>
+              ) : null}
+              {perRouteScores.length > 0 ? (
+                <>
+                  <p><strong>Scoring detaille par voie:</strong></p>
+                  <ul>
+                    {perRouteScores.map((r, idx) => (
+                      <li key={`ps-${idx}`}>
+                        {r.filiere} - Global {Number(r.score || 0).toFixed(1)}/100 |
+                        Tech {Number(r.technique || 0).toFixed(1)} |
+                        Env {Number(r.environnement || 0).toFixed(1)} |
+                        Reg {Number(r.reglementaire || 0).toFixed(1)} |
+                        Eco {Number(r.economique || 0).toFixed(1)}
+                        {r.blocked ? ` (bloquee: ${r.blocked_reason || "non conforme"})` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
             </article>
           </div>
 

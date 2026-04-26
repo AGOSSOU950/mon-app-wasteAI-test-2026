@@ -733,3 +733,81 @@ a {
 
 .presentation-item { transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; }
 .presentation-item:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--brand) 45%, var(--line)); box-shadow: 0 14px 26px rgba(27,94,32,0.08); }
+
+.upload-zone .actions-row {
+  justify-content: center;
+}
+
+@media (max-width: 760px) {
+  .page-section {
+    margin-top: 12px;
+  }
+
+  .analysis-wrap {
+    padding: 12px;
+  }
+
+  .step-title {
+    margin-bottom: 8px;
+    font-size: 15px;
+  }
+
+  .upload-zone {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .upload-zone p {
+    margin: 0 0 6px;
+  }
+
+  .upload-zone small {
+    display: block;
+  }
+
+  .photo-preview {
+    max-height: 190px;
+    border-radius: 8px;
+  }
+
+  .actions-row {
+    gap: 6px;
+  }
+
+  .actions-row .btn {
+    flex: 1 1 calc(50% - 6px);
+    min-height: 44px;
+    padding: 10px 12px;
+  }
+
+  .result-card {
+    margin-top: 10px;
+    padding: 12px;
+  }
+
+  .result-top {
+    gap: 8px;
+  }
+
+  .score-meter {
+    width: 100%;
+  }
+
+  .result-grid {
+    margin-top: 8px;
+    gap: 8px;
+  }
+
+  .result-pane {
+    padding: 10px;
+  }
+
+  .result-pane p {
+    margin: 6px 0;
+  }
+
+  .result-pane ul {
+    margin: 6px 0;
+    padding-left: 18px;
+  }
+}

@@ -12,9 +12,6 @@ export default function AnalysisForm({
   onIdentify,
   onAnalyze,
   onReset,
-  onExampleTextile,
-  onExamplePlastic,
-  onExamplePaper,
   onPrefill,
 }) {
   return (
@@ -69,10 +66,7 @@ export default function AnalysisForm({
       <h3 className="step-title" style={{ marginTop: 16 }}>Etape 3 - Actions</h3>
       <div className="actions-row">
         <button className="btn btn-primary" type="button" onClick={onAnalyze} disabled={loading}>{loading ? "Analyse en cours..." : "Analyser"}</button>
-        <button className="btn btn-secondary" type="button" onClick={onExampleTextile}>Exemple textile</button>
-        <button className="btn btn-secondary" type="button" onClick={onExamplePlastic}>Exemple plastique</button>
-        <button className="btn btn-secondary" type="button" onClick={onExamplePaper}>Exemple papier</button>
-        <button className="btn" type="button" onClick={onReset}>Reinitialiser</button>
+                <button className="btn" type="button" onClick={onReset}>Reinitialiser</button>
         <button className="btn" type="button" onClick={onPrefill}>Pre-remplir scientifique</button>
       </div>
 

@@ -1,0 +1,60 @@
+{
+  "country_policy": {
+    "benin": {
+      "regulatoryDelta": { "energetic": -2, "material": 4, "reuse_sale": 2, "specialized": 0 },
+      "economicFactor": { "energetic": 1.0, "material": 1.02, "reuse_sale": 1.0, "specialized": 1.0 },
+      "refs": ["Benin: Decret sur la gestion des dechets et autorisations des filieres de traitement."]
+    },
+    "togo": {
+      "regulatoryDelta": { "energetic": -4, "material": 3, "reuse_sale": 2, "specialized": 0 },
+      "economicFactor": { "energetic": 0.95, "material": 1.0, "reuse_sale": 1.0, "specialized": 1.0 },
+      "refs": ["Togo: cadre national d'hygiene publique et police environnementale."]
+    },
+    "cote_divoire": {
+      "regulatoryDelta": { "energetic": -1, "material": 4, "reuse_sale": 2, "specialized": 0 },
+      "economicFactor": { "energetic": 1.05, "material": 1.08, "reuse_sale": 1.04, "specialized": 1.0 },
+      "refs": ["Cote d'Ivoire: Code de l'environnement et filieres agreees de valorisation."]
+    },
+    "ghana": {
+      "regulatoryDelta": { "energetic": 2, "material": 3, "reuse_sale": 2, "specialized": 0 },
+      "economicFactor": { "energetic": 1.08, "material": 1.06, "reuse_sale": 1.03, "specialized": 1.0 },
+      "refs": ["Ghana: EPA Act and hazardous waste control framework."]
+    },
+    "nigeria": {
+      "regulatoryDelta": { "energetic": 1, "material": 2, "reuse_sale": 1, "specialized": 0 },
+      "economicFactor": { "energetic": 1.1, "material": 1.07, "reuse_sale": 1.05, "specialized": 1.0 },
+      "refs": ["Nigeria: NESREA guidelines for hazardous waste and industrial emissions."]
+    },
+    "default": {
+      "regulatoryDelta": { "energetic": 0, "material": 0, "reuse_sale": 0, "specialized": 0 },
+      "economicFactor": { "energetic": 1.0, "material": 1.0, "reuse_sale": 1.0, "specialized": 1.0 },
+      "refs": []
+    }
+  },
+  "waste_type_rules": {
+    "pvc_or_chlorinated": {
+      "refs": ["Flux PVC/chlore: combustion strictement encadree, priorite au recyclage ou traitement specialise."]
+    },
+    "waste_oil_or_solvent": {
+      "refs": ["Huiles/solvants usages: regeneration prioritaire, elimination securisee si contamination forte."]
+    },
+    "heavy_metals": {
+      "refs": ["Presence de metaux lourds: interdiction des voies diffuses, traitement specialise requis."]
+    },
+    "lignin_high": {
+      "refs": ["Biomasse lignocellulosique: voie charbon actif ou biogaz selon qualite du flux."]
+    }
+  },
+  "type_economic_multipliers": {
+    "fallback": 1.0,
+    "category_decision": {
+      "metal": { "material": 1.12, "reuse_sale": 1.12 },
+      "plastique": { "material": 1.05, "energetic": 0.92 },
+      "biomasse": { "energetic": 1.08 },
+      "chimique": { "energetic": 0.6, "material": 1.02 }
+    },
+    "route_bonus": {
+      "charbon_actif": { "ligninHigh": 1.15 }
+    }
+  }
+}

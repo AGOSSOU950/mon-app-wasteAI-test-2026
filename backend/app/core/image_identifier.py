@@ -238,8 +238,8 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
             instruction=prompt,
             image_bytes=image_bytes,
             media_type=media_type,
-            model=(os.getenv("OPENAI_VISION_MODEL") or os.getenv("OPENAI_MODEL") or "gpt-5.4").strip(),
-            max_tokens=700,
+            model=(os.getenv("OPENAI_VISION_MODEL") or os.getenv("OPENAI_MODEL") or "gpt-4o").strip(),
+            max_tokens=260,
             timeout_s=35,
         )
     except Exception:
