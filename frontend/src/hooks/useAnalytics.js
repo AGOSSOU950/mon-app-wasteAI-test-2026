@@ -32,6 +32,31 @@ function buildSummaryFromRows(rows) {
   }
 }
 
+function readLocalRows() {
+  try {
+    const raw = localStorage.getItem("wasteai_analytics_rows")
+    const rows = JSON.parse(raw || "[]")
+    return normalizeRows(rows)
+  } catch {
+    return []
+  }
+}
+
+function mergeWithLocalRows(rows) {
+  const apiRows = normalizeRows(rows)
+  const localRows = readLocalRows()
+  if (apiRows.length === 0) return localRows
+  const merged = [...apiRows]
+  localRows.forEach((row) => {
+    const exists = merged.some((x) =>
+      String(x?.created_at || "") === String(row?.created_at || "") &&
+      String(x?.nom || "") === String(row?.nom || "")
+    )
+    if (!exists) merged.push(row)
+  })
+  return merged
+}
+
 export default function useAnalytics() {
   const [analytics, setAnalytics] = useState(EMPTY_PAYLOAD)
   const [dashboardLoading, setDashboardLoading] = useState(false)
@@ -45,13 +70,15 @@ export default function useAnalytics() {
       })
 
       const payload = compactRes.data || {}
-      const rows = normalizeRows(payload.history || payload.recent || payload.rows)
-      const summary = payload.summary || buildSummaryFromRows(rows)
+      const rows = mergeWithLocalRows(payload.history || payload.recent || payload.rows)
+      const summary = payload.summary && Number(payload.summary.total_analyses || 0) > 0
+        ? payload.summary
+        : buildSummaryFromRows(rows)
 
       setAnalytics({
         summary,
         history: rows.slice(0, 20),
-        meta: payload.meta || EMPTY_PAYLOAD.meta,
+        meta: payload.meta || { ...EMPTY_PAYLOAD.meta, summary_total_records: rows.length },
       })
     } catch {
       try {
@@ -60,12 +87,14 @@ export default function useAnalytics() {
         })
 
         const payload = fallbackRes.data || {}
-        const rows = normalizeRows(
+        const rows = mergeWithLocalRows(
           Array.isArray(payload)
             ? payload
             : payload.history || payload.recent || payload.rows || payload.items
         )
-        const summary = payload.summary || buildSummaryFromRows(rows)
+        const summary = payload.summary && Number(payload.summary.total_analyses || 0) > 0
+          ? payload.summary
+          : buildSummaryFromRows(rows)
 
         setAnalytics({
           summary,
@@ -73,7 +102,12 @@ export default function useAnalytics() {
           meta: payload.meta || { recent_limit: 20, summary_window: 100, summary_total_records: rows.length },
         })
       } catch {
-        setAnalytics(EMPTY_PAYLOAD)
+        const rows = readLocalRows()
+        setAnalytics({
+          summary: buildSummaryFromRows(rows),
+          history: rows.slice(0, 20),
+          meta: { recent_limit: 20, summary_window: 100, summary_total_records: rows.length },
+        })
       }
     } finally {
       setDashboardLoading(false)

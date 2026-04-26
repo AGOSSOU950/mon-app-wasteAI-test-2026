@@ -43,6 +43,8 @@ const SPECIFIC_ROUTE_LABELS = {
   recyclage_papetier: "Recyclage papetier",
   compostage: "Compostage",
   epandage_agricole: "Epandage agricole conforme",
+  recyclage_verre: "Recyclage du verre (calcin)",
+  demantelement_e_waste: "Demantelement e-waste et recuperation de metaux" ,
   elimination_securisee: "Elimination securisee",
 }
 
@@ -280,13 +282,31 @@ function normalizeText(value) {
     .trim()
 }
 
+const COUNTRY_ALIASES = {
+  benin: ["benin"],
+  togo: ["togo"],
+  cote_divoire: ["cote divoire", "cote d ivoire", "cote ivoire", "ivory coast"],
+  ghana: ["ghana"],
+  nigeria: ["nigeria"],
+  default: [
+    "burkina faso",
+    "cap vert",
+    "gambie",
+    "guinee",
+    "guinee bissau",
+    "liberia",
+    "mali",
+    "niger",
+    "senegal",
+    "sierra leone",
+  ],
+}
+
 function getCountryKey(payload) {
   const raw = normalizeText(payload?.pays_cedeao || payload?.country || "benin")
-  if (raw.includes("benin")) return "benin"
-  if (raw.includes("togo")) return "togo"
-  if (raw.includes("cote") || raw.includes("ivoire")) return "cote_divoire"
-  if (raw.includes("ghana")) return "ghana"
-  if (raw.includes("nigeria")) return "nigeria"
+  for (const [key, aliases] of Object.entries(COUNTRY_ALIASES)) {
+    if (aliases.some((alias) => raw.includes(alias))) return key
+  }
   return "default"
 }
 
@@ -320,12 +340,15 @@ function guessCategory(payload) {
   const category = normalizeText(payload?.categorie)
   const type = normalizeText(payload?.type_dechet)
   const merged = `${category} ${type}`
-  if (merged.includes("metal")) return "metal"
-  if (merged.includes("textile")) return "textile"
+
+  if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
+  if (merged.includes("textile") || merged.includes("fibre")) return "textile"
   if (merged.includes("papier") || merged.includes("carton")) return "papier"
   if (merged.includes("plast")) return "plastique"
-  if (merged.includes("biom") || merged.includes("organ")) return "biomasse"
-  if (merged.includes("huile") || merged.includes("solvant") || merged.includes("chim")) return "chimique"
+  if (merged.includes("verre")) return "verre"
+  if (merged.includes("e waste") || merged.includes("ewaste") || merged.includes("electron") || merged.includes("batter")) return "e_waste"
+  if (merged.includes("biom") || merged.includes("organ") || merged.includes("bois") || merged.includes("lignine")) return "biomasse"
+  if (merged.includes("huile") || merged.includes("solvant") || merged.includes("chim") || merged.includes("boue")) return "chimique"
   return "autre"
 }
 
@@ -488,6 +511,12 @@ function candidateRoutesForCategory(category, payload) {
   }
   if (category === "chimique") {
     return ["regeneration_huiles", "elimination_securisee", "co_incineration_cimenterie"]
+  }
+  if (category === "verre") {
+    return ["recyclage_papetier", "refonte_metaux", "elimination_securisee"]
+  }
+  if (category === "e_waste") {
+    return ["refonte_metaux", "elimination_securisee", "reemploi_pieces_metalliques"]
   }
   return ["recyclage_papetier", "recyclage_mecanique_plastique", "methanisation_biogaz", "elimination_securisee"]
 }
@@ -899,7 +928,7 @@ export async function getScientificPrefill({ nom, type_dechet, categorie, descri
       description: description || null,
     },
   })
-  return normalizeIdentificationApiResult(response.data || {}, filename)
+  return response.data || {}
 }
 
 export async function pingApi() {
