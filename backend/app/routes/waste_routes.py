@@ -143,12 +143,31 @@ def identify_image_waste(payload: WasteImageIdentificationInput):
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     return WasteImageIdentificationResult(
-        nom=str(identified.get("nom") or "dechet industriel"),
+        waste_name=str(identified.get("waste_name") or identified.get("nom_exact") or identified.get("nom") or "dechet solide non identifie"),
+        confidence=float(identified.get("confidence") or (float(identified.get("confiance_identification") or 32) / 100.0)),
+        status=str(identified.get("status") or ("identified" if float(identified.get("confidence") or 0) >= 0.5 else "uncertain")),
+        nom=str(identified.get("nom") or identified.get("waste_name") or "dechet solide non identifie"),
         categorie=identified.get("categorie", "autre"),
         type_dechet=identified.get("type_dechet", "autre"),
         confiance=str(identified.get("confiance") or "faible"),
         description_estimee=identified.get("description_estimee"),
         avertissement=identified.get("avertissement"),
+        nom_exact=identified.get("nom_exact"),
+        filiere=identified.get("filiere"),
+        sous_type=identified.get("sous_type"),
+        origine_probable=identified.get("origine_probable"),
+        qualite=identified.get("qualite"),
+        valorisation_1=identified.get("valorisation_1") if isinstance(identified.get("valorisation_1"), dict) else {},
+        valorisation_2=identified.get("valorisation_2") if isinstance(identified.get("valorisation_2"), dict) else {},
+        acheteurs_benin=identified.get("acheteurs_benin") if isinstance(identified.get("acheteurs_benin"), list) else [],
+        acheteurs_cedeao=identified.get("acheteurs_cedeao") if isinstance(identified.get("acheteurs_cedeao"), list) else [],
+        impact_co2_kg=identified.get("impact_co2_kg"),
+        conseil_stockage=identified.get("conseil_stockage"),
+        niveau_danger=identified.get("niveau_danger"),
+        score_valorisation=identified.get("score_valorisation"),
+        confiance_identification=identified.get("confiance_identification"),
+        explication=identified.get("explication"),
+        hypotheses=identified.get("hypotheses") if isinstance(identified.get("hypotheses"), list) else [],
     )
 
 

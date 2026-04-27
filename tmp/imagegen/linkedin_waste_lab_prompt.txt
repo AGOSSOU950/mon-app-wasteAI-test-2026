@@ -1,0 +1,11 @@
+﻿Use case: ads-marketing
+Asset type: LinkedIn premium hero illustration
+Primary request: Illustration d'un ingenieur analysant des dechets industriels dans un laboratoire moderne. Interface IA affichant des options de valorisation (matiere, energetique, reemploi). Style futuriste, propre, professionnel, ambiance scientifique. Contraste entre dechets bruts et processus optimise par IA.
+Scene/backdrop: laboratoire industriel moderne, surfaces inox, verrerie, ecrans analytiques, unite de tri en arriere-plan
+Subject: ingenieur en EPI (blouse propre, gants, tablette) examinant des echantillons de dechets industriels (plastiques, metaux, biomasse) sur paillasse
+Style/medium: illustration digitale premium semi-realiste, rendu corporate haut de gamme
+Composition/framing: format paysage 16:9, sujet principal au tiers gauche, interface IA holographique lisible au tiers droit
+Lighting/mood: eclairage de laboratoire propre, key light froide, accents lumineux technologiques
+Color palette: bleu et vert dominants, contrastes nets, blancs propres, touches cyan
+Constraints: apparence professionnelle LinkedIn, details techniques credibles, pas de logo, pas de watermark, pas de texte parasite
+Avoid: style cartoon, ambiance sale, tons ternes, flou excessif

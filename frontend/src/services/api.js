@@ -851,23 +851,31 @@ function normalizeIdentificationApiResult(raw, filename) {
     data.nom_exact || data.nom || data.waste_name || data.label || data.object_name || ""
   ).trim()
 
-  const fallbackName = String(filename || "dechet industriel")
+  const fallbackName = String(filename || "dechet solide non identifie")
     .replace(/\.[^.]+$/, "")
     .replace(/[_-]+/g, " ")
-    .trim() || "dechet industriel"
+    .trim() || "dechet solide non identifie"
 
-  const confidenceRaw = Number(data.confiance_identification ?? data.confidence ?? data.score ?? 0)
-  const confidence = Number.isFinite(confidenceRaw) ? Math.max(0, Math.min(100, confidenceRaw)) : 0
+  const confidenceRaw = Number(data.confidence ?? data.confiance_identification ?? data.score ?? 0)
+  const confidencePercent = Number.isFinite(confidenceRaw)
+    ? Math.max(0, Math.min(100, confidenceRaw <= 1 ? confidenceRaw * 100 : confidenceRaw))
+    : 32
+  const confidenceNormalized = Number((confidencePercent / 100).toFixed(2))
+  const status = String(data.status || "").trim() || (confidenceNormalized < 0.5 ? "uncertain" : "identified")
+  const finalName = detectedName || fallbackName || "dechet solide non identifie"
 
   return {
     ...data,
-    nom_exact: detectedName || fallbackName,
-    nom: detectedName || fallbackName,
+    waste_name: finalName,
+    confidence: confidenceNormalized,
+    status,
+    nom_exact: finalName,
+    nom: finalName,
     filiere: String(data.filiere || data.categorie || data.category || "autre"),
     description_estimee: String(data.description_estimee || data.description || data.resume || "").trim(),
     explication: String(data.explication || data.description_estimee || data.description || "").trim(),
-    confiance_identification: confidence || 45,
-    confiance: confidence >= 75 ? "elevee" : confidence >= 55 ? "moyenne" : "faible",
+    confiance_identification: confidencePercent,
+    confiance: confidencePercent >= 75 ? "elevee" : confidencePercent >= 55 ? "moyenne" : "faible",
   }
 }
 export async function identifyWasteFromImage({ imageBase64, mediaType, filename, file }) {

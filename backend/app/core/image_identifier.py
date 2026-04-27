@@ -11,6 +11,7 @@ from app.models.waste import WasteCategory, WasteType
 MAX_IMAGE_SIZE_BYTES = 6 * 1024 * 1024
 ALLOWED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp"}
 BENIN_DB_PATH = Path(__file__).resolve().with_name("waste_benin_database.json")
+UNKNOWN_WASTE_NAME = "dechet solide non identifie"
 
 
 def _normalize(value: str | None) -> str:
@@ -23,6 +24,13 @@ def _normalize(value: str | None) -> str:
 def _safe_int(value: object, default: int = 0) -> int:
     try:
         return int(float(str(value)))
+    except Exception:
+        return default
+
+
+def _safe_float(value: object, default: float = 0.0) -> float:
+    try:
+        return float(str(value))
     except Exception:
         return default
 
@@ -146,81 +154,174 @@ def _confidence_label(score: int) -> str:
     return "faible"
 
 
-def _confidence_message(score: int) -> str:
-    if score < 40:
-        return "Photo difficile a analyser. Conseils: meilleure lumiere, dechet bien centre, fond neutre"
-    if score < 60:
-        return "Dechet identifie avec precision moyenne. Une meilleure photo ameliorerait les resultats"
-    if score <= 80:
-        return "Bonne identification !"
-    return "Identification precise !"
-
-
 def _is_unreadable_signal(parsed: dict) -> bool:
     text = " ".join(
         [
+            str(parsed.get("waste_name") or ""),
             str(parsed.get("nom_exact") or ""),
             str(parsed.get("explication") or ""),
+            str(parsed.get("description_estimee") or ""),
             str(parsed.get("sous_type") or ""),
         ]
     )
     norm = _normalize(text)
-    hints = ["completement noire", "completement noir", "image noire", "illisible", "black image", "unreadable", "aucun objet"]
+    hints = [
+        "completement noire",
+        "completement noir",
+        "image noire",
+        "illisible",
+        "black image",
+        "unreadable",
+        "aucun objet",
+        "non identifiable",
+        "cannot identify",
+    ]
     return any(h in norm for h in hints)
 
 
 def _build_prompt() -> str:
     return (
         "Expert dechets industriels Benin.\n"
-        "Observe la photo et propose le dechet le plus plausible meme en cas d\'incertitude.\n"
-        "Retourne UNIQUEMENT ce JSON:\n"
+        "Observe la photo et propose le dechet le plus plausible meme en cas d'incertitude.\n"
+        "Retourne STRICTEMENT un objet JSON valide (double quotes), sans markdown et sans texte hors JSON.\n"
+        "Le JSON doit contenir exactement: waste_name (string), confidence (number entre 0 et 1), status (identified|uncertain).\n"
+        "Regles: waste_name jamais vide; si rien n'est reconnaissable, utiliser \"dechet solide non identifie\".\n"
+        "Si confidence < 0.5 alors status=\"uncertain\", sinon status=\"identified\".\n"
+        "Tu peux ajouter des champs optionnels utiles (filiere, description_estimee, etc.) mais pas de valeurs null.\n"
+        "Exemple:\n"
         "{\n"
-        "  'nom_exact': '...',\n"
-        "  'filiere': 'textile|plastique|papier|biomasse|metal|autre',\n"
-        "  'description_estimee': '1 a 2 phrases max',\n"
-        "  'confiance': 20-99\n"
+        "  \"waste_name\": \"coque de noix de coco\",\n"
+        "  \"confidence\": 0.62,\n"
+        "  \"status\": \"identified\"\n"
         "}\n"
         "Pas de texte autour du JSON."
     )
 
 
+def _normalize_identification_output(result: dict) -> dict:
+    if not isinstance(result, dict):
+        result = {}
+
+    raw_name = str(
+        result.get("waste_name")
+        or result.get("nom_exact")
+        or result.get("nom")
+        or result.get("label")
+        or ""
+    ).strip()
+    waste_name = raw_name or UNKNOWN_WASTE_NAME
+
+    confidence = _safe_float(result.get("confidence"), default=-1.0)
+    if confidence < 0:
+        if result.get("confiance_identification") is not None:
+            confidence = _safe_float(result.get("confiance_identification"), default=32.0)
+        elif result.get("confiance") is not None:
+            raw_conf = result.get("confiance")
+            if isinstance(raw_conf, str) and raw_conf.lower() in {"elevee", "high"}:
+                confidence = 0.85
+            elif isinstance(raw_conf, str) and raw_conf.lower() in {"moyenne", "medium"}:
+                confidence = 0.65
+            elif isinstance(raw_conf, str) and raw_conf.lower() in {"faible", "low"}:
+                confidence = 0.35
+            else:
+                confidence = _safe_float(raw_conf, default=32.0)
+        else:
+            confidence = 0.32
+
+    if confidence > 1:
+        confidence = confidence / 100.0
+    confidence = max(0.01, min(0.99, confidence))
+
+    if not waste_name or _normalize(waste_name) in {
+        "null",
+        "none",
+        "undefined",
+        "",
+        "inconnu",
+        "unknown",
+        "dechet non identifie",
+        "dechet solide non identifie",
+    }:
+        waste_name = UNKNOWN_WASTE_NAME
+        confidence = min(confidence, 0.49)
+
+    if _is_unreadable_signal(result):
+        confidence = min(confidence, 0.45)
+
+    status = "identified" if confidence >= 0.5 else "uncertain"
+    confidence_identification = int(round(confidence * 100))
+
+    normalized = dict(result)
+    normalized["waste_name"] = waste_name
+    normalized["confidence"] = round(confidence, 2)
+    normalized["status"] = status
+    normalized["nom"] = waste_name
+    normalized["nom_exact"] = waste_name
+    normalized["confiance_identification"] = confidence_identification
+    normalized["confiance"] = _confidence_label(confidence_identification)
+    normalized["description_estimee"] = str(
+        normalized.get("description_estimee")
+        or normalized.get("explication")
+        or "Identification visuelle probable. Merci de confirmer ce nom."
+    ).strip()
+    normalized["avertissement"] = str(
+        normalized.get("avertissement")
+        or "Proposition la plus plausible. Merci de valider ou corriger."
+    ).strip()
+    return normalized
+
+
 def _fallback_from_hypotheses(filename: str | None = None) -> dict:
     hyp = _top_hypotheses(str(filename or ""), limit=3)
-    lead = hyp[0] if hyp else {"nom": "Hypothese non determinee", "confiance": 62, "filiere": "autre"}
-    score = max(60, min(95, _safe_int(lead.get("confiance"), 62)))
+    lead = hyp[0] if hyp else {"nom": UNKNOWN_WASTE_NAME, "confiance": 32, "filiere": "autre"}
+    lead_name = str(lead.get("nom") or "").strip() or UNKNOWN_WASTE_NAME
 
-    return {
-        "nom": str(lead.get("nom") or "Hypothese non determinee"),
-        "nom_exact": str(lead.get("nom") or "Hypothese non determinee"),
-        "filiere": str(lead.get("filiere") or "autre"),
-        "sous_type": "Estimation prealable basee sur la base beninoise",
-        "origine_probable": "A confirmer",
-        "qualite": "moyenne",
-        "valorisation_1": {
-            "methode": "Tri complementaire",
-            "description": "Identifier plus precisement avant valorisation finale.",
-            "valeur_fcfa_tonne": 0,
-        },
-        "valorisation_2": {
-            "methode": "Pre-tri",
-            "description": "Orienter vers un centre de tri pour qualification.",
-            "valeur_fcfa_tonne": 0,
-        },
-        "acheteurs_benin": [],
-        "acheteurs_cedeao": [],
-        "impact_co2_kg": 0,
-        "conseil_stockage": "Conserver sec, prendre une photo plus nette.",
-        "niveau_danger": "faible",
-        "score_valorisation": max(45, score - 8),
-        "confiance_identification": score,
-        "explication": "Reconnaissance prealable basee sur les meilleurs profils disponibles.",
-        "hypotheses": hyp,
-        "categorie": _category_from_filiere(str(lead.get("filiere") or "autre")),
-        "type_dechet": _type_from_filiere(str(lead.get("filiere") or "autre"), str(lead.get("nom") or "")),
-        "confiance": _confidence_label(score),
-        "description_estimee": "Identification visuelle probable. Merci de confirmer ce nom.",
-        "avertissement": "Proposition la plus plausible. Merci de valider ou corriger.",
-    }
+    if _normalize(lead_name) in {"hypothese non determinee", "hypothese inconnue", "inconnu", "unknown"}:
+        lead_name = UNKNOWN_WASTE_NAME
+
+    score = _safe_int(lead.get("confiance"), 32)
+    if lead_name == UNKNOWN_WASTE_NAME:
+        score = max(20, min(49, score if score > 0 else 32))
+    else:
+        score = max(35, min(95, score if score > 0 else 62))
+
+    return _normalize_identification_output(
+        {
+            "nom": lead_name,
+            "nom_exact": lead_name,
+            "filiere": str(lead.get("filiere") or "autre"),
+            "sous_type": "Estimation prealable basee sur la base beninoise",
+            "origine_probable": "A confirmer",
+            "qualite": "moyenne",
+            "valorisation_1": {
+                "methode": "Tri complementaire",
+                "description": "Identifier plus precisement avant valorisation finale.",
+                "valeur_fcfa_tonne": 0,
+            },
+            "valorisation_2": {
+                "methode": "Pre-tri",
+                "description": "Orienter vers un centre de tri pour qualification.",
+                "valeur_fcfa_tonne": 0,
+            },
+            "acheteurs_benin": [],
+            "acheteurs_cedeao": [],
+            "impact_co2_kg": 0,
+            "conseil_stockage": "Conserver sec, prendre une photo plus nette.",
+            "niveau_danger": "faible",
+            "score_valorisation": max(45, score - 8),
+            "confiance_identification": score,
+            "explication": "Reconnaissance prealable basee sur les meilleurs profils disponibles.",
+            "hypotheses": hyp,
+            "categorie": _category_from_filiere(str(lead.get("filiere") or "autre")),
+            "type_dechet": _type_from_filiere(str(lead.get("filiere") or "autre"), lead_name),
+            "confiance": _confidence_label(score),
+            "description_estimee": "Identification visuelle probable. Merci de confirmer ce nom.",
+            "avertissement": "Proposition la plus plausible. Merci de valider ou corriger.",
+            "waste_name": lead_name,
+            "confidence": round(score / 100.0, 2),
+            "status": "identified" if score >= 50 else "uncertain",
+        }
+    )
 
 
 def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str | None = None) -> dict:
@@ -248,7 +349,7 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
     if not parsed:
         return _fallback_from_hypotheses(filename)
 
-    nom_exact = str(parsed.get("nom_exact") or parsed.get("nom") or "").strip()
+    nom_exact = str(parsed.get("waste_name") or parsed.get("nom_exact") or parsed.get("nom") or "").strip()
     filiere = _normalize(parsed.get("filiere"))
     if filiere not in {"textile", "plastique", "papier", "biomasse", "metal", "autre"}:
         filiere = "autre"
@@ -256,37 +357,57 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
     if not nom_exact:
         hyp = _top_hypotheses(str(filename or ""), limit=1)
         if hyp:
-            nom_exact = str(hyp[0].get("nom") or "Hypothese non determinee")
+            nom_exact = str(hyp[0].get("nom") or UNKNOWN_WASTE_NAME)
         else:
-            nom_exact = "Hypothese non determinee"
+            nom_exact = UNKNOWN_WASTE_NAME
 
-    raw_conf = _safe_int(parsed.get("confiance_identification") or parsed.get("confiance"), 65)
+    raw_conf = _safe_float(
+        parsed.get("confidence")
+        if parsed.get("confidence") is not None
+        else (parsed.get("confiance_identification") or parsed.get("confiance")),
+        0.65,
+    )
+
+    if raw_conf > 1:
+        raw_conf = raw_conf / 100.0
+
     if _is_unreadable_signal(parsed):
-        confiance_identification = max(20, min(45, raw_conf if raw_conf < 46 else 40))
+        confidence = max(0.20, min(0.45, raw_conf if raw_conf < 0.46 else 0.40))
     else:
-        confiance_identification = max(20, min(99, raw_conf))
+        confidence = max(0.20, min(0.99, raw_conf))
 
     valorisation = str(parsed.get("valorisation") or "").strip()
     valeur_fcfa = _safe_int(parsed.get("valeur_fcfa"), 0)
-    explication = str(parsed.get("description_estimee") or parsed.get("explication") or "Identification visuelle probable. Merci de confirmer ce nom.").strip()
+    explication = str(
+        parsed.get("description_estimee")
+        or parsed.get("explication")
+        or "Identification visuelle probable. Merci de confirmer ce nom."
+    ).strip()
     phrases = [p.strip() for p in re.split(r"(?<=[.!?])\\s+", explication) if p.strip()]
     explication = " ".join(phrases[:2])[:260] if phrases else "Identification visuelle probable. Merci de confirmer ce nom."
 
     hypotheses = _top_hypotheses(" ".join([nom_exact, str(filename or "")]), limit=3)
 
     result = {
+        "waste_name": nom_exact,
+        "confidence": round(confidence, 2),
+        "status": "identified" if confidence >= 0.5 else "uncertain",
         "nom": nom_exact,
         "nom_exact": nom_exact,
         "filiere": filiere,
         "sous_type": str(parsed.get("sous_type") or "").strip(),
         "origine_probable": str(parsed.get("origine_probable") or "").strip(),
         "qualite": str(parsed.get("qualite") or "moyenne").strip().lower() or "moyenne",
-        "valorisation_1": parsed.get("valorisation_1") if isinstance(parsed.get("valorisation_1"), dict) else {
+        "valorisation_1": parsed.get("valorisation_1")
+        if isinstance(parsed.get("valorisation_1"), dict)
+        else {
             "methode": valorisation or "Tri et valorisation",
             "description": explication,
             "valeur_fcfa_tonne": valeur_fcfa,
         },
-        "valorisation_2": parsed.get("valorisation_2") if isinstance(parsed.get("valorisation_2"), dict) else {
+        "valorisation_2": parsed.get("valorisation_2")
+        if isinstance(parsed.get("valorisation_2"), dict)
+        else {
             "methode": "Alternative locale",
             "description": "Orienter vers un repreneur secondaire.",
             "valeur_fcfa_tonne": 0,
@@ -297,12 +418,12 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
         "conseil_stockage": str(parsed.get("conseil") or parsed.get("conseil_stockage") or "Stocker dans un espace sec et ventile.").strip(),
         "niveau_danger": str(parsed.get("niveau_danger") or "faible").strip().lower(),
         "score_valorisation": max(0, min(100, _safe_int(parsed.get("score_valorisation"), 65))),
-        "confiance_identification": confiance_identification,
+        "confiance_identification": int(round(confidence * 100)),
         "explication": explication,
         "hypotheses": hypotheses,
         "categorie": _category_from_filiere(filiere),
         "type_dechet": _type_from_filiere(filiere, nom_exact),
-        "confiance": _confidence_label(confiance_identification),
+        "confiance": _confidence_label(int(round(confidence * 100))),
         "description_estimee": explication,
         "avertissement": "Proposition la plus plausible. Merci de valider ou corriger.",
     }
@@ -310,9 +431,4 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
     if not result["hypotheses"]:
         result["hypotheses"] = _top_hypotheses(nom_exact, limit=3)
 
-    return result
-
-
-
-
-
+    return _normalize_identification_output(result)
