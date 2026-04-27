@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import re
 import unicodedata
@@ -144,6 +144,59 @@ def _pct(description: str | None, keywords: list[str]) -> float | None:
     m = re.search(r"(\d{1,3}(?:[\.,]\d+)?)\s*%", t)
     return float(m.group(1).replace(",", ".")) if m else None
 
+
+
+_ABATTOIR_KEYWORDS = [
+    "abattoir",
+    "abattage",
+    "dechet abattoir",
+    "dechets d abattoir",
+    "effluent abattoir",
+    "sang animal",
+    "sang d abattage",
+    "residus animaux",
+    "tripes",
+    "panse",
+    "rumen",
+    "visceres",
+    "graisse animale",
+    "sous produit animal",
+]
+
+
+def _is_abattoir_waste(waste: WasteInput) -> bool:
+    text = " ".join([
+        _n(waste.nom),
+        _n(waste.description),
+        _n(waste.produit_principal),
+        _n(waste.origine_flux),
+    ])
+    return any(k in text for k in _ABATTOIR_KEYWORDS)
+
+
+def _infer_effective_profile(waste: WasteInput) -> tuple[WasteInput, WasteType, list[str]]:
+    assumptions: list[str] = []
+
+    if _is_abattoir_waste(waste):
+        effective = waste.model_copy(
+            update={
+                "categorie": WasteCategory.ORGANIC,
+                "type_dechet": WasteType.BOUE_DE_VIDANGE,
+                "description": ((waste.description or "") + " Flux abattoir a dominante organique, oriente methanisation biogaz.").strip(),
+            }
+        )
+        assumptions.append("Profil corrige via nom/description: dechet d'abattoir traite comme flux organique pour methanisation biogaz.")
+        return effective, WasteType.BOUE_DE_VIDANGE, assumptions
+
+    inferred_type = _infer_type(waste)
+    inferred_category = waste.categorie
+
+    if inferred_type in {WasteType.BOUE_DE_VIDANGE, WasteType.BIOMASSE_LIGNOCELLULOSIQUE} and waste.categorie in {WasteCategory.PLASTIC, WasteCategory.OTHER}:
+        inferred_category = WasteCategory.ORGANIC
+        assumptions.append("Categorie ajustee depuis le nom/description utilisateur (profil organique detecte).")
+
+    effective = waste.model_copy(update={"categorie": inferred_category, "type_dechet": inferred_type})
+    return effective, inferred_type, assumptions
 
 def _infer_type(waste: WasteInput) -> WasteType:
     if waste.type_dechet != WasteType.OTHER:
@@ -613,23 +666,25 @@ def _llm_enrichment(waste: WasteInput) -> str | None:
 
 
 def analyser_dechet(waste: WasteInput) -> DecisionResult:
-    wt = _infer_type(waste)
-    litterature_defaults, litterature_source, litterature_id, litterature_refs, _ = infer_literature_defaults(waste.nom, waste.description)
+    effective_waste, wt, profile_assumptions = _infer_effective_profile(waste)
+    litterature_defaults, litterature_source, litterature_id, litterature_refs, _ = infer_literature_defaults(effective_waste.nom, effective_waste.description)
 
-    metrics, assumptions, missing_critical = _metrics(waste, wt)
+    metrics, assumptions, missing_critical = _metrics(effective_waste, wt)
+    if profile_assumptions:
+        assumptions.extend(profile_assumptions)
     refs_appliquees: dict[str, float | str] = {}
     for f in ["pci_mj_kg", "taux_lignine_pct", "dbo_mg_l", "dco_mg_l"]:
-        if getattr(waste, f, None) is None and litterature_defaults.get(f) is not None:
+        if getattr(effective_waste, f, None) is None and litterature_defaults.get(f) is not None:
             metrics[f] = float(litterature_defaults[f])
             refs_appliquees[f] = metrics[f]
 
-    candidates, warnings = _build_candidates(waste, wt, metrics)
-    ml_explain = explain_ml_adjustments(waste, lookback_limit=1200)
+    candidates, warnings = _build_candidates(effective_waste, wt, metrics)
+    ml_explain = explain_ml_adjustments(effective_waste, lookback_limit=1200)
     combined_deltas = ml_explain.get("combined_deltas", {}) if isinstance(ml_explain, dict) else {}
-    evald = _evaluate(waste, candidates, waste.pays_cedeao or "Benin", metrics, score_adjustments=combined_deltas)
+    evald = _evaluate(effective_waste, candidates, effective_waste.pays_cedeao or "Benin", metrics, score_adjustments=combined_deltas)
 
     labels = {"reemploi": DECISION_REEMPLOI, "matiere": DECISION_MATIERE, "energetique": DECISION_ENERGIE, "vente": DECISION_VENTE}
-    blocked, regulatory, reg_refs = evaluate_regulatory_compliance(waste, wt.value, labels)
+    blocked, regulatory, reg_refs = evaluate_regulatory_compliance(effective_waste, wt.value, labels)
     evald = _apply_regulatory_priority(evald, blocked, regulatory, labels, reg_refs)
 
     chosen, hierarchy_reasons = _select(evald)
@@ -654,7 +709,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     for fr in (regulatory.get("filiere_restrictions") or []):
         warnings.append(str(fr))
 
-    llm_text = _llm_enrichment(waste)
+    llm_text = _llm_enrichment(effective_waste)
     if not llm_text:
         warnings.append("Enrichissement IA indisponible (cle/API absente ou inaccessible).")
 
@@ -756,27 +811,27 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     )
 
 def explain_ml_adjustments(waste: WasteInput, lookback_limit: int = 1200) -> dict[str, Any]:
-    wt = _infer_type(waste)
+    effective_waste, wt, _ = _infer_effective_profile(waste)
     decision_labels = [DECISION_REEMPLOI, DECISION_MATIERE, DECISION_ENERGIE, DECISION_VENTE]
 
     learning = get_learning_adjustments(
         waste_type=wt.value,
-        country=waste.pays_cedeao,
+        country=effective_waste.pays_cedeao,
         decision_labels=decision_labels,
     )
 
     ml = get_ml_score_adjustments(
         waste_type=wt.value,
-        country=waste.pays_cedeao,
-        quantity_kg=float(waste.quantite_kg),
+        country=effective_waste.pays_cedeao,
+        quantity_kg=float(effective_waste.quantite_kg),
         decision_labels=decision_labels,
         lookback_limit=max(50, min(5000, int(lookback_limit))),
     )
 
     return {
         "waste_type_effectif": wt.value,
-        "country": waste.pays_cedeao,
-        "quantity_kg": float(waste.quantite_kg),
+        "country": effective_waste.pays_cedeao,
+        "quantity_kg": float(effective_waste.quantite_kg),
         "decision_labels": decision_labels,
         "learning_adjustments": learning,
         "ml_adjustments": ml,
@@ -785,6 +840,17 @@ def explain_ml_adjustments(waste: WasteInput, lookback_limit: int = 1200) -> dic
             for label in decision_labels
         },
     }
+
+
+
+
+
+
+
+
+
+
+
 
 
 

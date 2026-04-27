@@ -1,4 +1,4 @@
-from enum import Enum
+﻿from enum import Enum
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -88,6 +88,11 @@ class WasteImageIdentificationResult(BaseModel):
     waste_name: str
     confidence: float
     status: Literal["identified", "uncertain"]
+    name: Optional[str] = None
+    guess: Optional[str] = None
+    description: Optional[str] = None
+    technical_description: Optional[str] = None
+    ux_message: Optional[str] = None
     nom: str
     categorie: WasteCategory
     type_dechet: WasteType
@@ -145,3 +150,7 @@ class DecisionResult(BaseModel):
     avertissements: Optional[str] = None
     donnees_manquantes_critiques: list[str] = Field(default_factory=list)
     hypotheses_utilisees: list[str] = Field(default_factory=list)
+
+
+
+

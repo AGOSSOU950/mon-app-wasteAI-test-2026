@@ -1,4 +1,4 @@
-import axios from "axios"
+﻿import axios from "axios"
 import regulatoryProfiles from "../data/regulatory_profiles.json"
 
 const API_URL = import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev"
@@ -339,7 +339,13 @@ function toDecisionDisplayLabel(rawDecision) {
 function guessCategory(payload) {
   const category = normalizeText(payload?.categorie)
   const type = normalizeText(payload?.type_dechet)
-  const merged = `${category} ${type}`
+  const name = normalizeText(payload?.nom)
+  const desc = normalizeText(payload?.description)
+  const flow = normalizeText(payload?.origine_flux)
+  const merged = `${category} ${type} ${name} ${desc} ${flow}`
+
+  const abattoirHint = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal"].some((k) => merged.includes(k))
+  if (abattoirHint) return "biomasse"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
   if (merged.includes("textile") || merged.includes("fibre")) return "textile"
@@ -347,7 +353,7 @@ function guessCategory(payload) {
   if (merged.includes("plast")) return "plastique"
   if (merged.includes("verre")) return "verre"
   if (merged.includes("e waste") || merged.includes("ewaste") || merged.includes("electron") || merged.includes("batter")) return "e_waste"
-  if (merged.includes("biom") || merged.includes("organ") || merged.includes("bois") || merged.includes("lignine")) return "biomasse"
+  if (merged.includes("biom") || merged.includes("organ") || merged.includes("bois") || merged.includes("lignine") || merged.includes("dechet animal")) return "biomasse"
   if (merged.includes("huile") || merged.includes("solvant") || merged.includes("chim") || merged.includes("boue")) return "chimique"
   return "autre"
 }
@@ -857,23 +863,50 @@ function normalizeIdentificationApiResult(raw, filename) {
     .trim() || "dechet solide non identifie"
 
   const confidenceRaw = Number(data.confidence ?? data.confiance_identification ?? data.score ?? 0)
-  const confidencePercent = Number.isFinite(confidenceRaw)
+  let confidencePercent = Number.isFinite(confidenceRaw)
     ? Math.max(0, Math.min(100, confidenceRaw <= 1 ? confidenceRaw * 100 : confidenceRaw))
     : 32
+  if (confidencePercent <= 0) confidencePercent = 32
+
   const confidenceNormalized = Number((confidencePercent / 100).toFixed(2))
   const status = String(data.status || "").trim() || (confidenceNormalized < 0.5 ? "uncertain" : "identified")
-  const finalName = detectedName || fallbackName || "dechet solide non identifie"
+
+  const filiere = String(data.filiere || data.categorie || data.category || "autre")
+  let finalName = detectedName || fallbackName || "dechet solide non identifie"
+  let guess = String(data.guess || "").trim()
+  let description = String(data.description_estimee || data.description || data.explication || data.resume || "").trim()
+  const technicalDescription = String(data.technical_description || "").trim()
+
+  if (confidencePercent < 30) {
+    if (!detectedName || /dechet solide non identifie/i.test(finalName)) {
+      finalName = "Type de dechet probable inconnu"
+    }
+    guess = guess || `${filiere} (approximation)`
+    description = description || `L'image est difficile a analyser. Base sur la texture et la couleur, ce dechet pourrait appartenir a la categorie ${filiere}.`
+  }
+
+  if (!description && technicalDescription) {
+    description = technicalDescription
+  }
+  if (!description) {
+    description = "Identification visuelle probable. Merci de confirmer ce nom."
+  }
 
   return {
     ...data,
+    name: String(data.name || finalName),
+    guess,
+    description,
+    technical_description: technicalDescription,
+    ux_message: String(data.ux_message || (confidencePercent < 40 ? "Image difficile a analyser. Essayez une photo plus nette ou rapprochee." : "")),
     waste_name: finalName,
     confidence: confidenceNormalized,
     status,
     nom_exact: finalName,
     nom: finalName,
-    filiere: String(data.filiere || data.categorie || data.category || "autre"),
-    description_estimee: String(data.description_estimee || data.description || data.resume || "").trim(),
-    explication: String(data.explication || data.description_estimee || data.description || "").trim(),
+    filiere,
+    description_estimee: description,
+    explication: String(data.explication || description).trim(),
     confiance_identification: confidencePercent,
     confiance: confidencePercent >= 75 ? "elevee" : confidencePercent >= 55 ? "moyenne" : "faible",
   }
@@ -971,3 +1004,5 @@ export async function submitIdentificationCorrection(payload) {
   })
   return response.data || { status: "ok" }
 }
+
+

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
@@ -108,7 +108,9 @@ async function compressImage(file) {
 
         canvas.width = Math.max(1, Math.round(width))
         canvas.height = Math.max(1, Math.round(height))
+        ctx.filter = "contrast(1.12) brightness(1.05)"
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+        ctx.filter = "none"
 
         canvas.toBlob((blob) => {
           URL.revokeObjectURL(objectUrl)
@@ -725,6 +727,9 @@ export default function App() {
     </main>
   )
 }
+
+
+
 
 
 

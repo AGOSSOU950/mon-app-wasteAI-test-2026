@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import json
 import base64
 import io
@@ -146,6 +146,11 @@ def identify_image_waste(payload: WasteImageIdentificationInput):
         waste_name=str(identified.get("waste_name") or identified.get("nom_exact") or identified.get("nom") or "dechet solide non identifie"),
         confidence=float(identified.get("confidence") or (float(identified.get("confiance_identification") or 32) / 100.0)),
         status=str(identified.get("status") or ("identified" if float(identified.get("confidence") or 0) >= 0.5 else "uncertain")),
+        name=identified.get("name"),
+        guess=identified.get("guess"),
+        description=identified.get("description"),
+        technical_description=identified.get("technical_description"),
+        ux_message=identified.get("ux_message"),
         nom=str(identified.get("nom") or identified.get("waste_name") or "dechet solide non identifie"),
         categorie=identified.get("categorie", "autre"),
         type_dechet=identified.get("type_dechet", "autre"),
@@ -359,3 +364,7 @@ def get_benin_waste_database():
         "version": "fallback",
         "wastes": [],
     }
+
+
+
+

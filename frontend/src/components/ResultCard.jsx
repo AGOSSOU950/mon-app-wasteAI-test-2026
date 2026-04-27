@@ -22,7 +22,7 @@ function confidenceStatus(confidence) {
   if (c < 40) {
     return {
       label: "Identification faible",
-      message: "Photo difficile a analyser. Essayez une image plus nette.",
+      message: "Image difficile a analyser. Essayez une photo plus nette ou rapprochee.",
       warn: true,
     }
   }
@@ -254,3 +254,4 @@ export default function ResultCard({
     </section>
   )
 }
+
