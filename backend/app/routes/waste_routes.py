@@ -1,9 +1,12 @@
-﻿from pathlib import Path
+from pathlib import Path
 import json
 import base64
 import io
 import os
 import logging
+import re
+import urllib.parse
+import urllib.request
 
 from fastapi import APIRouter, Header, HTTPException, Query
 from fastapi.responses import StreamingResponse
@@ -118,20 +121,78 @@ def email_analytics_report(payload: ReportEmailRequest):
     return {"status": "ok", "message": f"Rapport envoye a {payload.email}"}
 
 
-@router.post("/identify-image", response_model=WasteImageIdentificationResult)
-def identify_image_waste(payload: WasteImageIdentificationInput):
-    media_type = payload.media_type
-    if not media_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Media type invalide: image requise.")
 
-    raw_data = payload.image_base64
-    if "," in raw_data:
-        raw_data = raw_data.split(",", 1)[1]
+def _is_http_image_url(value: str | None) -> bool:
+    if not value:
+        return False
+    parsed = urllib.parse.urlparse(value.strip())
+    return parsed.scheme in {"http", "https"} and bool(parsed.netloc)
+
+
+def _decode_identification_image(payload: WasteImageIdentificationInput) -> tuple[bytes, str]:
+    image_value = str(payload.image_base64 or "").strip()
+    image_url = str(payload.image_url or "").strip()
+    media_type = str(payload.media_type or "").strip().lower()
+
+    logger.info(
+        "Image recue: has_base64=%s has_url=%s media_type=%s chars=%s",
+        bool(image_value),
+        bool(image_url),
+        media_type or "",
+        len(image_value),
+    )
+
+    if not image_url and _is_http_image_url(image_value):
+        image_url = image_value
+        image_value = ""
+
+    if image_url:
+        if not _is_http_image_url(image_url):
+            raise HTTPException(status_code=400, detail="Aucune image valide re\u00e7ue")
+        try:
+            request = urllib.request.Request(
+                image_url,
+                headers={"User-Agent": "WasteAI/1.0"},
+                method="GET",
+            )
+            with urllib.request.urlopen(request, timeout=15) as response:
+                content = response.read()
+                fetched_type = str(response.headers.get("Content-Type") or "").split(";", 1)[0].strip().lower()
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail="Aucune image valide re\u00e7ue") from exc
+
+        resolved_media_type = fetched_type if fetched_type.startswith("image/") else (media_type or "image/jpeg")
+        if not resolved_media_type.startswith("image/") or not content:
+            raise HTTPException(status_code=400, detail="Aucune image valide re\u00e7ue")
+        return content, resolved_media_type
+
+    if not image_value:
+        raise HTTPException(status_code=400, detail="Aucune image valide re\u00e7ue")
+
+    data_uri = re.match(r"^data:(image/[a-zA-Z0-9.+-]+);base64,(.+)$", image_value, re.DOTALL)
+    if data_uri:
+        media_type = data_uri.group(1).strip().lower()
+        raw_data = data_uri.group(2).strip()
+    else:
+        raw_data = image_value.split(",", 1)[1].strip() if image_value.lower().startswith("data:") and "," in image_value else image_value
+
+    if not media_type or not media_type.startswith("image/"):
+        media_type = "image/jpeg"
 
     try:
         content = base64.b64decode(raw_data, validate=True)
     except Exception as exc:
-        raise HTTPException(status_code=400, detail="Image base64 invalide.") from exc
+        raise HTTPException(status_code=400, detail="Aucune image valide re\u00e7ue") from exc
+
+    if not content:
+        raise HTTPException(status_code=400, detail="Aucune image valide re\u00e7ue")
+
+    return content, media_type
+
+
+@router.post("/identify-image", response_model=WasteImageIdentificationResult)
+def identify_image_waste(payload: WasteImageIdentificationInput):
+    content, media_type = _decode_identification_image(payload)
 
     try:
         identified = identify_waste_from_image(
@@ -142,10 +203,19 @@ def identify_image_waste(payload: WasteImageIdentificationInput):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
+    confidence_value = identified.get("confidence")
+    if confidence_value is None:
+        confidence_value = float(identified.get("confiance_identification") or 32) / 100.0
+    confidence = float(confidence_value)
+
+    status_value = identified.get("status")
+    if not status_value:
+        status_value = "identified" if confidence >= 0.5 else "uncertain"
+
     return WasteImageIdentificationResult(
         waste_name=str(identified.get("waste_name") or identified.get("nom_exact") or identified.get("nom") or "dechet solide non identifie"),
-        confidence=float(identified.get("confidence") or (float(identified.get("confiance_identification") or 32) / 100.0)),
-        status=str(identified.get("status") or ("identified" if float(identified.get("confidence") or 0) >= 0.5 else "uncertain")),
+        confidence=confidence,
+        status=str(status_value),
         name=identified.get("name"),
         guess=identified.get("guess"),
         description=identified.get("description"),
@@ -174,8 +244,6 @@ def identify_image_waste(payload: WasteImageIdentificationInput):
         explication=identified.get("explication"),
         hypotheses=identified.get("hypotheses") if isinstance(identified.get("hypotheses"), list) else [],
     )
-
-
 
 @router.post("/identify-image/corrections")
 def save_identification_correction(payload: IdentificationCorrectionRequest):

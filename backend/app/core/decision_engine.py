@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 import re
 import unicodedata
@@ -34,6 +34,8 @@ LOCAL_MARKET = {
     "reemploi_textile": 90000,
     "effilochage_textile": 115000,
     "methanisation_biogaz": 155000,
+    "biodiesel_combustible": 185000,
+    "farines_animales_engrais": 140000,
     "combustion_gazeification": 135000,
     "co_incineration_cimenterie": 80000,
     "compostage": 50000,
@@ -52,6 +54,8 @@ TREATMENT_COST = {
     "reemploi_textile": 35000,
     "effilochage_textile": 60000,
     "methanisation_biogaz": 90000,
+    "biodiesel_combustible": 115000,
+    "farines_animales_engrais": 95000,
     "combustion_gazeification": 100000,
     "co_incineration_cimenterie": 95000,
     "compostage": 40000,
@@ -70,6 +74,8 @@ CO2_AVOIDED = {
     "reemploi_textile": 300,
     "effilochage_textile": 260,
     "methanisation_biogaz": 360,
+    "biodiesel_combustible": 290,
+    "farines_animales_engrais": 180,
     "combustion_gazeification": 180,
     "co_incineration_cimenterie": 140,
     "compostage": 110,
@@ -88,6 +94,8 @@ SOCIAL = {
     "reemploi_textile": 80,
     "effilochage_textile": 74,
     "methanisation_biogaz": 69,
+    "biodiesel_combustible": 58,
+    "farines_animales_engrais": 62,
     "combustion_gazeification": 54,
     "co_incineration_cimenterie": 45,
     "compostage": 68,
@@ -106,6 +114,8 @@ AVAIL_BENIN = {
     "reemploi_textile": 6,
     "effilochage_textile": 5,
     "methanisation_biogaz": 6,
+    "biodiesel_combustible": 3,
+    "farines_animales_engrais": 4,
     "compostage": 8,
     "epandage_agricole": 6,
     "co_incineration_cimenterie": 3,
@@ -279,6 +289,228 @@ def _apply_combustion_safety_constraints(candidates: list[dict[str, Any]], w: Wa
     if blocked_any:
         warnings.append(reason)
 
+
+def _humidity_level_from_siccite(siccite_pct: float) -> str:
+    if siccite_pct < 25:
+        return "eleve"
+    if siccite_pct < 55:
+        return "moyen"
+    return "faible"
+
+
+def _state_from_waste(w: WasteInput, wt: WasteType, metrics: dict[str, float]) -> str:
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.origine_flux)])
+    if any(k in txt for k in ["effluent", "liquide", "boue", "sludge", "sang"]):
+        return "liquide"
+    if wt == WasteType.BOUE_DE_VIDANGE:
+        return "semi-solide" if float(metrics.get("siccite_pct", 0.0) or 0.0) > 20 else "liquide"
+    return "solide"
+
+
+
+def _probable_family_and_subtype_from_text(w: WasteInput) -> tuple[str, str]:
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal), _n(w.origine_flux)])
+
+    if any(k in txt for k in ["abattoir", "abattage", "viscere", "tripe", "sang", "animal", "carcasse"]):
+        return "abattoir", "biomasse animale"
+    if any(k in txt for k in ["alimentaire", "reste alimentaire", "dechet alimentaire", "agroalimentaire", "organique"]):
+        return "agricole", "dechet alimentaire organique"
+    if any(k in txt for k in ["plastique", "pet", "pehd", "pvc", "poly", "sachet", "film"]):
+        return "plastique", "polymere synthetique"
+    if any(k in txt for k in ["bois", "sciure", "copeaux", "bagasse", "lignine", "cellulose"]):
+        return "agricole", "biomasse lignocellulosique"
+    if any(k in txt for k in ["metal", "fer", "acier", "alu", "ferraille"]):
+        return "industriel", "dechet metallique"
+
+    return "industriel", "biomasse mixte probable"
+
+
+def _is_composition_estimated(w: WasteInput, wt: WasteType) -> bool:
+    if wt == WasteType.BOUE_DE_VIDANGE:
+        return w.dbo_mg_l is None or w.dco_mg_l is None
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        return w.pci_mj_kg is None or w.taux_lignine_pct is None
+    if wt in {WasteType.PLASTIQUE, WasteType.TEXTILE, WasteType.HUILE_USAGEE}:
+        return w.pci_mj_kg is None
+    if wt == WasteType.OTHER:
+        return True
+    return any(v is None for v in [w.pci_mj_kg, w.taux_lignine_pct, w.dbo_mg_l, w.dco_mg_l])
+def _waste_family_label(w: WasteInput, wt: WasteType) -> str:
+    if _is_abattoir_waste(w):
+        return "abattoir"
+    if wt == WasteType.PLASTIQUE:
+        return "plastique"
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        return "agricole"
+    if w.categorie == WasteCategory.METAL:
+        return "industriel"
+    if w.categorie == WasteCategory.CHEMICAL:
+        return "industriel"
+    if wt == WasteType.BOUE_DE_VIDANGE:
+        return "industriel"
+    if wt == WasteType.OTHER:
+        probable_family, _ = _probable_family_and_subtype_from_text(w)
+        return probable_family
+    return "industriel"
+
+
+def _waste_subtype_label(w: WasteInput, wt: WasteType) -> str:
+    if _is_abattoir_waste(w):
+        return "biomasse animale"
+    if wt == WasteType.OTHER:
+        _, probable_subtype = _probable_family_and_subtype_from_text(w)
+        return probable_subtype
+    mapping = {
+        WasteType.BIOMASSE_LIGNOCELLULOSIQUE: "biomasse lignocellulosique",
+        WasteType.BOUE_DE_VIDANGE: "matiere organique humide",
+        WasteType.HUILE_USAGEE: "fraction lipidique",
+        WasteType.TEXTILE: "fibre polymerique",
+        WasteType.PLASTIQUE: "polymere thermoplastique",
+        WasteType.OTHER: "biomasse mixte probable",
+    }
+    return mapping.get(wt, "biomasse mixte probable")
+
+
+def _is_lipid_rich(w: WasteInput, wt: WasteType) -> bool:
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal)])
+    if any(k in txt for k in ["graisse", "lipide", "suif", "gras", "huile"]):
+        return True
+    return wt == WasteType.HUILE_USAGEE or _is_abattoir_waste(w)
+
+
+def _is_animal_protein_rich(w: WasteInput) -> bool:
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal), _n(w.origine_flux)])
+    return any(k in txt for k in ["abattoir", "animal", "viscere", "tripe", "sang", "carcasse", "proteine"])
+
+
+def _estimate_composition_labels(w: WasteInput, wt: WasteType, metrics: dict[str, float]) -> list[str]:
+    comp: list[str] = []
+    humidity = _humidity_level_from_siccite(float(metrics.get("siccite_pct", 0.0) or 0.0))
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal), _n(w.origine_flux)])
+
+    if _is_abattoir_waste(w):
+        comp.extend([
+            "matiere organique elevee",
+            "proteines animales",
+            "lipides animaux",
+            "humidite elevee",
+            "mineraux traces",
+        ])
+        return comp
+
+    if any(k in txt for k in ["dechet alimentaire", "alimentaire", "reste alimentaire", "agroalimentaire"]):
+        comp.extend(["glucides", "matiere organique"])
+
+    if any(k in txt for k in ["bois", "sciure", "copeaux", "bagasse", "lignine", "cellulose"]):
+        comp.extend(["cellulose", "lignine"])
+
+    if any(k in txt for k in ["plastique", "pet", "pehd", "pvc", "poly"]):
+        comp.append("polymeres synthetiques")
+
+    if wt in {WasteType.BIOMASSE_LIGNOCELLULOSIQUE, WasteType.BOUE_DE_VIDANGE}:
+        comp.append("matiere organique")
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        comp.append("cellulose/lignine")
+    if wt == WasteType.HUILE_USAGEE:
+        comp.append("lipides/hydrocarbures")
+    if wt == WasteType.PLASTIQUE:
+        comp.append("polymeres")
+    if w.categorie == WasteCategory.METAL:
+        comp.append("mineraux/metaux")
+    if wt == WasteType.BOUE_DE_VIDANGE and float(metrics.get("dbo_mg_l", 0.0) or 0.0) > 800:
+        comp.append("fraction biodegradable elevee")
+
+    if wt == WasteType.OTHER and not comp:
+        _, probable_subtype = _probable_family_and_subtype_from_text(w)
+        if probable_subtype == "biomasse mixte probable":
+            comp.append("biomasse mixte probable")
+        elif "polymere" in probable_subtype:
+            comp.append("polymeres synthetiques")
+        elif "lignocellulosique" in probable_subtype:
+            comp.extend(["cellulose", "lignine"])
+        elif "alimentaire" in probable_subtype:
+            comp.extend(["glucides", "matiere organique"])
+
+    comp.append(f"humidite {humidity}")
+    return list(dict.fromkeys(comp))
+
+
+def _priority_from_filiere(filiere: str) -> str:
+    high = {"methanisation_biogaz", "biodiesel_combustible", "regeneration_huiles", "refonte_metaux", "recyclage_mecanique_plastique", "charbon_actif", "recyclage_papetier", "pyrolyse_plastique", "farines_animales_engrais"}
+    medium = {"compostage", "epandage_agricole", "effilochage_textile", "reemploi_textile", "reemploi_pieces_metalliques", "reemploi_plastique", "reemploi_carton_emballage"}
+    if filiere in high:
+        return "haute"
+    if filiere in medium:
+        return "moyenne"
+    return "basse"
+
+
+def _build_expert_valorization_profile(w: WasteInput, wt: WasteType, metrics: dict[str, float], evald: list[dict[str, Any]], regulatory: dict[str, Any]) -> dict[str, Any]:
+    waste_type = _waste_family_label(w, wt)
+    subtype = _waste_subtype_label(w, wt)
+    humidity = _humidity_level_from_siccite(float(metrics.get("siccite_pct", 0.0) or 0.0))
+    state = _state_from_waste(w, wt, metrics)
+    composition = _estimate_composition_labels(w, wt, metrics)
+    composition_estimee = _is_composition_estimated(w, wt)
+
+    ranked = sorted([x for x in evald if x.get("feasible", True)], key=lambda z: float(z.get("global_score", 0.0)), reverse=True)
+    valorisations: list[dict[str, str]] = []
+
+    def add_valo(name: str, priority: str, justification: str) -> None:
+        if any(v["nom"] == name for v in valorisations):
+            return
+        valorisations.append({"nom": name, "priorite": priority, "justification": justification})
+
+    if _is_abattoir_waste(w):
+        add_valo("methanisation_biogaz", "haute", "Matiere organique humide elevee: production de biogaz et digestat stabilise, voie robuste en contexte CEDEAO.")
+        if _is_lipid_rich(w, wt):
+            add_valo("biodiesel_combustible", "haute", "Fraction lipidique valorisable en esters energetiques apres pretraitement.")
+        add_valo("farines_animales_engrais", "moyenne", "Proteines animales valorisables sous contraintes sanitaires strictes et conformite reglementaire locale.")
+        add_valo("compostage", "moyenne", "Option biologique complementaire apres hygienisation/pretraitement.")
+        if w.niveau_danger in {"faible", "moyen"}:
+            add_valo("epandage_agricole", "moyenne", "Applicable uniquement apres controle microbiologique et autorisation locale.")
+
+    for item in ranked:
+        filiere = str(item.get("filiere") or "")
+        if not filiere:
+            continue
+        add_valo(filiere, _priority_from_filiere(filiere), str(item.get("technical_reason") or "Justification technique multicritere."))
+        if len(valorisations) >= 5:
+            break
+
+    if not any(v["priorite"] == "haute" for v in valorisations):
+        for item in ranked:
+            filiere = str(item.get("filiere") or "")
+            if filiere and filiere != DECISION_ELIMINATION:
+                existing = next((v for v in valorisations if v["nom"] == filiere), None)
+                if existing:
+                    existing["priorite"] = "haute"
+                    existing["justification"] = "Meilleure option a forte valeur retenue par scoring technico-economique."
+                else:
+                    add_valo(filiere, "haute", "Meilleure option a forte valeur retenue par scoring technico-economique.")
+                break
+
+    add_valo(DECISION_ELIMINATION, "basse", "Voie de securite obligatoire en cas de non-conformite sanitaire/reglementaire des autres filieres.")
+
+    contraintes = [
+        "sanitaire: pretraitement/hygienisation requis pour flux animaux ou putrescibles",
+        "reglementation: conformite CEDEAO/Bamako et autorisations locales obligatoires",
+        "technique: tri, controle qualite et caracterisation physico-chimique avant orientation finale",
+    ]
+    if str(regulatory.get("status") or "") == "non_conforme":
+        contraintes.append("reglementation: certaines voies sont bloquees tant que la non-conformite persiste")
+
+    return {
+        "type": waste_type,
+        "categorie": subtype,
+        "etat": state,
+        "humidite": humidity,
+        "composition": composition,
+        "composition_estimee": composition_estimee,
+        "mention_composition": "Les données de composition sont estimées automatiquement" if composition_estimee else "",
+        "valorisations": valorisations,
+        "contraintes": contraintes,
+    }
 def _metrics(w: WasteInput, wt: WasteType) -> tuple[dict[str, float], list[str], list[str]]:
     defaults = TYPICAL.get(wt.value, TYPICAL[WasteType.OTHER.value])
     assumptions: list[str] = []
@@ -360,8 +592,13 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
             _cand("co_incineration_cimenterie", "energie", 72 if m["pci_mj_kg"] > 15 else 45, f"PCI={m['pci_mj_kg']:.1f} MJ/kg, co-incineration conditionnelle.", ["filiere cimenterie", "controle chlore"], feasible=(m["pci_mj_kg"] > 15 and (not _is_pvc(w) or bool(w.filiere_cimenterie_autorisee))), blocked="PCI<15 ou filiere cimenterie non autorisee pour flux chlore" if not (m["pci_mj_kg"] > 15 and (not _is_pvc(w) or bool(w.filiere_cimenterie_autorisee))) else None),
         ]
     elif wt == WasteType.BOUE_DE_VIDANGE:
+        is_abattoir = _is_abattoir_waste(w)
+        lipid_rich = _is_lipid_rich(w, wt)
+        protein_rich = _is_animal_protein_rich(w)
         c += [
-            _cand("methanisation_biogaz", "energie", 88 if m["dbo_mg_l"] > 1000 else 60, f"DBO={m['dbo_mg_l']:.0f} mg/L, DCO={m['dco_mg_l']:.0f} mg/L.", ["digesteur", "epuration biogaz"], feasible=(m["dbo_mg_l"] > 500), blocked="Charge organique insuffisante" if m["dbo_mg_l"] <= 500 else None),
+            _cand("methanisation_biogaz", "energie", 92 if (is_abattoir or m["dbo_mg_l"] > 1000) else 60, f"DBO={m['dbo_mg_l']:.0f} mg/L, DCO={m['dco_mg_l']:.0f} mg/L.", ["digesteur", "epuration biogaz", "hygienisation des intrants"], feasible=(m["dbo_mg_l"] > 500 or is_abattoir), blocked="Charge organique insuffisante" if (m["dbo_mg_l"] <= 500 and not is_abattoir) else None),
+            _cand("biodiesel_combustible", "energie", 84 if lipid_rich else 58, "Fraction lipidique valorisable en biocarburant apres pretraitement.", ["separation des graisses", "transesterification", "controle qualite"], feasible=lipid_rich, blocked="Fraction lipidique insuffisante" if not lipid_rich else None),
+            _cand("farines_animales_engrais", "matiere", 72 if protein_rich else 50, "Valorisation proteique conditionnee a une maitrise sanitaire stricte.", ["sterilisation", "controle pathogenes", "conformite sanitaire"], feasible=protein_rich and w.niveau_danger != "critique", blocked="Profil proteique animal non confirme ou risque sanitaire eleve" if not (protein_rich and w.niveau_danger != "critique") else None),
             _cand("compostage", "matiere", 74 if m["siccite_pct"] > 20 else 52, f"Siccite={m['siccite_pct']:.1f}%.", ["compostage", "stabilisation"], feasible=(m["siccite_pct"] > 15), blocked="Siccite trop faible" if m["siccite_pct"] <= 15 else None),
             _cand("epandage_agricole", "matiere", 58, "Epandage possible si conformite sanitaire.", ["analyse sanitaire", "autorisation locale"], feasible=(w.niveau_danger in {"faible", "moyen"}), blocked="Niveau de danger incompatible" if w.niveau_danger in {"eleve", "critique"} else None),
         ]
@@ -686,6 +923,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     labels = {"reemploi": DECISION_REEMPLOI, "matiere": DECISION_MATIERE, "energetique": DECISION_ENERGIE, "vente": DECISION_VENTE}
     blocked, regulatory, reg_refs = evaluate_regulatory_compliance(effective_waste, wt.value, labels)
     evald = _apply_regulatory_priority(evald, blocked, regulatory, labels, reg_refs)
+    expert_profile = _build_expert_valorization_profile(effective_waste, wt, metrics, evald, regulatory)
 
     chosen, hierarchy_reasons = _select(evald)
     alternatives = _alternatives(chosen, evald)
@@ -741,6 +979,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         "hypotheses_utilisees": assumptions,
         "references_reglementaires": reg_refs,
         "ajustements_ml": ml_explain,
+        "profil_valorisation_expert": expert_profile,
         "details_scoring": {
             "technique": round(float(chosen["technical_score"]), 2),
             "economique": round(float(chosen["economic_score"]), 2),

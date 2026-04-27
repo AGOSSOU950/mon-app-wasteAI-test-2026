@@ -3,11 +3,13 @@ from __future__ import annotations
 import base64
 import json
 import os
+import logging
 import re
 import urllib.error
 import urllib.request
 from typing import Any
 
+logger = logging.getLogger(__name__)
 
 def _normalize_base_url(value: str | None) -> str | None:
     if not value:
@@ -30,7 +32,7 @@ def get_llm_base_url() -> str | None:
     return _normalize_base_url(os.getenv("OPENAI_BASE_URL") or os.getenv("DATABASE_URL"))
 
 
-def get_llm_model(default: str = "gpt-5.4") -> str:
+def get_llm_model(default: str = "gpt-4.1") -> str:
     return (os.getenv("OPENAI_MODEL") or default).strip()
 
 
@@ -184,11 +186,14 @@ def vision_completion_json(
     api_key = get_llm_api_key()
     endpoint = _chat_completions_url()
     if not api_key or not endpoint:
+        logger.warning("Vision call skipped: missing API key or endpoint")
         return None
 
+    selected_model = (model or (os.getenv("OPENAI_VISION_MODEL") or "gpt-4.1")).strip()
     encoded = base64.b64encode(image_bytes).decode("utf-8")
+    image_data_url = f"data:{media_type};base64,{encoded}"
     body = {
-        "model": model or (os.getenv("OPENAI_VISION_MODEL") or get_llm_model(default="gpt-5.4")).strip(),
+        "model": selected_model,
         "max_tokens": max_tokens,
         "temperature": 0,
         "messages": [
@@ -199,7 +204,7 @@ def vision_completion_json(
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:{media_type};base64,{encoded}",
+                            "url": image_data_url,
                         },
                     },
                 ],
@@ -207,10 +212,27 @@ def vision_completion_json(
         ],
     }
 
+    logger.info(
+        "Vision request -> endpoint=%s model=%s media_type=%s image_bytes=%s",
+        endpoint,
+        selected_model,
+        media_type,
+        len(image_bytes or b""),
+    )
+
     raw = _post_json(endpoint, api_key, body, timeout_s=timeout_s)
     if not raw:
+        logger.warning("Vision response empty from model=%s", selected_model)
         return None
+
+    try:
+        logger.info("Reponse IA brute: %s", json.dumps(raw, ensure_ascii=False)[:4000])
+    except Exception:
+        logger.info("Reponse IA brute: <unserializable response>")
+
     text = _extract_first_message_text(raw)
     if not text:
+        logger.warning("Vision response had no text content for model=%s", selected_model)
         return None
+
     return extract_json_block(text)

@@ -1,4 +1,4 @@
-﻿from enum import Enum
+from enum import Enum
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -79,8 +79,9 @@ class WasteInput(BaseModel):
 
 
 class WasteImageIdentificationInput(BaseModel):
-    image_base64: str
-    media_type: str
+    image_base64: Optional[str] = None
+    media_type: Optional[str] = None
+    image_url: Optional[str] = None
     filename: Optional[str] = None
 
 

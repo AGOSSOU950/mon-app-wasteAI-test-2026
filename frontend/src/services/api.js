@@ -1,4 +1,4 @@
-﻿import axios from "axios"
+import axios from "axios"
 import regulatoryProfiles from "../data/regulatory_profiles.json"
 
 const API_URL = import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev"
@@ -863,10 +863,9 @@ function normalizeIdentificationApiResult(raw, filename) {
     .trim() || "dechet solide non identifie"
 
   const confidenceRaw = Number(data.confidence ?? data.confiance_identification ?? data.score ?? 0)
-  let confidencePercent = Number.isFinite(confidenceRaw)
+  const confidencePercent = Number.isFinite(confidenceRaw)
     ? Math.max(0, Math.min(100, confidenceRaw <= 1 ? confidenceRaw * 100 : confidenceRaw))
     : 32
-  if (confidencePercent <= 0) confidencePercent = 32
 
   const confidenceNormalized = Number((confidencePercent / 100).toFixed(2))
   const status = String(data.status || "").trim() || (confidenceNormalized < 0.5 ? "uncertain" : "identified")

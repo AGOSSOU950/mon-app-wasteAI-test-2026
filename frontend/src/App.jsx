@@ -1,4 +1,4 @@
-﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
@@ -407,6 +407,9 @@ export default function App() {
         ? compressed
         : new File([compressed], fileOverride.name || "waste.jpg", { type: compressed.type || "image/jpeg" })
       const imageBase64 = await fileToBase64(uploadFile)
+      const image = imageBase64
+      console.log("Image reçue:", image)
+      console.log("Image meta:", { mediaType: uploadFile.type || "image/jpeg", size: uploadFile.size, filename: fileOverride.name })
 
       let identified = null
       let lastError = null

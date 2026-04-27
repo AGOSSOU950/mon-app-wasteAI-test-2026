@@ -1,8 +1,9 @@
-﻿import io
+import io
 import json
 import os
 import re
 import unicodedata
+import logging
 from functools import lru_cache
 from pathlib import Path
 
@@ -21,6 +22,8 @@ ALLOWED_MEDIA_TYPES = {"image/jpeg", "image/png", "image/webp"}
 BENIN_DB_PATH = Path(__file__).resolve().with_name("waste_benin_database.json")
 UNKNOWN_WASTE_NAME = "dechet solide non identifie"
 LOW_CONFIDENCE_UNKNOWN_NAME = "Type de dechet probable inconnu"
+
+logger = logging.getLogger(__name__)
 
 
 def _normalize(value: str | None) -> str:
@@ -272,9 +275,7 @@ def _normalize_identification_output(result: dict) -> dict:
 
     if confidence > 1:
         confidence = confidence / 100.0
-    if confidence <= 0:
-        confidence = 0.32
-    confidence = max(0.01, min(0.99, confidence))
+    confidence = max(0.0, min(0.99, confidence))
 
     hints_text = " ".join([
         waste_name,
@@ -418,6 +419,7 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
         raise ValueError("Format non supporte. Utilise JPEG, PNG ou WEBP.")
 
     processed_bytes, processed_media_type = _preprocess_image_for_vision(image_bytes, media_type)
+    logger.info("identify_waste_from_image called: media_type=%s bytes=%s filename=%s", media_type, len(image_bytes), filename or "")
 
     parsed = None
     try:
@@ -425,7 +427,7 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
             instruction=_build_prompt(),
             image_bytes=processed_bytes,
             media_type=processed_media_type,
-            model=(os.getenv("OPENAI_VISION_MODEL") or os.getenv("OPENAI_MODEL") or "gpt-4o").strip(),
+            model=(os.getenv("OPENAI_VISION_MODEL") or os.getenv("OPENAI_MODEL") or "gpt-4.1").strip(),
             max_tokens=320,
             timeout_s=35,
         )
@@ -453,7 +455,7 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
     if raw_conf > 1:
         raw_conf = raw_conf / 100.0
 
-    confidence = max(0.15, min(0.99, raw_conf))
+    confidence = max(0.0, min(0.99, raw_conf))
     if _is_unreadable_signal(parsed):
         confidence = min(confidence, 0.35)
 
