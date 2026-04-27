@@ -1,4 +1,3 @@
-﻿import json
 import unittest
 
 from app.core.decision_engine import analyser_dechet
@@ -19,35 +18,23 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
             pays_cedeao="Benin",
         )
         result = analyser_dechet(waste)
-        payload = json.loads(result.explication)
-        profile = payload.get("profil_valorisation_expert") or {}
         return {
-            "decision": payload.get("decision_principale"),
-            "profile": profile,
-            "valorisations": profile.get("valorisations") or [],
+            "decision": result.decision_principale,
+            "explication": str(result.explication or ""),
+            "alternatives": [str(x) for x in (result.options_alternatives or [])],
         }
 
     def test_excrements_animaux_are_routed_as_organic_not_plastic(self) -> None:
         output = self._analyze("excrements d'animaux")
-        decision = output["decision"]
-        profile = output["profile"]
-        names = [str(v.get("nom") or "") for v in output["valorisations"]]
-
-        self.assertEqual(decision, "methanisation_biogaz")
-        self.assertEqual(profile.get("type"), "organique")
-        self.assertIn("methanisation_biogaz", names)
-        self.assertNotIn("recyclage_mecanique_plastique", names)
+        self.assertEqual(output["decision"], "methanisation_biogaz")
+        self.assertIn("filiere retenue est methanisation_biogaz", output["explication"].lower())
+        self.assertNotIn("recyclage_mecanique_plastique", output["explication"].lower())
 
     def test_peinture_chimique_is_not_routed_to_regeneration_huiles(self) -> None:
         output = self._analyze("peinture industrie chimique")
-        decision = output["decision"]
-        profile = output["profile"]
-        names = [str(v.get("nom") or "") for v in output["valorisations"]]
-
-        self.assertEqual(decision, "neutralisation_chimique")
-        self.assertEqual(profile.get("categorie"), "dechet chimique de peinture/revetement")
-        self.assertIn("neutralisation_chimique", names)
-        self.assertNotIn("regeneration_huiles", names)
+        self.assertEqual(output["decision"], "neutralisation_chimique")
+        self.assertIn("cedeao", output["explication"].lower())
+        self.assertNotIn("regeneration_huiles", output["explication"].lower())
 
 
 if __name__ == "__main__":

@@ -998,6 +998,43 @@ def _req(conds: list[str]) -> str:
     return "; ".join(dict.fromkeys(conds)) if conds else "Aucune condition specifique identifiee."
 
 
+def _build_explication_paragraphs(
+    chosen: dict[str, Any],
+    evald: list[dict[str, Any]],
+    regulatory: dict[str, Any],
+    reg_refs: list[str],
+    hierarchy_reasons: list[str],
+) -> str:
+    p1 = (
+        f"La filiere retenue est {chosen.get('filiere')} avec un score global de {float(chosen.get('global_score', 0.0)):.1f}/100. "
+        f"Ce choix est motive par la robustesse technique ({float(chosen.get('technical_score', 0.0)):.1f}/100), "
+        f"la performance economique ({float(chosen.get('economic_score', 0.0)):.1f}/100) et l'impact environnemental "
+        f"({float(chosen.get('environmental_score', 0.0)):.1f}/100). {' '.join(hierarchy_reasons)}"
+    )
+
+    blocked_items = [x for x in evald if (not x.get('feasible', True)) or bool(x.get('blocked_reason'))]
+    if blocked_items:
+        blocked_items = sorted(blocked_items, key=lambda x: float(x.get('global_score', 0.0)), reverse=True)
+        blocked_desc: list[str] = []
+        for item in blocked_items[:3]:
+            reason = str(item.get('blocked_reason') or 'non faisable techniquement/reglementairement').strip()
+            blocked_desc.append(f"{item.get('filiere')} ({reason})")
+        p2 = "Voies bloquees ou non prioritaires: " + "; ".join(blocked_desc) + "."
+    else:
+        p2 = "Aucune voie critique n'a ete bloquee a ce stade; les alternatives restent disponibles sous conditions d'exploitation et de qualite du flux."
+
+    has_bamako_ref = any('bamako' in _n(ref) for ref in reg_refs)
+    p3 = (
+        f"Le scoring multicriteres combine technique (poids {WEIGHT_TECH}), economique ({WEIGHT_ECO}), environnement ({WEIGHT_ENV}), "
+        f"social ({WEIGHT_SOCIAL}) et reglementaire ({WEIGHT_REG}). Le statut de conformite est {regulatory.get('status', 'unknown')} "
+        f"avec un risque reglementaire de {float(regulatory.get('risk_score') or 0.0):.1f}/100. "
+        f"Le cadre CEDEAO est applique sur les contraintes de transport/traitement et la Convention de Bamako est "
+        f"{'prise en compte' if has_bamako_ref else 'verifiee via les references disponibles'} pour les restrictions transfrontalieres et de gestion des dechets dangereux."
+    )
+
+    return "\\n\\n".join([p1, p2, p3])
+
+
 def _llm_enrichment(waste: WasteInput) -> str | None:
     system_prompt = "Expert dechets Benin. Analyse uniquement a partir des donnees fournies. Retourne du JSON valide uniquement."
     prompt = (
@@ -1088,6 +1125,8 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         recommended_decision=chosen["filiere"],
     )
 
+    explication_detaillee = _build_explication_paragraphs(chosen, evald, regulatory, reg_refs, hierarchy_reasons)
+
     exp_payload = {
         "decision_principale": chosen["filiere"],
         "justification_technique": just_tech,
@@ -1104,6 +1143,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         "references_reglementaires": reg_refs,
         "ajustements_ml": ml_explain,
         "profil_valorisation_expert": expert_profile,
+        "explication_detaillee": explication_detaillee,
         "details_scoring": {
             "technique": round(float(chosen["technical_score"]), 2),
             "economique": round(float(chosen["economic_score"]), 2),
@@ -1126,7 +1166,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         decision=decision_legacy,
         score=round(score_global, 2),
         confiance=confiance,
-        explication=json.dumps(exp_payload, ensure_ascii=False),
+        explication=explication_detaillee,
         resume_choix=f"Filiere retenue: {chosen['filiere']} ({chosen['hierarchy']}) avec score {score_global:.1f}/100.",
         details_scores={
             "technique": round(float(chosen["technical_score"]), 2),
