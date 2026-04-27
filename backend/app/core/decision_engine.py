@@ -174,6 +174,87 @@ _ABATTOIR_KEYWORDS = [
 ]
 
 
+
+_ORGANIC_TEXT_KEYWORDS = [
+    "excrement",
+    "excrements",
+    "dejection",
+    "dejections",
+    "fumier",
+    "fiente",
+    "lisier",
+    "dechet animal",
+    "dechets animaux",
+    "organique",
+    "biodechet",
+    "dechet alimentaire",
+    "reste alimentaire",
+]
+
+_PAINT_TEXT_KEYWORDS = [
+    "peinture",
+    "paint",
+    "vernis",
+    "coating",
+    "laque",
+    "encre",
+    "pigment",
+    "resine",
+]
+
+_USED_OIL_KEYWORDS = [
+    "huile usagee",
+    "huiles usees",
+    "huile de vidange",
+    "vidange huile",
+    "huile moteur",
+    "lubrifiant use",
+    "used oil",
+    "waste oil",
+]
+
+_PLASTIC_TEXT_KEYWORDS = [
+    "plastique",
+    "polyethylene",
+    "polyprop",
+    "pet",
+    "pehd",
+    "pvc",
+    "film plastique",
+    "sachet plastique",
+]
+
+
+def _waste_text(waste: WasteInput) -> str:
+    return " ".join([
+        _n(waste.nom),
+        _n(waste.description),
+        _n(waste.produit_principal),
+        _n(waste.origine_flux),
+        _n(waste.type_plastique),
+    ])
+
+
+def _is_organic_waste_text(waste: WasteInput) -> bool:
+    txt = _waste_text(waste)
+    return any(k in txt for k in _ORGANIC_TEXT_KEYWORDS)
+
+
+def _is_paint_or_coating_waste(waste: WasteInput) -> bool:
+    txt = _waste_text(waste)
+    return any(k in txt for k in _PAINT_TEXT_KEYWORDS)
+
+
+def _is_used_oil_waste(waste: WasteInput) -> bool:
+    txt = _waste_text(waste)
+    if any(k in txt for k in _USED_OIL_KEYWORDS):
+        return True
+    return ("huile" in txt and "peinture" not in txt and "vernis" not in txt)
+
+
+def _is_probably_plastic_text(waste: WasteInput) -> bool:
+    txt = _waste_text(waste)
+    return any(k in txt for k in _PLASTIC_TEXT_KEYWORDS)
 def _is_abattoir_waste(waste: WasteInput) -> bool:
     text = " ".join([
         _n(waste.nom),
@@ -201,9 +282,25 @@ def _infer_effective_profile(waste: WasteInput) -> tuple[WasteInput, WasteType, 
     inferred_type = _infer_type(waste)
     inferred_category = waste.categorie
 
+    if _is_organic_waste_text(waste):
+        inferred_category = WasteCategory.ORGANIC
+        if inferred_type == WasteType.OTHER:
+            inferred_type = WasteType.BOUE_DE_VIDANGE
+        assumptions.append("Categorie organique deduite du nom/description utilisateur.")
+
+    if _is_paint_or_coating_waste(waste):
+        inferred_category = WasteCategory.CHEMICAL
+        if inferred_type == WasteType.HUILE_USAGEE and not _is_used_oil_waste(waste):
+            inferred_type = WasteType.OTHER
+        assumptions.append("Flux peinture/revetement detecte: orientation chimique appliquee.")
+
     if inferred_type in {WasteType.BOUE_DE_VIDANGE, WasteType.BIOMASSE_LIGNOCELLULOSIQUE} and waste.categorie in {WasteCategory.PLASTIC, WasteCategory.OTHER}:
         inferred_category = WasteCategory.ORGANIC
         assumptions.append("Categorie ajustee depuis le nom/description utilisateur (profil organique detecte).")
+
+    if inferred_category == WasteCategory.PLASTIC and not _is_probably_plastic_text(waste) and (_is_organic_waste_text(waste) or _is_paint_or_coating_waste(waste)):
+        inferred_category = WasteCategory.ORGANIC if _is_organic_waste_text(waste) else WasteCategory.CHEMICAL
+        assumptions.append("Categorie plastique corrigee selon le nom du dechet saisi.")
 
     effective = waste.model_copy(update={"categorie": inferred_category, "type_dechet": inferred_type})
     return effective, inferred_type, assumptions
@@ -211,19 +308,27 @@ def _infer_effective_profile(waste: WasteInput) -> tuple[WasteInput, WasteType, 
 def _infer_type(waste: WasteInput) -> WasteType:
     if waste.type_dechet != WasteType.OTHER:
         return waste.type_dechet
-    text = " ".join([_n(waste.nom), _n(waste.description), _n(waste.composition_textile), _n(waste.type_plastique)])
-    if any(x in text for x in ["bagasse", "sciure", "coque", "tige", "biomasse"]):
-        return WasteType.BIOMASSE_LIGNOCELLULOSIQUE
-    if any(x in text for x in ["boue", "vidange", "sludge"]):
+
+    text = " ".join([_n(waste.nom), _n(waste.description), _n(waste.composition_textile), _n(waste.type_plastique), _n(waste.produit_principal), _n(waste.origine_flux)])
+
+    if _is_abattoir_waste(waste) or _is_organic_waste_text(waste):
         return WasteType.BOUE_DE_VIDANGE
-    if any(x in text for x in ["huile", "lubrifiant", "oil"]):
+
+    if _is_paint_or_coating_waste(waste) and not _is_used_oil_waste(waste):
+        return WasteType.OTHER
+
+    if _is_used_oil_waste(waste) or any(x in text for x in ["lubrifiant", "oil"]):
         return WasteType.HUILE_USAGEE
+
+    if any(x in text for x in ["bagasse", "sciure", "coque", "tige", "biomasse", "bois", "lignine", "cellulose"]):
+        return WasteType.BIOMASSE_LIGNOCELLULOSIQUE
+    if any(x in text for x in ["boue", "vidange", "sludge", "effluent"]):
+        return WasteType.BOUE_DE_VIDANGE
     if any(x in text for x in ["textile", "tissu", "vetement"]):
         return WasteType.TEXTILE
     if any(x in text for x in ["plastique", "poly", "pet", "pehd", "pvc"]):
         return WasteType.PLASTIQUE
     return WasteType.OTHER
-
 
 def _is_pvc(w: WasteInput) -> bool:
     tp = _n(w.type_plastique)
@@ -319,6 +424,8 @@ def _probable_family_and_subtype_from_text(w: WasteInput) -> tuple[str, str]:
         return "plastique", "polymere synthetique"
     if any(k in txt for k in ["bois", "sciure", "copeaux", "bagasse", "lignine", "cellulose"]):
         return "agricole", "biomasse lignocellulosique"
+    if any(k in txt for k in ["peinture", "paint", "vernis", "coating", "laque", "encre", "resine", "pigment"]):
+        return "industriel", "dechet chimique de peinture/revetement"
     if any(k in txt for k in ["metal", "fer", "acier", "alu", "ferraille"]):
         return "industriel", "dechet metallique"
 
@@ -335,28 +442,32 @@ def _is_composition_estimated(w: WasteInput, wt: WasteType) -> bool:
     if wt == WasteType.OTHER:
         return True
     return any(v is None for v in [w.pci_mj_kg, w.taux_lignine_pct, w.dbo_mg_l, w.dco_mg_l])
+
 def _waste_family_label(w: WasteInput, wt: WasteType) -> str:
     if _is_abattoir_waste(w):
         return "abattoir"
+    if _is_organic_waste_text(w):
+        return "organique"
     if wt == WasteType.PLASTIQUE:
         return "plastique"
     if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
         return "agricole"
-    if w.categorie == WasteCategory.METAL:
-        return "industriel"
     if w.categorie == WasteCategory.CHEMICAL:
         return "industriel"
-    if wt == WasteType.BOUE_DE_VIDANGE:
+    if w.categorie == WasteCategory.METAL:
         return "industriel"
+    if wt == WasteType.BOUE_DE_VIDANGE:
+        return "organique"
     if wt == WasteType.OTHER:
         probable_family, _ = _probable_family_and_subtype_from_text(w)
         return probable_family
     return "industriel"
 
-
 def _waste_subtype_label(w: WasteInput, wt: WasteType) -> str:
     if _is_abattoir_waste(w):
         return "biomasse animale"
+    if w.categorie == WasteCategory.CHEMICAL:
+        return "dechet chimique de peinture/revetement" if _is_paint_or_coating_waste(w) else "dechet chimique industriel"
     if wt == WasteType.OTHER:
         _, probable_subtype = _probable_family_and_subtype_from_text(w)
         return probable_subtype
@@ -369,7 +480,6 @@ def _waste_subtype_label(w: WasteInput, wt: WasteType) -> str:
         WasteType.OTHER: "biomasse mixte probable",
     }
     return mapping.get(wt, "biomasse mixte probable")
-
 
 def _is_lipid_rich(w: WasteInput, wt: WasteType) -> bool:
     txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal)])
@@ -436,7 +546,7 @@ def _estimate_composition_labels(w: WasteInput, wt: WasteType, metrics: dict[str
 
 
 def _priority_from_filiere(filiere: str) -> str:
-    high = {"methanisation_biogaz", "biodiesel_combustible", "regeneration_huiles", "refonte_metaux", "recyclage_mecanique_plastique", "charbon_actif", "recyclage_papetier", "pyrolyse_plastique", "farines_animales_engrais"}
+    high = {"methanisation_biogaz", "biodiesel_combustible", "regeneration_huiles", "neutralisation_chimique", "refonte_metaux", "recyclage_mecanique_plastique", "charbon_actif", "recyclage_papetier", "pyrolyse_plastique", "farines_animales_engrais"}
     medium = {"compostage", "epandage_agricole", "effilochage_textile", "reemploi_textile", "reemploi_pieces_metalliques", "reemploi_plastique", "reemploi_carton_emballage"}
     if filiere in high:
         return "haute"
@@ -492,6 +602,10 @@ def _build_expert_valorization_profile(w: WasteInput, wt: WasteType, metrics: di
 
     add_valo(DECISION_ELIMINATION, "basse", "Voie de securite obligatoire en cas de non-conformite sanitaire/reglementaire des autres filieres.")
 
+    priority_rank = {"haute": 0, "moyenne": 1, "basse": 2}
+    valorisations = sorted(valorisations, key=lambda v: priority_rank.get(str(v.get("priorite") or ""), 3))
+
+
     contraintes = [
         "sanitaire: pretraitement/hygienisation requis pour flux animaux ou putrescibles",
         "reglementation: conformite CEDEAO/Bamako et autorisations locales obligatoires",
@@ -507,7 +621,7 @@ def _build_expert_valorization_profile(w: WasteInput, wt: WasteType, metrics: di
         "humidite": humidity,
         "composition": composition,
         "composition_estimee": composition_estimee,
-        "mention_composition": "Les données de composition sont estimées automatiquement" if composition_estimee else "",
+        "mention_composition": "Les donnees de composition sont estimees automatiquement" if composition_estimee else "",
         "valorisations": valorisations,
         "contraintes": contraintes,
     }
@@ -569,6 +683,16 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
         return [
             _cand(DECISION_ELIMINATION, "elimination", 95, "Dangerosite critique/chimique: elimination securisee obligatoire.", ["transport ADR", "centre agree", "bordereau de suivi"])
         ], warnings
+
+    if w.categorie == WasteCategory.CHEMICAL and wt != WasteType.HUILE_USAGEE:
+        paint_like = _is_paint_or_coating_waste(w)
+        c += [
+            _cand("neutralisation_chimique", "matiere", 86 if paint_like else 74, "Traitement physico-chimique prioritaire pour stabiliser/neutraliser le flux chimique.", ["neutralisation", "controle pH", "gestion des boues"], feasible=True),
+            _cand("co_incineration_cimenterie", "energie", 58 if paint_like else 52, "Voie thermique uniquement si conformite emissions et autorisation locale.", ["analyse halogenes", "controle emissions"], feasible=(not bool(w.presence_chlore)), blocked="Presence de chlore: voie thermique non recommandee" if bool(w.presence_chlore) else None),
+            _cand(DECISION_ELIMINATION, "elimination", 68, "Filet de securite en cas de non-conformite des filieres de valorisation chimique.", ["centre agree", "bordereau de suivi"]),
+        ]
+        _apply_combustion_safety_constraints(c, w, m, warnings)
+        return c, warnings
     if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
         c += [
             _cand("charbon_actif", "matiere", 88 if m["taux_lignine_pct"] >= 20 else 72, f"Biomasse lignocellulosique, lignine={m['taux_lignine_pct']:.1f}%.", ["pyrolyse", "activation", "QC"]),

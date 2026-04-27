@@ -38,6 +38,7 @@ const SPECIFIC_ROUTE_LABELS = {
   reemploi_pieces_metalliques: "Reemploi de pieces metalliques",
   methanisation_biogaz: "Methanisation avec production de biogaz",
   regeneration_huiles: "Regeneration des huiles usagees",
+  neutralisation_chimique: "Traitement physico-chimique (peintures/solvants)",
   effilochage_textile: "Effilochage textile en fibres techniques",
   reemploi_textile: "Reemploi textile avec tri qualite",
   recyclage_papetier: "Recyclage papetier",
@@ -128,7 +129,9 @@ function inferWasteFlags(payload) {
   const heavyMetals = payload?.presence_metaux_lourds === true
 
   const pvcOrChlorinated = chlorine || plasticType.includes("pvc")
-  const wasteOilOrSolvent = type.includes("huile") || type.includes("solvant") || category.includes("chimique")
+  const name = normalizeText(payload?.nom)
+  const desc = normalizeText(payload?.description)
+  const wasteOilOrSolvent = type.includes("huile") || type.includes("solvant") || name.includes("huile") || desc.includes("huile") || desc.includes("solvant")
   const ligninHigh = lignin >= 30
 
   return {
@@ -238,6 +241,12 @@ const ROUTE_CONFIG = {
     base: { technique: 58, environnement: 66, reglementaire: 60, economique: 45, social: 64 },
     description: "Epandage uniquement si conformite agronomique et sanitaire verifiee.",
   },
+  neutralisation_chimique: {
+    decisionKey: "specialized",
+    econFcfaTonne: 15000,
+    base: { technique: 82, environnement: 62, reglementaire: 88, economique: 42, social: 50 },
+    description: "Traitement physico-chimique pour stabiliser les flux peinture/solvants.",
+  },
   elimination_securisee: {
     decisionKey: "specialized",
     econFcfaTonne: -25000,
@@ -344,16 +353,19 @@ function guessCategory(payload) {
   const flow = normalizeText(payload?.origine_flux)
   const merged = `${category} ${type} ${name} ${desc} ${flow}`
 
-  const abattoirHint = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal"].some((k) => merged.includes(k))
-  if (abattoirHint) return "biomasse"
+  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "alimentaire"]
+  if (organicHints.some((k) => merged.includes(k))) return "organique"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
   if (merged.includes("textile") || merged.includes("fibre")) return "textile"
   if (merged.includes("papier") || merged.includes("carton")) return "papier"
-  if (merged.includes("plast")) return "plastique"
+  if (merged.includes("plast") || merged.includes("pet") || merged.includes("pehd") || merged.includes("pvc")) return "plastique"
   if (merged.includes("verre")) return "verre"
   if (merged.includes("e waste") || merged.includes("ewaste") || merged.includes("electron") || merged.includes("batter")) return "e_waste"
-  if (merged.includes("biom") || merged.includes("organ") || merged.includes("bois") || merged.includes("lignine") || merged.includes("dechet animal")) return "biomasse"
+
+  const paintHints = ["peinture", "paint", "vernis", "coating", "laque", "encre", "resine", "pigment"]
+  if (paintHints.some((k) => merged.includes(k))) return "chimique"
+
   if (merged.includes("huile") || merged.includes("solvant") || merged.includes("chim") || merged.includes("boue")) return "chimique"
   return "autre"
 }
@@ -498,6 +510,10 @@ function estimateImpactKg(payload, decisionKey) {
 
 function candidateRoutesForCategory(category, payload) {
   const lignin = Number(payload?.taux_lignine_pct || 0)
+  const merged = normalizeText(`${payload?.nom || ""} ${payload?.description || ""} ${payload?.type_dechet || ""} ${payload?.categorie || ""}`)
+  const paintLike = ["peinture", "paint", "vernis", "coating", "laque", "encre", "resine", "pigment"].some((k) => merged.includes(k))
+  const oilLike = ["huile usagee", "huile usee", "vidange", "lubrifiant", "waste oil", "used oil"].some((k) => merged.includes(k))
+
   if (category === "plastique") {
     return ["recyclage_mecanique_plastique", "pyrolyse_plastique", "co_incineration_cimenterie", "elimination_securisee"]
   }
@@ -510,13 +526,15 @@ function candidateRoutesForCategory(category, payload) {
   if (category === "papier") {
     return ["recyclage_papetier", "compostage", "co_incineration_cimenterie", "elimination_securisee"]
   }
-  if (category === "biomasse") {
+  if (category === "biomasse" || category === "organique") {
     return lignin >= 30
       ? ["charbon_actif", "methanisation_biogaz", "compostage", "elimination_securisee"]
       : ["methanisation_biogaz", "compostage", "epandage_agricole", "elimination_securisee"]
   }
   if (category === "chimique") {
-    return ["regeneration_huiles", "elimination_securisee", "co_incineration_cimenterie"]
+    if (paintLike) return ["neutralisation_chimique", "co_incineration_cimenterie", "elimination_securisee"]
+    if (oilLike) return ["regeneration_huiles", "co_incineration_cimenterie", "elimination_securisee"]
+    return ["neutralisation_chimique", "elimination_securisee", "co_incineration_cimenterie"]
   }
   if (category === "verre") {
     return ["recyclage_papetier", "refonte_metaux", "elimination_securisee"]
@@ -524,7 +542,7 @@ function candidateRoutesForCategory(category, payload) {
   if (category === "e_waste") {
     return ["refonte_metaux", "elimination_securisee", "reemploi_pieces_metalliques"]
   }
-  return ["recyclage_papetier", "recyclage_mecanique_plastique", "methanisation_biogaz", "elimination_securisee"]
+  return ["methanisation_biogaz", "recyclage_papetier", "elimination_securisee", "co_incineration_cimenterie"]
 }
 
 function scoreRoute(payload, routeKey) {
