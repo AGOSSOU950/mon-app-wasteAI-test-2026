@@ -156,6 +156,7 @@ class DecisionResult(BaseModel):
     score_global: Optional[float] = None
     alternatives: list[dict[str, object]] = Field(default_factory=list)
     classement_filieres: list[dict[str, object]] = Field(default_factory=list)
+    scores_par_voie: list[dict[str, object]] = Field(default_factory=list)
     conditions_requises: Optional[str] = None
     avertissements: Optional[str] = None
     donnees_manquantes_critiques: list[str] = Field(default_factory=list)

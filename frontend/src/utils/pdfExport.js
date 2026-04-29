@@ -49,9 +49,19 @@ function buildRecommendations(result) {
   const stockage = String(result?.conseil_stockage || '').trim()
   const co2 = Number(result?.co2_evite_estime_kg || result?.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0)
   const cost = Number(result?.cout_estime_fcfa_tonne || result?.details_scores_bruts?.treatment_cost_fcfa || 0)
+  const voies = Array.isArray(result?.scores_par_voie) && result.scores_par_voie.length > 0 ? result.scores_par_voie : Array.isArray(result?.classement_filieres) ? result.classement_filieres : []
 
   if (route) items.push(`Voie retenue: ${route}`)
-  if (explanation) items.push(`La filiere a ete retenue car le profil technique, economique, environnemental et reglementaire est plus robuste que les alternatives.`)
+  if (explanation) items.push(`La voie retenue reste la plus coherente avec la chimie du lot, sa charge organique, son humidite et ses contraintes de securite.`)
+  if (voies.length > 0) {
+    const topVoies = voies.slice(0, 4).map((voie, index) => {
+      const nom = String(voie?.filiere || voie?.nom || `voie ${index + 1}`).trim()
+      const statut = String(voie?.statut || voie?.status || (voie?.compatible === false ? 'Non conforme' : index === 0 ? 'Recommandee' : 'Alternative')).trim()
+      const exp = String(voie?.explication || '').trim()
+      return exp ? `${nom} - ${statut}. ${exp}` : `${nom} - ${statut}`
+    })
+    items.push(`Voies examinees: ${topVoies.join(' | ')}`)
+  }
   if (stockage) items.push(`Stockage / manipulation: ${stockage}`)
   if (co2 > 0) items.push(`Impact CO2 evite estime: ${money(co2)} kgCO2e`)
   if (cost > 0) items.push(`Cout de traitement estime: ${money(cost)} FCFA/tonne`)

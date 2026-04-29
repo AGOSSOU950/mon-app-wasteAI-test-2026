@@ -1054,16 +1054,29 @@ def _select(evald: list[dict[str, Any]]) -> tuple[dict[str, Any], list[str]]:
         "roi": -1.0,
         "co2_avoided_kg": 0.0,
     }, reasons
+def _route_status_label(route: dict[str, Any], chosen: dict[str, Any]) -> str:
+    if route.get("filiere") == chosen.get("filiere"):
+        return "Recommandee" if route.get("feasible", True) else "Recommandee sous conditions"
+    if not route.get("feasible", True):
+        return "Non conforme"
+    score = float(route.get("global_score", 0.0))
+    if score >= 70.0:
+        return "Alternative recommandee"
+    if score >= 55.0:
+        return "Alternative"
+    return "Pertinence faible"
+
+
 def _alternatives(chosen: dict[str, Any], evald: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    order = sorted([x for x in evald if x["filiere"] != chosen["filiere"] and x.get("feasible", True)], key=lambda z: z["global_score"], reverse=True)
+    order = sorted([x for x in evald if x["filiere"] != chosen["filiere"]], key=lambda z: z["global_score"], reverse=True)
     out: list[dict[str, Any]] = []
-    for x in order[:3]:
+    for x in order[:4]:
         why = "Score global inferieur a la filiere principale."
         if chosen["hierarchy"] != x["hierarchy"] and chosen["hierarchy"] in {"matiere", "energie"}:
             why = f"Moins prioritaire dans la hierarchie ({x['hierarchy']} apres {chosen['hierarchy']})."
         if not x.get("feasible", True):
             why = x.get("blocked_reason") or "Non faisable techniquement/reglementairement."
-        out.append({"filiere": x["filiere"], "score": round(float(x["global_score"]), 2), "pourquoi_pas_prioritaire": why})
+        out.append({"filiere": x["filiere"], "score": round(float(x["global_score"]), 2), "statut": _route_status_label(x, chosen), "pourquoi_pas_prioritaire": why, "blocked": not x.get("feasible", True), "blocked_reason": x.get("blocked_reason")})
     return out
 
 
@@ -1198,44 +1211,36 @@ def _build_explication_paragraphs(
 ) -> str:
     physico = _format_physico_chemical_context(waste, metrics)
     process = _process_engineering_notes(waste, chosen, metrics)
+
+    route_lines: list[str] = []
+    for alt in alternatives[:4]:
+        route_lines.append(
+            f"- {alt.get('filiere')}: {alt.get('explication') or alt.get('pourquoi_pas_prioritaire') or 'Aucune justification detaillee disponible.'}"
+        )
+
     p1 = (
-        f"La filiere retenue est {chosen.get('filiere')} avec un score global de {float(chosen.get('global_score', 0.0)):.1f}/100. "
-        f"Elle a ete choisie parce que le profil technique ({float(chosen.get('technical_score', 0.0)):.1f}/100), "
-        f"economique ({float(chosen.get('economic_score', 0.0)):.1f}/100) et environnemental ({float(chosen.get('environmental_score', 0.0)):.1f}/100) "
-        f"reste meilleur que les autres voies compatibles. {physico} {process} {' '.join(hierarchy_reasons)}"
+        f"La voie retenue est {chosen.get('filiere')}. Elle est coherente avec le profil du flux: {physico} {process} "
+        f"En pratique, le lot se comporte comme une biomasse humide a forte charge organique, ce qui rend la voie choisie plus stable que les options thermiques ou les usages directs au sol."
     )
 
-    alt_desc: list[str] = []
-    for alt in alternatives[:3]:
-        alt_desc.append(
-            f"{alt.get('filiere')} ({float(alt.get('score', 0.0)):.1f}/100, {alt.get('pourquoi_pas_prioritaire') or 'moins favorable'})"
-        )
-    if alt_desc:
-        p2_prefix = "Les alternatives examinees sont: " + "; ".join(alt_desc) + "."
-    else:
-        p2_prefix = "Aucune alternative robuste n'a ete gardee au-dessus des seuils de faisabilite."
+    p2 = (
+        "Lecture des autres voies: "
+        + (" ".join(route_lines) if route_lines else "Aucune alternative exploitable n'a pu etre maintenue.")
+        + "."
+    )
 
     co2 = float(chosen.get("co2_avoided_kg", 0.0))
     cost = float(chosen.get("treatment_cost_fcfa", 0.0))
     market = float(chosen.get("market_value_fcfa", 0.0))
     gain = float(chosen.get("gain_industriel_fcfa", market - cost))
     gain_pt = float(chosen.get("gain_industriel_fcfa_tonne", (float(chosen.get("market_value_fcfa_tonne", 0.0)) - float(chosen.get("treatment_cost_fcfa_tonne", 0.0)))))
-    roi = float(chosen.get("roi", 0.0))
-    p2 = (
-        f"{p2_prefix} Le gain environnemental associe a la voie retenue est estime a {co2:.1f} kgCO2e evites par tonne. "
-        f"Le cout de traitement est estime a {cost:.0f} FCFA pour le lot, pour une valeur de marche d'environ {market:.0f} FCFA et un gain industriel brut de {gain:.0f} FCFA sur le lot (soit {gain_pt:.0f} FCFA/t). "
-        f"Le ROI estime est de {roi:.2f}, avant prise en compte des frais de collecte, transport, fiscalite et CAPEX. Le seuil de rentabilite est franchi des que la marge industrielle brute devient positive et que la voie reste exploitable regulierement."
-    )
-
-    has_bamako_ref = any('bamako' in _n(ref) for ref in reg_refs)
     reg_status = str(regulatory.get('status', 'unknown'))
-    reg_risk = float(regulatory.get('risk_score') or 0.0)
     reg_warnings = regulatory.get('warnings') or []
-    warning_txt = f" Les alertes principales sont: {'; '.join(str(w) for w in reg_warnings[:2])}." if reg_warnings else ""
+    warning_txt = f" Alertes notables: {'; '.join(str(w) for w in reg_warnings[:2])}." if reg_warnings else ""
     p3 = (
-        f"Le filtre reglementaire CEDEAO/Bamako a ete applique avant validation finale: transport, stockage, tracabilite, autorisations locales et gestion des flux dangereux "
-        f"sont verifiees pour eviter toute voie non conforme. La Convention de Bamako est {'referencee explicitement' if has_bamako_ref else 'verifiee dans le corpus de references disponible'} "
-        f"pour les restrictions sur les transferts transfrontaliers de dechets dangereux. Statut de conformite: {reg_status}, risque reglementaire {reg_risk:.1f}/100.{warning_txt}"
+        f"Sur le plan economique, la valeur de marche du lot et le cout de traitement montrent si la voie reste defendable dans la duree. "
+        f"Sur le plan reglementaire, le filtre CEDEAO/Bamako a ete applique avant validation finale. La voie retenue reste exploitable tant que les obligations de transport, de tracabilite, d'hygienisation et d'autorisation locale sont respectees. "
+        f"La Convention de Bamako est {'referencee explicitement' if any('bamako' in _n(ref) for ref in reg_refs) else 'verifiee dans le corpus de references disponible'} pour les transferts transfrontaliers de dechets dangereux. Statut de conformite: {reg_status}.{warning_txt}"
     )
 
     return "\n\n".join([p1, p2, p3])
@@ -1299,7 +1304,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
             "nom": x.get("nom") or x.get("filiere"),
             "type": x.get("type"),
             "score": round(float(x.get("global_score", 0.0)), 2),
-            "statut": x.get("status") or ("Recommand?" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Peu pertinent" if x.get("feasible", True) else "Non compatible techniquement"),
+            "statut": x.get("status") or ("Recommandee" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Alternative" if x.get("feasible", True) else "Non conforme"),
             "compatible": bool(x.get("feasible", True)),
             "raison": x.get("technical_reason"),
             "contraintes": x.get("contraintes") or [],
@@ -1314,8 +1319,8 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
 
     just_tech = f"{chosen['technical_reason']} Classement generic applique sur l'ensemble des filieres candidates. {' '.join(hierarchy_reasons)}"
     just_eco = f"Valeur marche {chosen['market_value_fcfa']:.0f} FCFA, cout {chosen['treatment_cost_fcfa']:.0f} FCFA, gain industriel brut {chosen.get('gain_industriel_fcfa', chosen['market_value_fcfa'] - chosen['treatment_cost_fcfa']):.0f} FCFA, ROI={chosen['roi']:.2f}."
-    just_env = f"CO2 evite estime {chosen['co2_avoided_kg']:.1f} kg/t, score env {chosen['environmental_score']}/100, score reglementaire {chosen['regulatory_score']}/100, conformite {regulatory.get('status', 'unknown')}.{bamako_tag}"
-    just_social = f"Score social {chosen['social_score']}/100 (emploi local + disponibilite filiere Benin/CEDEAO)."
+    just_env = f"CO2 evite estime {chosen['co2_avoided_kg']:.1f} kg/t, conformite {regulatory.get('status', 'unknown')}.{bamako_tag}"
+    just_social = "Impact social positif lie a l'emploi local et a la disponibilite de la filiere au Benin/CEDEAO."
 
     if missing_critical:
         warnings.append("Donnees critiques manquantes: " + ", ".join(missing_critical))
@@ -1405,7 +1410,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         confiance=confiance,
         explication=explication_detaillee,
         explication_detaillee=explication_detaillee,
-        resume_choix=f"Filiere retenue: {chosen['filiere']} ({chosen['hierarchy']}) avec score {score_global:.1f}/100.",
+        resume_choix=f"Filiere retenue: {chosen['filiere']} ({chosen['hierarchy']}).",
         details_scores={
             "technique": round(float(chosen["technical_score"]), 2),
             "economique": round(float(chosen["economic_score"]), 2),
@@ -1455,6 +1460,25 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         score_global=round(score_global, 2),
         alternatives=alternatives,
         classement_filieres=classement_filieres,
+        scores_par_voie=[
+            {
+                "filiere": x.get("filiere"),
+                "nom": x.get("nom") or x.get("filiere"),
+                "score": round(float(x.get("global_score", 0.0)), 2),
+                "statut": "Recommandee" if x.get("filiere") == chosen["filiere"] and x.get("feasible", True) else "Alternative recommandee" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Alternative" if x.get("feasible", True) else "Non conforme",
+                "compatible": bool(x.get("feasible", True)),
+                "raison": x.get("technical_reason"),
+                "contraintes": x.get("conditions", []),
+                "blocked_reason": x.get("blocked_reason"),
+                "explication": _route_explanation(x, chosen),
+                "technique": round(float(x.get("technical_score", 0.0)), 2),
+                "economique": round(float(x.get("economic_score", 0.0)), 2),
+                "environnement": round(float(x.get("environmental_score", 0.0)), 2),
+                "social": round(float(x.get("social_score", 0.0)), 2),
+                "reglementaire": round(float(x.get("regulatory_score", 0.0)), 2),
+            }
+            for x in sorted(evald, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)
+        ],
         conditions_requises=_req(chosen.get("conditions", [])),
         avertissements=(" | ".join(warnings) if warnings else "Aucun avertissement majeur."),
         donnees_manquantes_critiques=missing_critical,
@@ -1672,10 +1696,102 @@ def _select(evald: list[dict[str, Any]]) -> tuple[dict[str, Any], list[str]]:
     return chosen, reasons
 
 
+def _route_explanation(route: dict[str, Any], chosen: dict[str, Any]) -> str:
+    filiere = str(route.get("filiere") or "").lower()
+    blocked = str(route.get("blocked_reason") or "").strip()
+
+    if route.get("filiere") == chosen.get("filiere"):
+        if filiere == "methanisation_biogaz":
+            base = (
+                "Retenue parce que le flux est humide, fortement charge en matiere organique et peu adapte a une voie thermique. "
+                "Dans ce contexte, la digestion anaerobie valorise mieux la DBO/DCO elevee en biogaz, sous reserve d'un tri initial, d'une homogenisation du lot et d'une hygienisation des intrants."
+            )
+        elif filiere == "compostage":
+            base = (
+                "Retenue parce que le flux reste biologiquement stabilisable sans exigence de PCI eleve. L'humidite et la fraction organique permettent une maturation aerobie, a condition de maitriser les odeurs, les lixiviats et la contamination."
+            )
+        elif filiere == "epandage_agricole":
+            base = (
+                "Retenue seulement si les analyses sanitaires et agronomiques sont conformes. Cette option n'est acceptable que pour un residu organique stabilise, peu contamine et traceable jusqu'au champ d'epandage."
+            )
+        elif filiere == "elimination_securisee":
+            base = (
+                "Retenue comme voie de securite lorsque les autres options restent trop incertaines sur le plan sanitaire, technique ou reglementaire. L'orientation en installation agreee garantit la maitrise et la tracabilite du lot."
+            )
+        else:
+            base = (
+                "Retenue car cette voie correspond le mieux a la nature du flux, a sa qualite materielle et aux contraintes de marche et de conformite."
+            )
+    elif not route.get("feasible", True):
+        if filiere == "compostage":
+            base = (
+                "Ecartee car le lot est trop instable, trop sec ou trop contamine pour une maturation biologique fiable. Les odeurs, les pertes de matiere et les risques sanitaires deviendraient trop difficiles a contenir en exploitation reguliere."
+            )
+        elif filiere == "epandage_agricole":
+            base = (
+                "Ecartee car l'epandage exige un flux stabilise, peu contamine et juridiquement encadre. En l'etat, le risque sanitaire et la contrainte reglementaire restent trop eleves pour une application directe au sol."
+            )
+        elif filiere == "methanisation_biogaz":
+            base = (
+                "Ecartee car les conditions de digestion ne sont pas reunies: la charge organique, l'humidite ou la qualite sanitaire ne donnent pas une marge de securite suffisante pour un digesteur stable."
+            )
+        elif filiere == "elimination_securisee":
+            base = (
+                "Ecartee uniquement si une autre voie reste conforme, car cette option doit rester le filet de securite du dossier."
+            )
+        else:
+            base = (
+                "Ecartee car la qualite du flux, sa contamination ou ses contraintes de marche ne permettent pas une exploitation fiable de cette voie."
+            )
+    else:
+        if filiere == "methanisation_biogaz":
+            base = (
+                "Alternative solide car le lot est organique et humide, mais une autre voie reste plus simple a mettre en oeuvre dans ce dossier. La methanisation demeure pertinente si l'on securise l'hygienisation, le drainage et le pilotage du digesteur."
+            )
+        elif filiere == "compostage":
+            base = (
+                "Alternative plausible car le flux peut se stabiliser biologiquement, mais la tenue economique, les nuisances d'exploitation ou la concurrence d'une voie plus robuste limitent son rang."
+            )
+        elif filiere == "recyclage_mecanique_plastique":
+            base = (
+                "Alternative plausible pour un flux propre et homogene, mais elle reste moins adaptee si la contamination, l'humidite ou l'heterogeneite augmentent."
+            )
+        elif filiere == "reemploi":
+            base = (
+                "Alternative seulement si le lot est suffisamment propre et homogene; en presence de contraintes sanitaires ou de qualite, le reemploi devient trop fragile pour etre prioritaire."
+            )
+        else:
+            base = (
+                "Alternative plausible mais moins robuste que la voie retenue au regard du profil du lot, de la conformite et des debouches disponibles."
+            )
+
+    if blocked:
+        base = f"{base} Limite identifiee: {blocked}."
+    return base
+
+
 def _alternatives(chosen: dict[str, Any], evald: list[dict[str, Any]]) -> list[dict[str, Any]]:
     order = sorted([x for x in evald if x.get("filiere") != chosen.get("filiere")], key=lambda z: float(z.get("global_score", 0.0)), reverse=True)
     out: list[dict[str, Any]] = []
-    for x in order[:3]:
+    for x in order[:4]:
         why = str(x.get("blocked_reason") or "Score global inferieur a la filiere principale.")
-        out.append({"filiere": x["filiere"], "nom": x.get("nom") or x["filiere"], "score": round(float(x.get("global_score", 0.0)), 2), "statut": x.get("status") or "Peu pertinent", "pourquoi_pas_prioritaire": why})
+        if not x.get("feasible", True):
+            why = str(x.get("blocked_reason") or "Non faisable techniquement/reglementairement.")
+        if chosen.get("hierarchy") != x.get("hierarchy") and chosen.get("hierarchy") in {"matiere", "energie"}:
+            why = f"Moins prioritaire dans la hierarchie ({x.get('hierarchy')} apres {chosen.get('hierarchy')})." if x.get("feasible", True) else why
+        out.append({
+            "filiere": x.get("filiere"),
+            "nom": x.get("nom") or x.get("filiere"),
+            "score": round(float(x.get("global_score", 0.0)), 2),
+            "statut": _route_status_label(x, chosen),
+            "pourquoi_pas_prioritaire": why,
+            "blocked": not x.get("feasible", True),
+            "blocked_reason": x.get("blocked_reason"),
+            "explication": _route_explanation(x, chosen),
+            "technique": round(float(x.get("technical_score", 0.0)), 2),
+            "economique": round(float(x.get("economic_score", 0.0)), 2),
+            "environnement": round(float(x.get("environmental_score", 0.0)), 2),
+            "social": round(float(x.get("social_score", 0.0)), 2),
+            "reglementaire": round(float(x.get("regulatory_score", 0.0)), 2),
+        })
     return out

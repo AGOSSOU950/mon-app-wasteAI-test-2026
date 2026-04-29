@@ -1,4 +1,4 @@
-﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
@@ -17,7 +17,6 @@ import PresentationSection from "./components/PresentationSection"
 import AnalysisForm from "./components/AnalysisForm"
 import ResultCard from "./components/ResultCard"
 import MarketplaceSection from "./components/MarketplaceSection"
-import RecommendedChannelsSection from "./components/RecommendedChannelsSection"
 import DashboardSection from "./components/DashboardSection"
 import AdminRegistryPanel from "./components/AdminRegistryPanel"
 import Footer from "./components/Footer"
@@ -194,6 +193,7 @@ function normalizeResultToCard(result) {
     resume_choix: result.resume_choix || "",
     alternatives: Array.isArray(result.alternatives) ? result.alternatives : [],
     classement_filieres: Array.isArray(result.classement_filieres) ? result.classement_filieres : [],
+    scores_par_voie: Array.isArray(result.scores_par_voie) ? result.scores_par_voie : [],
     details_scores: result.details_scores || {},
     details_scores_bruts: result.details_scores_bruts || {},
     justification_technique: result.justification_technique || "",
@@ -383,8 +383,8 @@ export default function App() {
     if (Math.abs(dx) < 64 || Math.abs(dx) < Math.abs(dy)) return
 
     const tabs = MARKETPLACE_ENABLED
-      ? ["presentation", "analyse", "marketplace", "dashboard", "analytics", "admin"]
-      : ["presentation", "analyse", "channels", "dashboard", "analytics", "admin"]
+      ? ["presentation", "analyse", "marketplace", "pilotage", "admin"]
+      : ["presentation", "analyse", "pilotage", "admin"]
     const idx = tabs.indexOf(view)
     if (idx === -1) return
 
@@ -657,8 +657,6 @@ export default function App() {
     }
   }
 
-  const channelsPanelResult = analysisContext
-
   return (
     <main className="app-shell" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
       <Header
@@ -712,7 +710,7 @@ export default function App() {
               correctionOptions={beninWasteDb}
               onSubmitCorrection={submitCorrection}
               correctionStatus={correctionStatus}
-              onOpenMarketplace={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "channels")}
+              onOpenMarketplace={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "pilotage")}
               onSave={handleSaveResult}
               compactMode={Boolean(aiProposal && !analysisResult)}
             />
@@ -733,16 +731,7 @@ export default function App() {
           </MarketplaceSection>
         ) : null}
 
-        {view === "channels" && !MARKETPLACE_ENABLED ? <RecommendedChannelsSection result={channelsPanelResult} /> : null}
-
-        {view === "dashboard" ? <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} /> : null}
-
-        {view === "analytics" ? (
-          <div className="space-y-6">
-            <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} />
-            <RecommendedChannelsSection result={channelsPanelResult} />
-          </div>
-        ) : null}
+        {view === "pilotage" ? <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} /> : null}
 
         {view === "admin" ? <AdminRegistryPanel /> : null}
 
@@ -750,16 +739,14 @@ export default function App() {
       </div>
 
       <nav className="mobile-nav" aria-label="Navigation mobile">
-        <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Presentation</button>
+        <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyser</button>
-        <button className={view === (MARKETPLACE_ENABLED ? "marketplace" : "channels") ? "active" : ""} onClick={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "channels")}>
-          {MARKETPLACE_ENABLED ? "Marketplace" : "Canaux recommandes"}
-        </button>
-        <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}>Stats</button>
-        <button className={view === "analytics" ? "active" : ""} onClick={() => setView("analytics")}>Analytics + Channels</button>
+        {FEATURES.marketplace ? (
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Marketplace</button>
+        ) : null}
+        <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
         <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>
       </nav>
-
       <button className="fab" type="button" onClick={onAnalyzeNow} aria-label="Analyser maintenant">+</button>
 
       {toast ? <div className="toast" role="status" aria-live="polite">{toast}</div> : null}

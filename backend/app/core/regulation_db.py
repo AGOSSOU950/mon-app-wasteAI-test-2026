@@ -234,12 +234,16 @@ def evaluate_regulatory_compliance(
     country_refs = REG_DB.get("references_par_pays", {}).get(country, []) if country else []
     references = [_format_ref(r) for r in REG_DB.get("references_generales", [])] + [_format_ref(r) for r in country_refs]
 
-    has_block = any(bool(v) for v in blocked.values())
+    blocked_count = sum(1 for v in blocked.values() if v)
+    has_block = blocked_count > 0
     max_sev = _max_severity(rule_hits, has_block)
 
     status = "conforme" if not has_block and in_cedeao else "conforme_sous_conditions"
     if has_block:
-        status = "non_conforme"
+        if blocked_count == len(blocked) or max_sev in {"high", "critical"} and blocked_count >= 2:
+            status = "non_conforme"
+        else:
+            status = "conforme_sous_conditions"
     elif warnings or international_restrictions or filiere_restrictions:
         status = "conforme_sous_conditions"
 

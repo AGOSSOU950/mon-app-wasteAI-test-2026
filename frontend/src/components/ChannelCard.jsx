@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 
 const money = (value) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(value || 0))
 
@@ -14,12 +14,13 @@ export default function ChannelCard({ channel, isBest = false, onContact, onSele
         </div>
         {isBest ? (
           <span className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
-            Best option
+            {channel.kind === "buyer" ? "Acheteur #1" : "Traitement #1"}
           </span>
         ) : null}
       </div>
 
       <div className="mt-4 grid gap-2 text-sm text-slate-700">
+        <p><span className="font-medium text-slate-500">Type:</span> {channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
         <p><span className="font-medium text-slate-500">Location:</span> {channel.location}</p>
         <p><span className="font-medium text-slate-500">Distance:</span> {Number(channel.distance_km || 0)} km</p>
         <p><span className="font-medium text-slate-500">Cost / ton:</span> {money(channel.estimated_cost_per_ton)} FCFA</p>

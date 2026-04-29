@@ -1,14 +1,8 @@
 ﻿import React, { useMemo, useState } from "react"
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
-  Cell,
-  Legend,
   Line,
   LineChart,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -30,8 +24,6 @@ const MONTH_LABEL = new Intl.DateTimeFormat("fr-FR", {
   month: "short",
   year: "2-digit",
 })
-
-const COLORS = ["#10b981", "#22c55e", "#f59e0b", "#ef4444", "#06b6d4", "#8b5cf6", "#84cc16", "#14b8a6"]
 
 const TYPE_BENCHMARKS = {
   plastic: { cost_per_ton: 120, gain_per_ton: 260 },
@@ -63,7 +55,7 @@ function formatQuantity(value) {
   return `${NUMBER.format(Number.isFinite(Number(value)) ? Number(value) : 0)} t`
 }
 
-function formatMonthValue(dateString) {
+function formatMonth(dateString) {
   const date = new Date(`${dateString}-01T00:00:00`)
   return Number.isNaN(date.getTime()) ? dateString : MONTH_LABEL.format(date)
 }
@@ -117,140 +109,84 @@ function normalizeRow(row, index = 0) {
   }
 }
 
-function MetricCard({ label, value, hint, tone = "neutral" }) {
-  const toneClasses = {
-    neutral: "from-slate-900 to-slate-800 border-slate-700",
-    positive: "from-emerald-950 to-emerald-900 border-emerald-700/60",
-    negative: "from-rose-950 to-rose-900 border-rose-700/60",
-    amber: "from-amber-950 to-amber-900 border-amber-700/60",
+function StatCard({ label, value, hint, tone = "neutral" }) {
+  const tones = {
+    neutral: "border-slate-200 bg-white",
+    positive: "border-emerald-200 bg-emerald-50",
+    negative: "border-rose-200 bg-rose-50",
+    amber: "border-amber-200 bg-amber-50",
   }
 
   return (
-    <article className={`rounded-2xl border bg-gradient-to-br p-4 shadow-[0_18px_40px_rgba(2,6,23,0.35)] ${toneClasses[tone]}`}>
-      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">{label}</p>
-      <div className="mt-2 text-2xl font-semibold text-white">{value}</div>
-      <p className="mt-1 text-sm text-slate-400">{hint}</p>
+    <article className={`rounded-2xl border p-4 ${tones[tone]}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
+      <div className="mt-2 text-2xl font-semibold text-slate-900">{value}</div>
+      <p className="mt-1 text-sm text-slate-600">{hint}</p>
     </article>
   )
 }
 
-function Panel({ title, subtitle, children, className = "" }) {
+function CompactChannel({ channel, isBest = false }) {
+  if (!channel) return null
+  const net = Number(channel.net_gain_per_ton || 0)
   return (
-    <section className={`rounded-3xl border border-slate-800/80 bg-slate-950/90 p-5 shadow-[0_22px_70px_rgba(2,6,23,0.45)] ${className}`}>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
+    <div className={`rounded-2xl border p-4 ${isBest ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+      <div className="flex items-start justify-between gap-3">
         <div>
-          <h3 className="text-lg font-semibold text-white">{title}</h3>
-          {subtitle ? <p className="mt-1 text-sm text-slate-400">{subtitle}</p> : null}
+          <p className="font-semibold text-slate-900">{channel.name}</p>
+          <p className="text-sm text-slate-600">{channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
         </div>
+        {isBest ? <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">Choix</span> : null}
       </div>
-      {children}
-    </section>
-  )
-}
-
-function ChartTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null
-  return (
-    <div className="rounded-2xl border border-slate-700 bg-slate-950/95 px-4 py-3 shadow-2xl">
-      <p className="text-sm font-semibold text-white">{label}</p>
-      <div className="mt-2 space-y-1 text-sm text-slate-300">
-        {payload.map((item) => (
-          <p key={item.dataKey}>
-            <span className="mr-2 inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-            {item.name}: {formatCurrency(item.value)}
-          </p>
-        ))}
+      <div className="mt-3 grid gap-1 text-sm text-slate-600">
+        <p>{channel.location}</p>
+        <p>{Number(channel.distance_km || 0)} km</p>
+        <p>{formatCurrency(net)} / t</p>
       </div>
     </div>
   )
 }
 
-function CompactChannelCard({ channel, isBest = false }) {
-  if (!channel) return null
-  const net = Number(channel.net_gain_per_ton || 0)
-  return (
-    <article className={`rounded-2xl border p-4 ${isBest ? "border-emerald-500/40 bg-emerald-500/10" : "border-slate-800 bg-slate-900/80"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-white">{channel.name}</p>
-          <p className="mt-1 text-xs text-slate-400">{channel.type}</p>
-        </div>
-        {isBest ? <span className="rounded-full bg-emerald-500 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-950">Best</span> : null}
-      </div>
-      <div className="mt-3 grid gap-1 text-xs text-slate-300">
-        <p>Distance: {Number(channel.distance_km || 0)} km</p>
-        <p>Net gain / ton: {formatCurrency(net)}</p>
-      </div>
-    </article>
-  )
-}
-
 function DashboardSection({ analytics, loading, onRefresh }) {
-  const sourceRows = useMemo(() => {
-    const analyticsRows = Array.isArray(analytics?.history) ? analytics.history.map(normalizeRow).filter(Boolean) : []
-    return analyticsRows.length > 0 ? analyticsRows : MOCK_WASTE_DATA
+  const sourceLignes = useMemo(() => {
+    const analyticsLignes = Array.isArray(analytics?.history) ? analytics.history.map(normalizeRow).filter(Boolean) : []
+    return analyticsLignes.length > 0 ? analyticsLignes : MOCK_WASTE_DATA
   }, [analytics])
 
   const [monthFilter, setMonthFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
 
-  const monthOptions = useMemo(() => [...new Set(sourceRows.map((row) => row.date.slice(0, 7)).filter(Boolean))].sort((a, b) => b.localeCompare(a)), [sourceRows])
-  const typeOptions = useMemo(() => [...new Set(sourceRows.map((row) => row.type).filter(Boolean))].sort(), [sourceRows])
+  const monthOptions = useMemo(() => [...new Set(sourceLignes.map((row) => row.date.slice(0, 7)).filter(Boolean))].sort((a, b) => b.localeCompare(a)), [sourceLignes])
+  const typeOptions = useMemo(() => [...new Set(sourceLignes.map((row) => row.type).filter(Boolean))].sort(), [sourceLignes])
 
-  const visibleRows = useMemo(() => {
-    return sourceRows.filter((row) => {
-      const matchesMonth = monthFilter === "all" || row.date.slice(0, 7) === monthFilter
-      const matchesType = typeFilter === "all" || row.type === typeFilter
-      return matchesMonth && matchesType
-    })
-  }, [sourceRows, monthFilter, typeFilter])
+  const visibleLignes = useMemo(() => sourceLignes.filter((row) => {
+    const matchesMonth = monthFilter === "all" || row.date.slice(0, 7) === monthFilter
+    const matchesType = typeFilter === "all" || row.type === typeFilter
+    return matchesMonth && matchesType
+  }), [sourceLignes, monthFilter, typeFilter])
 
   const metrics = useMemo(() => {
-    const totalCost = visibleRows.reduce((sum, row) => sum + row.cost_per_ton * row.quantity, 0)
-    const totalGain = visibleRows.reduce((sum, row) => sum + row.gain_per_ton * row.quantity, 0)
+    const totalCost = visibleLignes.reduce((sum, row) => sum + row.cost_per_ton * row.quantity, 0)
+    const totalGain = visibleLignes.reduce((sum, row) => sum + row.gain_per_ton * row.quantity, 0)
     const net = totalGain - totalCost
-    const positiveRows = visibleRows.filter((row) => row.gain_per_ton > row.cost_per_ton).length
-    const valorizationRate = visibleRows.length ? (positiveRows / visibleRows.length) * 100 : 0
+    const positiveCount = visibleLignes.filter((row) => row.gain_per_ton > row.cost_per_ton).length
+    const valorizationRate = visibleLignes.length ? (positiveCount / visibleLignes.length) * 100 : 0
     return { totalCost, totalGain, net, valorizationRate }
-  }, [visibleRows])
+  }, [visibleLignes])
 
   const monthlySeries = useMemo(() => {
     const map = new Map()
-    visibleRows.forEach((row) => {
+    visibleLignes.forEach((row) => {
       const month = row.date.slice(0, 7)
-      const current = map.get(month) || { month, cost: 0, gain: 0, label: formatMonthValue(month) }
+      const current = map.get(month) || { month, cost: 0, gain: 0, label: formatMonth(month) }
       current.cost += row.cost_per_ton * row.quantity
       current.gain += row.gain_per_ton * row.quantity
       map.set(month, current)
     })
     return [...map.values()].sort((a, b) => a.month.localeCompare(b.month))
-  }, [visibleRows])
+  }, [visibleLignes])
 
-  const typeSeries = useMemo(() => {
-    const map = new Map()
-    visibleRows.forEach((row) => {
-      const current = map.get(row.type) || { type: row.type, cost: 0, gain: 0, quantity: 0 }
-      current.cost += row.cost_per_ton * row.quantity
-      current.gain += row.gain_per_ton * row.quantity
-      current.quantity += row.quantity
-      map.set(row.type, current)
-    })
-    return [...map.values()].sort((a, b) => b.quantity - a.quantity)
-  }, [visibleRows])
-
-  const pieSeries = useMemo(() => {
-    const map = new Map()
-    visibleRows.forEach((row) => map.set(row.type, (map.get(row.type) || 0) + row.quantity))
-    return [...map.entries()].map(([type, quantity]) => ({ type, quantity })).sort((a, b) => b.quantity - a.quantity)
-  }, [visibleRows])
-
-  const netRows = useMemo(() => {
-    return [...visibleRows]
-      .map((row) => ({ ...row, net: (row.gain_per_ton - row.cost_per_ton) * row.quantity }))
-      .sort((a, b) => b.date.localeCompare(a.date) || b.net - a.net)
-  }, [visibleRows])
-
-  const latestWaste = visibleRows[0] || null
+  const latestWaste = visibleLignes[0] || null
   const channelContext = useMemo(() => {
     if (!latestWaste) return null
     return {
@@ -262,227 +198,132 @@ function DashboardSection({ analytics, loading, onRefresh }) {
   }, [latestWaste])
 
   const rankedChannels = useMemo(() => {
-    if (!channelContext) return { best: null, alternatives: [], all: [] }
+    if (!channelContext) return { best: null, directBuyer: null, treatmentChannel: null, alternatives: [], hasDirectBuyer: false }
     return rankChannels(channelContext)
   }, [channelContext])
 
-  const bestChannel = rankedChannels.best
-  const topChannels = [bestChannel, ...rankedChannels.alternatives].filter(Boolean)
-  const topTypeLabel = pieSeries.length ? pieSeries[0].type : "No data"
-  const loadingBadge = loading ? "Refreshing..." : `${visibleRows.length} flows shown`
+  const bestChannel = rankedChannels.directBuyer || rankedChannels.treatmentChannel || rankedChannels.best || null
+  const alternatives = rankedChannels.alternatives.slice(0, 2)
+  const recentRows = [...visibleLignes].slice(0, 4)
 
   return (
-    <section className="rounded-[2rem] border border-slate-800 bg-[radial-gradient(circle_at_top,_rgba(16,185,129,0.16),_transparent_35%),linear-gradient(180deg,_#0b1220_0%,_#020617_100%)] p-4 md:p-6">
-      <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-400">WasteAI control tower</p>
-          <h2 className="mt-2 text-3xl font-semibold text-white md:text-4xl">Industrial Waste Dashboard</h2>
-          <p className="mt-2 max-w-2xl text-sm text-slate-400">
-            Financial and operational tracking of valorization, with direct linkage to local treatment channels.
-          </p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Pilotage WasteAI</p>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">Résumé de valorisation</h2>
+          <p className="mt-1 max-w-2xl text-sm text-slate-600">Un seul écran pour lire les chiffres clés, le canal le plus cohérent et les derniers flux.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm font-medium text-slate-300">
-            {loadingBadge}
-          </div>
-          <button
-            type="button"
-            onClick={onRefresh}
-            disabled={loading}
-            className="rounded-full border border-emerald-500/50 bg-emerald-500/10 px-4 py-2 text-sm font-semibold text-emerald-300 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading ? "Refreshing" : "Refresh data"}
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onRefresh}
+          disabled={loading}
+          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {loading ? "Actualisation" : "Rafraîchir"}
+        </button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <MetricCard label="Total cost (€)" value={formatCurrency(metrics.totalCost)} hint="Operational treatment cost" tone="negative" />
-        <MetricCard label="Total gain (€)" value={formatCurrency(metrics.totalGain)} hint="Valorizable revenue" tone="positive" />
-        <MetricCard label="Net balance (€)" value={formatCurrency(metrics.net)} hint={metrics.net >= 0 ? "Positive balance" : "Negative balance"} tone={metrics.net >= 0 ? "positive" : "negative"} />
-        <MetricCard label="Valorization rate (%)" value={`${metrics.valorizationRate.toFixed(1)}%`} hint={`Top type: ${topTypeLabel}`} tone="amber" />
+      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Gain total" value={formatCurrency(metrics.totalGain)} hint="Revenu valorisable" tone="positive" />
+        <StatCard label="Coût total" value={formatCurrency(metrics.totalCost)} hint="Traitement et logistique" tone="negative" />
+        <StatCard label="Solde net" value={formatCurrency(metrics.net)} hint={metrics.net >= 0 ? "Position positive" : "Position négative"} tone={metrics.net >= 0 ? "positive" : "negative"} />
+        <StatCard label="Taux de valorisation" value={`${metrics.valorizationRate.toFixed(1)}%`} hint="Part des flux favorables" tone="amber" />
       </div>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-[1.3fr_0.7fr]">
-        <Panel title="Filters" subtitle="View by month and waste type">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <label className="grid gap-2 text-sm text-slate-300">
-              Month
-              <select
-                value={monthFilter}
-                onChange={(event) => setMonthFilter(event.target.value)}
-                className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400"
-              >
-                <option value="all">All months</option>
-                {monthOptions.map((month) => (
-                  <option key={month} value={month}>{formatMonthValue(month)}</option>
-                ))}
-              </select>
-            </label>
-            <label className="grid gap-2 text-sm text-slate-300">
-              Waste type
-              <select
-                value={typeFilter}
-                onChange={(event) => setTypeFilter(event.target.value)}
-                className="rounded-2xl border border-slate-700 bg-slate-900 px-4 py-3 text-slate-100 outline-none transition focus:border-emerald-400"
-              >
-                <option value="all">All types</option>
-                {typeOptions.map((type) => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
-              </select>
-            </label>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-400">
-            <span className="rounded-full border border-slate-700 px-3 py-1">Net = gain - cost</span>
-            <span className="rounded-full border border-slate-700 px-3 py-1">Positive = green</span>
-            <span className="rounded-full border border-slate-700 px-3 py-1">Negative = red</span>
-          </div>
-        </Panel>
-
-        <Panel title="Operational snapshot" subtitle="Current filtered dataset">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Rows</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{visibleRows.length}</p>
-            </div>
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-4">
-              <p className="text-xs uppercase tracking-[0.2em] text-slate-400">Best type</p>
-              <p className="mt-2 text-2xl font-semibold text-white">{topTypeLabel}</p>
+      <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_360px]">
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="grid gap-2 text-sm text-slate-600">
+                Mois
+                <select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none">
+                  <option value="all">Tous les mois</option>
+                  {monthOptions.map((month) => <option key={month} value={month}>{formatMonth(month)}</option>)}
+                </select>
+              </label>
+              <label className="grid gap-2 text-sm text-slate-600">
+                Filière
+                <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none">
+                  <option value="all">Toutes</option>
+                  {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </label>
             </div>
           </div>
-          <div className="mt-4 rounded-2xl border border-slate-800 bg-slate-900/80 p-4 text-sm text-slate-300">
-            Selected filters drive every calculation and chart.
-          </div>
-        </Panel>
-      </div>
 
-      <div className="mt-6 grid gap-4 xl:grid-cols-2">
-        <Panel title="Monthly evolution" subtitle="Cost vs gain over time">
-          <div className="h-[320px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={monthlySeries} margin={{ top: 10, right: 16, bottom: 8, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                <XAxis dataKey="label" stroke="#94a3b8" tickLine={false} axisLine={{ stroke: "#334155" }} />
-                <YAxis stroke="#94a3b8" tickLine={false} axisLine={{ stroke: "#334155" }} tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip content={<ChartTooltip />} />
-                <Legend />
-                <Line type="monotone" dataKey="cost" name="Cost" stroke="#ef4444" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-                <Line type="monotone" dataKey="gain" name="Gain" stroke="#22c55e" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-
-        <Panel title="Waste mix" subtitle="Distribution by type">
-          <div className="grid gap-4 lg:grid-cols-[1fr_140px] lg:items-center">
-            <div className="h-[300px] w-full">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Tendance mensuelle</h3>
+                <p className="text-sm text-slate-600">Coût et gain agrégés</p>
+              </div>
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{visibleLignes.length} flux</span>
+            </div>
+            <div className="h-[220px] w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip content={<ChartTooltip />} />
-                  <Pie data={pieSeries} dataKey="quantity" nameKey="type" innerRadius={70} outerRadius={110} paddingAngle={3}>
-                    {pieSeries.map((entry, index) => (
-                      <Cell key={entry.type} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Legend />
-                </PieChart>
+                <LineChart data={monthlySeries} margin={{ top: 10, right: 12, bottom: 6, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="label" stroke="#64748b" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
+                  <YAxis stroke="#64748b" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tickFormatter={(value) => formatCurrency(value)} />
+                  <Tooltip />
+                  <Line type="monotone" dataKey="gain" name="Gain" stroke="#16a34a" strokeWidth={3} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="cost" name="Coût" stroke="#dc2626" strokeWidth={3} dot={{ r: 3 }} />
+                </LineChart>
               </ResponsiveContainer>
             </div>
-            <div className="space-y-3">
-              {pieSeries.slice(0, 5).map((entry, index) => (
-                <div key={entry.type} className="flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/80 px-3 py-2">
-                  <span className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-white">{entry.type}</p>
-                    <p className="text-xs text-slate-400">{formatQuantity(entry.quantity)}</p>
-                  </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900">Canal cohérent</h3>
+                <p className="text-sm text-slate-600">Acheteur direct ou traitement</p>
+              </div>
+              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Pilotage</span>
+            </div>
+            {channelContext && bestChannel ? (
+              <div className="mt-4 space-y-3">
+                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Recommandé</p>
+                  <p className="mt-1 text-xl font-semibold text-slate-900">{bestChannel.name}</p>
+                  <p className="mt-1 text-sm text-slate-600">{bestChannel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
+                  <p className="mt-2 text-sm text-slate-700">{channelContext.name} - {formatQuantity(channelContext.quantity)} - {channelContext.recommendation}</p>
+                  {!rankedChannels.hasDirectBuyer ? <p className="mt-2 text-sm text-amber-700">Aucun acheteur direct pertinent, on privilégie la voie de traitement cohérente.</p> : null}
                 </div>
-              ))}
-            </div>
-          </div>
-        </Panel>
-      </div>
-
-      <div className="mt-6 grid gap-4 xl:grid-cols-2">
-        <Panel title="Cost and gain by waste type" subtitle="Grouped financial performance">
-          <div className="h-[320px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={typeSeries} margin={{ top: 10, right: 16, bottom: 8, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" />
-                <XAxis dataKey="type" stroke="#94a3b8" tickLine={false} axisLine={{ stroke: "#334155" }} />
-                <YAxis stroke="#94a3b8" tickLine={false} axisLine={{ stroke: "#334155" }} tickFormatter={(value) => formatCurrency(value)} />
-                <Tooltip content={<ChartTooltip />} />
-                <Legend />
-                <Bar dataKey="cost" name="Cost" fill="#ef4444" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="gain" name="Gain" fill="#22c55e" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-
-        <Panel title="Local channels" subtitle="Best destination for the latest waste flow">
-          {channelContext && bestChannel ? (
-            <div className="space-y-3">
-              <div className="rounded-2xl border border-emerald-500/30 bg-emerald-500/10 p-4">
-                <p className="text-xs uppercase tracking-[0.2em] text-emerald-300">Recommended destination</p>
-                <p className="mt-1 text-xl font-semibold text-white">{bestChannel.name}</p>
-                <p className="mt-1 text-sm text-emerald-100/85">
-                  For {channelContext.name} · {Number(channelContext.quantity || 0)} tons · {channelContext.recommendation}
-                </p>
+                <div className="grid gap-3">
+                  {alternatives.map((channel, index) => <CompactChannel key={channel.id} channel={channel} isBest={index === 0} />)}
+                </div>
               </div>
-              <div className="grid gap-3">
-                {topChannels.map((channel, index) => (
-                  <CompactChannelCard key={channel.id} channel={channel} isBest={index === 0} />
-                ))}
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400">No channel match available yet.</p>
-          )}
-        </Panel>
-      </div>
+            ) : (
+              <p className="mt-4 text-sm text-slate-600">Aucun canal pertinent pour l’instant.</p>
+            )}
+          </div>
 
-      <Panel title="Waste table" subtitle="Filtered operational list">
-        <div className="overflow-x-auto rounded-2xl border border-slate-800">
-          <table className="min-w-full divide-y divide-slate-800 text-left">
-            <thead className="bg-slate-900 text-xs uppercase tracking-[0.16em] text-slate-400">
-              <tr>
-                <th className="px-4 py-3">Waste name</th>
-                <th className="px-4 py-3">Quantity</th>
-                <th className="px-4 py-3">Recommendation</th>
-                <th className="px-4 py-3">Cost / ton</th>
-                <th className="px-4 py-3">Gain / ton</th>
-                <th className="px-4 py-3">Net result</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800 bg-slate-950 text-sm text-slate-200">
-              {netRows.length > 0 ? netRows.map((row) => {
+          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+            <h3 className="text-lg font-semibold text-slate-900">Derniers flux</h3>
+            <div className="mt-3 space-y-3">
+              {recentRows.map((row) => {
                 const net = (row.gain_per_ton - row.cost_per_ton) * row.quantity
                 const positive = net >= 0
                 return (
-                  <tr key={row.id} className="transition hover:bg-slate-900/80">
-                    <td className="px-4 py-4 font-medium text-white">{row.name}</td>
-                    <td className="px-4 py-4">{formatQuantity(row.quantity)}</td>
-                    <td className="px-4 py-4 text-slate-300">{row.recommendation}</td>
-                    <td className="px-4 py-4">{formatCurrency(row.cost_per_ton)}</td>
-                    <td className="px-4 py-4">{formatCurrency(row.gain_per_ton)}</td>
-                    <td className="px-4 py-4">
-                      <span className={`rounded-full px-3 py-1 text-xs font-semibold ${positive ? "bg-emerald-500/15 text-emerald-300" : "bg-rose-500/15 text-rose-300"}`}>
-                        {formatCurrency(net)}
-                      </span>
-                    </td>
-                  </tr>
+                  <div key={row.id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-slate-900">{row.name}</p>
+                      <p className="text-sm text-slate-600">{row.recommendation}</p>
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${positive ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                      {formatCurrency(net)}
+                    </span>
+                  </div>
                 )
-              }) : (
-                <tr>
-                  <td className="px-4 py-8 text-slate-400" colSpan={6}>No waste entries match the selected filters.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+              })}
+            </div>
+          </div>
         </div>
-      </Panel>
+      </div>
     </section>
   )
 }
