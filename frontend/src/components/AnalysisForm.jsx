@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 
 const CEDEAO_COUNTRIES = [
   "Benin",
@@ -58,7 +58,6 @@ const WASTE_TYPES = [
 export default function AnalysisForm({
   form,
   setForm,
-  imagePreview,
   identifyLoading,
   identifyLoadingMessage,
   loading,
@@ -68,23 +67,29 @@ export default function AnalysisForm({
   onAnalyze,
   onReset,
   onPrefill,
+  photoAiEnabled = true,
 }) {
   return (
     <section className="card analysis-wrap" id="analysis-form">
-      <h3 className="step-title">Etape 1 - Upload photo</h3>
-      <div className={`upload-zone ${identifyLoading ? "scan-overlay" : ""}`}>
-        <p><strong>Glissez votre photo ici</strong> ou cliquez pour choisir</p>
-        <small>Formats: JPG, PNG, WEBP</small>
-        <label htmlFor="waste-photo" className="sr-only">Photo du dechet</label>
-        <input id="waste-photo" type="file" accept="image/*" onChange={onImageChange} />
-        {imagePreview ? <img className="photo-preview" src={imagePreview} alt="Apercu" loading="lazy" decoding="async" /> : null}
-        <div className="actions-row">
-          <button className="btn" type="button" onClick={onIdentify} disabled={identifyLoading}>{identifyLoading ? "Identification..." : "Relancer identification"}</button>
-        </div>
-        <div style={{ marginTop: 10 }}><small>{identifyLoading ? (identifyLoadingMessage || "Analyse en cours...") : "Identification automatique au telechargement. Verifiez puis validez/corrigez."}</small></div>
-      </div>
+      {photoAiEnabled ? (
+        <>
+          <h3 className="step-title">Etape 1 - Upload photo</h3>
+          <div className={`upload-zone ${identifyLoading ? "scan-overlay" : ""}`}>
+            <p><strong>Glissez votre photo ici</strong> ou cliquez pour choisir</p>
+            <small>Formats: JPG, PNG, WEBP</small>
+            <label htmlFor="waste-photo" className="sr-only">Photo du dechet</label>
+            <input id="waste-photo" type="file" accept="image/*" onChange={onImageChange} />
+            <div className="actions-row">
+              <button className="btn" type="button" onClick={onIdentify} disabled={identifyLoading}>{identifyLoading ? "Identification..." : "Relancer identification"}</button>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <small>{identifyLoading ? (identifyLoadingMessage || "Analyse en cours...") : "Identification automatique au telechargement. Verifiez puis validez/corrigez."}</small>
+            </div>
+          </div>
+        </>
+      ) : null}
 
-      <h3 className="step-title" style={{ marginTop: 16 }}>Etape 2 - Informations complementaires</h3>
+      <h3 className="step-title" style={{ marginTop: photoAiEnabled ? 16 : 0 }}>Etape 1 - Informations complementaires</h3>
       <div className="form-grid">
         <div className="field"><label htmlFor="waste-name">Nom du dechet</label><input id="waste-name" placeholder="Ex: Boues huileuses" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></div>
         <div className="field"><label htmlFor="waste-qty">Quantite (kg)</label><input id="waste-qty" type="number" placeholder="Ex: 500" value={form.quantite_kg} onChange={(e) => setForm({ ...form, quantite_kg: e.target.value })} /></div>
@@ -101,7 +106,7 @@ export default function AnalysisForm({
         <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="waste-description">Description</label><textarea id="waste-description" placeholder="Precisez l'etat, la contamination, l'origine, le process industriel..." value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
       </div>
 
-      <h3 className="step-title" style={{ marginTop: 16 }}>Etape 2 bis - Caracteristiques physico-chimiques (optionnel)</h3>
+      <h3 className="step-title" style={{ marginTop: 16 }}>Etape 2 - Caracteristiques physico-chimiques (optionnel)</h3>
       <p style={{ margin: "0 0 10px", color: "var(--muted)" }}>
         Si vous renseignez ces donnees, elles sont prioritaires. Sinon, WasteAI complete automatiquement avec la base scientifique.
       </p>
@@ -111,8 +116,9 @@ export default function AnalysisForm({
 
         <div className="field"><label htmlFor="waste-dbo">DBO (mg/L)</label><input id="waste-dbo" type="number" step="1" placeholder="Ex: 1400" value={form.dbo_mg_l || ""} onChange={(e) => setForm({ ...form, dbo_mg_l: e.target.value })} /></div>
         <div className="field"><label htmlFor="waste-dco">DCO (mg/L)</label><input id="waste-dco" type="number" step="1" placeholder="Ex: 2600" value={form.dco_mg_l || ""} onChange={(e) => setForm({ ...form, dco_mg_l: e.target.value })} /></div>
+        <div className="field"><label htmlFor="waste-humidity">Taux d'humidite (%)</label><input id="waste-humidity" type="number" step="0.1" placeholder="Ex: 35" value={form.taux_humidite_pct || ""} onChange={(e) => setForm({ ...form, taux_humidite_pct: e.target.value })} /></div>
 
-        <div className="field"><label htmlFor="waste-contamination">Taux contamination (%)</label><input id="waste-contamination" type="number" step="0.1" placeholder="Ex: 15" value={form.taux_contamination_pct || ""} onChange={(e) => setForm({ ...form, taux_contamination_pct: e.target.value })} /></div>
+        <div className="field"><label htmlFor="waste-contamination">Taux de contamination (%)</label><input id="waste-contamination" type="number" step="0.1" placeholder="Ex: 15" value={form.taux_contamination_pct || ""} onChange={(e) => setForm({ ...form, taux_contamination_pct: e.target.value })} /></div>
         <div className="field"><label htmlFor="waste-plastic-type">Type plastique</label><input id="waste-plastic-type" placeholder="Ex: PET, PEHD, PVC" value={form.type_plastique || ""} onChange={(e) => setForm({ ...form, type_plastique: e.target.value })} /></div>
 
         <div className="field"><label htmlFor="waste-chlore">Presence chlore</label><select id="waste-chlore" value={form.presence_chlore ?? ""} onChange={(e) => setForm({ ...form, presence_chlore: e.target.value })}><option value="">Non renseigne</option><option value="true">Oui</option><option value="false">Non</option></select></div>

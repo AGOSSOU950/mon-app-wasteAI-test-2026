@@ -1,0 +1,1931 @@
+[
+  {
+    "timestamp": "2026-04-29T18:17:40.635595Z",
+    "waste_name": "CSR",
+    "country": "Benin",
+    "decision_principale": "reemploi",
+    "score_global": 86.94,
+    "classement_filieres": [
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 86.94,
+        "statut": "recommande",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Lot sec; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 85.98,
+        "statut": "non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre; Humidite compatible | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 73.13,
+        "statut": "non pertinent",
+        "compatible": true,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: PCI tres favorable; Flux sec; Flux compatible | contraintes: pci_mj_kg; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 60.13,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | penalites: Humidite trop faible | contraintes: categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "categorie"
+      },
+      {
+        "id": "co_incineration_cimenterie",
+        "nom": "Co-incineration cimenterie",
+        "type": "thermique",
+        "score": 58.38,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions. | conditions: PCI favorable; Flux sec | contraintes: pci_mj_kg; presence_chlore; pas de cimenterie autorisee",
+        "contraintes": {
+          "necessite_cimenterie": true,
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            }
+          ]
+        },
+        "blocked_reason": "pci_mj_kg; presence_chlore; pas de cimenterie autorisee"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 85.98,
+        "statut": "non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "score": 73.13,
+        "statut": "non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 60.13,
+        "statut": "non disponible",
+        "pourquoi_pas_prioritaire": "categorie"
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "conforme",
+      "max_severity": "low",
+      "risk_score": 0,
+      "rule_hits": [],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": []
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:17:40.666843Z",
+    "waste_name": "excrements d'animaux",
+    "country": "Benin",
+    "decision_principale": "methanisation_biogaz",
+    "score_global": 67.49,
+    "classement_filieres": [
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 67.49,
+        "statut": "recommande",
+        "compatible": true,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | conditions: Humidite favorable; Charge organique forte; Flux organique | contraintes: categorie; humidite_pct",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 65.27,
+        "statut": "non pertinent",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 64.9,
+        "statut": "non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "compostage",
+        "nom": "Compostage",
+        "type": "biologique",
+        "score": 45.28,
+        "statut": "non pertinent",
+        "compatible": true,
+        "raison": "Stabilisation biologique des flux organiques et lignocellulosiques peu dangereux. | conditions: Contamination faible; Flux organique | contraintes: humidite_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 41.33,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: Flux compatible",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "constrained"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "score": 65.27,
+        "statut": "non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 64.9,
+        "statut": "non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "compostage",
+        "nom": "Compostage",
+        "score": 45.28,
+        "statut": "non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "non_conforme",
+      "max_severity": "high",
+      "risk_score": 70,
+      "rule_hits": [
+        {
+          "id": "ecowas_hazardous_transfer",
+          "label": "Flux dangereux vers operateur agree",
+          "severity": "high",
+          "source": "Cadres nationaux dechets dangereux",
+          "article": "Gestion des dechets dangereux",
+          "message": "Flux reglemente: transfert vers operateur agree requis (pas de vente directe).",
+          "blocked_decision": "Vente directe sur marketplace"
+        },
+        {
+          "id": "ecowas_hazardous_transfer",
+          "label": "Flux dangereux vers operateur agree",
+          "severity": "high",
+          "source": "Cadres nationaux dechets dangereux",
+          "article": "Gestion des dechets dangereux",
+          "message": "Boues de vidange: vente directe interdite, traitement encadre obligatoire.",
+          "blocked_decision": "Vente directe sur marketplace"
+        }
+      ],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": [
+        "Boues de vidange: vente directe interdite, traitement encadre obligatoire."
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:17:40.673351Z",
+    "waste_name": "peinture industrie chimique",
+    "country": "Benin",
+    "decision_principale": "neutralisation_chimique",
+    "score_global": 44.65,
+    "classement_filieres": [
+      {
+        "id": "neutralisation_chimique",
+        "nom": "Neutralisation chimique",
+        "type": "chimique",
+        "score": 44.65,
+        "statut": "recommande",
+        "compatible": false,
+        "raison": "Traitement prioritaire des flux dangereux, reactifs ou necessitant une stabilisation chimique. | conditions: Flux chimique prioritaire; Danger eleve | contraintes: categorie; danger_level",
+        "contraintes": {
+          "any": [
+            {
+              "field": "categorie",
+              "op": "eq",
+              "value": "chimique"
+            },
+            {
+              "field": "danger_level",
+              "op": "in",
+              "value": [
+                "eleve",
+                "critique"
+              ]
+            },
+            {
+              "field": "presence_chlore",
+              "op": "truthy"
+            },
+            {
+              "field": "metaux_pct",
+              "op": "gt",
+              "value": 20
+            }
+          ]
+        },
+        "blocked_reason": "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire."
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 43.65,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre | penalites: Flux chimique non recycle en matiere | contraintes: contamination_pct; presence_chlore",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "contamination_pct; presence_chlore | Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire."
+      },
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 39.75,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre | penalites: Danger eleve; Flux chimique non adapte au reemploi | contraintes: contamination_pct; danger_level",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "contamination_pct; danger_level"
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 38.52,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | conditions: Humidite favorable | penalites: Risque sanitaire eleve; Flux chimique non methanisable",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "constrained | Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire."
+      },
+      {
+        "id": "compostage",
+        "nom": "Compostage",
+        "type": "biologique",
+        "score": 33.28,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Stabilisation biologique des flux organiques et lignocellulosiques peu dangereux. | conditions: Humidite exploitable; Contamination faible | penalites: Flux chimique non compostable | contraintes: humidite_pct; danger_level",
+        "contraintes": {
+          "all": [
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "humidite_pct; danger_level | Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire."
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 43.65,
+        "statut": "non disponible",
+        "pourquoi_pas_prioritaire": "contamination_pct; presence_chlore | Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire."
+      },
+      {
+        "filiere": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "score": 39.75,
+        "statut": "non disponible",
+        "pourquoi_pas_prioritaire": "contamination_pct; danger_level"
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 38.52,
+        "statut": "non disponible",
+        "pourquoi_pas_prioritaire": "constrained | Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire."
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "non_conforme",
+      "max_severity": "critical",
+      "risk_score": 100,
+      "rule_hits": [
+        {
+          "id": "ecowas_danger_market",
+          "label": "Interdiction vente directe dechets dangereux",
+          "severity": "high",
+          "source": "Cadres nationaux environnement + Bamako/Bale",
+          "article": "Principe de precaution",
+          "message": "Vente directe non conforme pour dechets dangereux sans autorisation specifique.",
+          "blocked_decision": "Vente directe sur marketplace"
+        },
+        {
+          "id": "ecowas_chemical_secure_disposal",
+          "label": "Dechets chimiques dangereux: elimination securisee",
+          "severity": "critical",
+          "source": "Bamako/Bale + cadres nationaux",
+          "article": "Gestion dechets dangereux",
+          "message": "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire.",
+          "blocked_decision": "Vente directe sur marketplace"
+        },
+        {
+          "id": "ecowas_chemical_secure_disposal",
+          "label": "Dechets chimiques dangereux: elimination securisee",
+          "severity": "critical",
+          "source": "Bamako/Bale + cadres nationaux",
+          "article": "Gestion dechets dangereux",
+          "message": "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire.",
+          "blocked_decision": "Valorisation matiere (charbon actif, refonte...)"
+        },
+        {
+          "id": "ecowas_chemical_secure_disposal",
+          "label": "Dechets chimiques dangereux: elimination securisee",
+          "severity": "critical",
+          "source": "Bamako/Bale + cadres nationaux",
+          "article": "Gestion dechets dangereux",
+          "message": "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire.",
+          "blocked_decision": "Valorisation energetique (biogaz, combustible, electricite...)"
+        }
+      ],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": [
+        "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire.",
+        "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire.",
+        "Dechets chimiques dangereux: elimination/neutralisation securisee obligatoire."
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:17:40.688981Z",
+    "waste_name": "CSR",
+    "country": "Benin",
+    "decision_principale": "reemploi",
+    "score_global": 86.94,
+    "classement_filieres": [
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 86.94,
+        "statut": "recommande",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Lot sec; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 85.98,
+        "statut": "non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre; Humidite compatible | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 73.13,
+        "statut": "non pertinent",
+        "compatible": true,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: PCI tres favorable; Flux sec; Flux compatible | contraintes: pci_mj_kg; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 60.13,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | penalites: Humidite trop faible | contraintes: categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "categorie"
+      },
+      {
+        "id": "co_incineration_cimenterie",
+        "nom": "Co-incineration cimenterie",
+        "type": "thermique",
+        "score": 58.38,
+        "statut": "non disponible",
+        "compatible": false,
+        "raison": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions. | conditions: PCI favorable; Flux sec | contraintes: pci_mj_kg; presence_chlore; pas de cimenterie autorisee",
+        "contraintes": {
+          "necessite_cimenterie": true,
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            }
+          ]
+        },
+        "blocked_reason": "pci_mj_kg; presence_chlore; pas de cimenterie autorisee"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 85.98,
+        "statut": "non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "score": 73.13,
+        "statut": "non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 60.13,
+        "statut": "non disponible",
+        "pourquoi_pas_prioritaire": "categorie"
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "conforme",
+      "max_severity": "low",
+      "risk_score": 0,
+      "rule_hits": [],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": []
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:17:56.905232Z",
+    "waste_name": "CSR",
+    "country": "Benin",
+    "decision_principale": "reemploi",
+    "score_global": 86.94,
+    "classement_filieres": [
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 86.94,
+        "statut": "Recommande",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Lot sec; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre; Humidite compatible | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: PCI tres favorable; Flux sec; Flux compatible | contraintes: pci_mj_kg; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 60.13,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | penalites: Humidite trop faible | contraintes: categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "categorie"
+      },
+      {
+        "id": "co_incineration_cimenterie",
+        "nom": "Co-incineration cimenterie",
+        "type": "thermique",
+        "score": 58.38,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions. | conditions: PCI favorable; Flux sec | contraintes: pci_mj_kg; presence_chlore; pas de cimenterie autorisee",
+        "contraintes": {
+          "necessite_cimenterie": true,
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            }
+          ]
+        },
+        "blocked_reason": "pci_mj_kg; presence_chlore; pas de cimenterie autorisee"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 60.13,
+        "statut": "Non disponible",
+        "pourquoi_pas_prioritaire": "categorie"
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "conforme",
+      "max_severity": "low",
+      "risk_score": 0,
+      "rule_hits": [],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": []
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:17:56.936478Z",
+    "waste_name": "excrements d'animaux",
+    "country": "Benin",
+    "decision_principale": "methanisation_biogaz",
+    "score_global": 67.49,
+    "classement_filieres": [
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 67.49,
+        "statut": "Recommande",
+        "compatible": true,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | conditions: Humidite favorable; Charge organique forte; Flux organique | contraintes: categorie; humidite_pct",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 65.27,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 64.9,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "compostage",
+        "nom": "Compostage",
+        "type": "biologique",
+        "score": 45.28,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Stabilisation biologique des flux organiques et lignocellulosiques peu dangereux. | conditions: Contamination faible; Flux organique | contraintes: humidite_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 41.33,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: Flux compatible",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "constrained"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "score": 65.27,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 64.9,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "compostage",
+        "nom": "Compostage",
+        "score": 45.28,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "non_conforme",
+      "max_severity": "high",
+      "risk_score": 70,
+      "rule_hits": [
+        {
+          "id": "ecowas_hazardous_transfer",
+          "label": "Flux dangereux vers operateur agree",
+          "severity": "high",
+          "source": "Cadres nationaux dechets dangereux",
+          "article": "Gestion des dechets dangereux",
+          "message": "Flux reglemente: transfert vers operateur agree requis (pas de vente directe).",
+          "blocked_decision": "Vente directe sur marketplace"
+        },
+        {
+          "id": "ecowas_hazardous_transfer",
+          "label": "Flux dangereux vers operateur agree",
+          "severity": "high",
+          "source": "Cadres nationaux dechets dangereux",
+          "article": "Gestion des dechets dangereux",
+          "message": "Boues de vidange: vente directe interdite, traitement encadre obligatoire.",
+          "blocked_decision": "Vente directe sur marketplace"
+        }
+      ],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": [
+        "Boues de vidange: vente directe interdite, traitement encadre obligatoire."
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:17:56.967729Z",
+    "waste_name": "peinture industrie chimique",
+    "country": "Benin",
+    "decision_principale": "neutralisation_chimique",
+    "score_global": 49.53,
+    "classement_filieres": [
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 63.65,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre | penalites: Flux chimique non recycle en matiere | contraintes: contamination_pct; presence_chlore",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "contamination_pct; presence_chlore"
+      },
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 61.22,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Danger acceptable | penalites: Flux chimique non adapte au reemploi | contraintes: contamination_pct; danger_level",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "contamination_pct; danger_level"
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 58.52,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | conditions: Humidite favorable | penalites: Flux chimique non methanisable",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "constrained"
+      },
+      {
+        "id": "compostage",
+        "nom": "Compostage",
+        "type": "biologique",
+        "score": 53.28,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Stabilisation biologique des flux organiques et lignocellulosiques peu dangereux. | conditions: Humidite exploitable; Contamination faible | penalites: Flux chimique non compostable | contraintes: humidite_pct; danger_level",
+        "contraintes": {
+          "all": [
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": "humidite_pct; danger_level"
+      },
+      {
+        "id": "co_incineration_cimenterie",
+        "nom": "Co-incineration cimenterie",
+        "type": "thermique",
+        "score": 51.07,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions. | conditions: Flux stabilisable | contraintes: pci_mj_kg; presence_chlore; pas de cimenterie autorisee",
+        "contraintes": {
+          "necessite_cimenterie": true,
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            }
+          ]
+        },
+        "blocked_reason": "pci_mj_kg; presence_chlore; pas de cimenterie autorisee"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 63.65,
+        "statut": "Non disponible",
+        "pourquoi_pas_prioritaire": "contamination_pct; presence_chlore"
+      },
+      {
+        "filiere": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "score": 61.22,
+        "statut": "Non disponible",
+        "pourquoi_pas_prioritaire": "contamination_pct; danger_level"
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 58.52,
+        "statut": "Non disponible",
+        "pourquoi_pas_prioritaire": "constrained"
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "conforme",
+      "max_severity": "low",
+      "risk_score": 0,
+      "rule_hits": [],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": []
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:17:56.998975Z",
+    "waste_name": "CSR",
+    "country": "Benin",
+    "decision_principale": "reemploi",
+    "score_global": 86.94,
+    "classement_filieres": [
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 86.94,
+        "statut": "Recommande",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Lot sec; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre; Humidite compatible | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: PCI tres favorable; Flux sec; Flux compatible | contraintes: pci_mj_kg; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 60.13,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | penalites: Humidite trop faible | contraintes: categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "categorie"
+      },
+      {
+        "id": "co_incineration_cimenterie",
+        "nom": "Co-incineration cimenterie",
+        "type": "thermique",
+        "score": 58.38,
+        "statut": "Non disponible",
+        "compatible": false,
+        "raison": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions. | conditions: PCI favorable; Flux sec | contraintes: pci_mj_kg; presence_chlore; pas de cimenterie autorisee",
+        "contraintes": {
+          "necessite_cimenterie": true,
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            }
+          ]
+        },
+        "blocked_reason": "pci_mj_kg; presence_chlore; pas de cimenterie autorisee"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 60.13,
+        "statut": "Non disponible",
+        "pourquoi_pas_prioritaire": "categorie"
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "conforme",
+      "max_severity": "low",
+      "risk_score": 0,
+      "rule_hits": [],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": []
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:18:27.527047Z",
+    "waste_name": "CSR",
+    "country": "Benin",
+    "decision_principale": "reemploi",
+    "score_global": 86.94,
+    "classement_filieres": [
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 86.94,
+        "statut": "Recommande",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Lot sec; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre; Humidite compatible | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: PCI tres favorable; Flux sec; Flux compatible | contraintes: pci_mj_kg; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 60.13,
+        "statut": "Non disponible (pas de cimenterie autorisee)",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | penalites: Humidite trop faible | contraintes: categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "categorie"
+      },
+      {
+        "id": "co_incineration_cimenterie",
+        "nom": "Co-incineration cimenterie",
+        "type": "thermique",
+        "score": 58.38,
+        "statut": "Non disponible (pas de cimenterie autorisee)",
+        "compatible": false,
+        "raison": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions. | conditions: PCI favorable; Flux sec | contraintes: pci_mj_kg; presence_chlore; pas de cimenterie autorisee",
+        "contraintes": {
+          "necessite_cimenterie": true,
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            }
+          ]
+        },
+        "blocked_reason": "pci_mj_kg; presence_chlore; pas de cimenterie autorisee"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 60.13,
+        "statut": "Non disponible (pas de cimenterie autorisee)",
+        "pourquoi_pas_prioritaire": "categorie"
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "conforme",
+      "max_severity": "low",
+      "risk_score": 0,
+      "rule_hits": [],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": []
+    }
+  },
+  {
+    "timestamp": "2026-04-29T18:18:27.558296Z",
+    "waste_name": "CSR",
+    "country": "Benin",
+    "decision_principale": "reemploi",
+    "score_global": 86.94,
+    "classement_filieres": [
+      {
+        "id": "reemploi",
+        "nom": "Reemploi / reutilisation",
+        "type": "reemploi",
+        "score": 86.94,
+        "statut": "Recommande",
+        "compatible": true,
+        "raison": "Reutilisation directe pour les flux propres, stables et peu dangereux. | conditions: Flux tres propre; Lot sec; Danger acceptable | contraintes: contamination_pct; danger_level; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 30
+            },
+            {
+              "field": "danger_level",
+              "op": "ne",
+              "value": "critique"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "type": "matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Recyclage mecanique ou preparation matiere pour flux techniquement propres. | conditions: Flux assez propre; Humidite compatible | contraintes: contamination_pct; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "contamination_pct",
+              "op": "le",
+              "value": 40
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "type": "thermique",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "compatible": true,
+        "raison": "Conversion thermique des flux secs et energetiquement denses. | conditions: PCI tres favorable; Flux sec; Flux compatible | contraintes: pci_mj_kg; presence_chlore; categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            },
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            }
+          ]
+        },
+        "blocked_reason": null
+      },
+      {
+        "id": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "type": "biologique",
+        "score": 60.13,
+        "statut": "Non disponible (pas de cimenterie autorisee)",
+        "compatible": false,
+        "raison": "Valorisation biologique des flux humides et fortement charges en matiere organique. | penalites: Humidite trop faible | contraintes: categorie",
+        "contraintes": {
+          "all": [
+            {
+              "field": "categorie",
+              "op": "ne",
+              "value": "chimique"
+            },
+            {
+              "field": "humidite_pct",
+              "op": "ge",
+              "value": 45
+            }
+          ]
+        },
+        "blocked_reason": "categorie"
+      },
+      {
+        "id": "co_incineration_cimenterie",
+        "nom": "Co-incineration cimenterie",
+        "type": "thermique",
+        "score": 58.38,
+        "statut": "Non disponible (pas de cimenterie autorisee)",
+        "compatible": false,
+        "raison": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions. | conditions: PCI favorable; Flux sec | contraintes: pci_mj_kg; presence_chlore; pas de cimenterie autorisee",
+        "contraintes": {
+          "necessite_cimenterie": true,
+          "all": [
+            {
+              "field": "pci_mj_kg",
+              "op": "ge",
+              "value": 12
+            },
+            {
+              "field": "presence_chlore",
+              "op": "falsy"
+            }
+          ]
+        },
+        "blocked_reason": "pci_mj_kg; presence_chlore; pas de cimenterie autorisee"
+      }
+    ],
+    "alternatives": [
+      {
+        "filiere": "recyclage_matiere",
+        "nom": "Recyclage matiere",
+        "score": 85.98,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "pyrolyse_gazification",
+        "nom": "Pyrolyse / gazification",
+        "score": 73.13,
+        "statut": "Non pertinent",
+        "pourquoi_pas_prioritaire": "Score global inferieur a la filiere principale."
+      },
+      {
+        "filiere": "methanisation_biogaz",
+        "nom": "Methanisation",
+        "score": 60.13,
+        "statut": "Non disponible (pas de cimenterie autorisee)",
+        "pourquoi_pas_prioritaire": "categorie"
+      }
+    ],
+    "conformite_reglementaire": {
+      "scope": "CEDEAO",
+      "country": "benin",
+      "in_cedeao": true,
+      "sous_region": "uemoa",
+      "sous_region_saisie": null,
+      "sous_region_coherente": null,
+      "status": "conforme",
+      "max_severity": "low",
+      "risk_score": 0,
+      "rule_hits": [],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": []
+    }
+  }
+]dres nationaux dechets dangereux",
+          "article": "Gestion des dechets dangereux",
+          "message": "Flux reglemente: transfert vers operateur agree requis (pas de vente directe).",
+          "blocked_decision": "Vente directe sur marketplace"
+        },
+        {
+          "id": "ecowas_hazardous_transfer",
+          "label": "Flux dangereux vers operateur agree",
+          "severity": "high",
+          "source": "Cadres nationaux dechets dangereux",
+          "article": "Gestion des dechets dangereux",
+          "message": "Boues de vidange: vente directe interdite, traitement encadre obligatoire.",
+          "blocked_decision": "Vente directe sur marketplace"
+        }
+      ],
+      "warnings": [],
+      "international_restrictions": [],
+      "filiere_restrictions": [
+        "Boues de vidange: vente directe interdite, traitement encadre obligatoire."
+      ]
+    }
+  }
+]

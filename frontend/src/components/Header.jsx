@@ -1,4 +1,5 @@
 import React from "react"
+import { FEATURES } from "../config/features"
 
 function WasteAiMark() {
   return (
@@ -20,6 +21,9 @@ function WasteAiMark() {
 }
 
 export default function Header({ view, setView, apiOnline, theme, onToggleTheme }) {
+  const marketplaceView = FEATURES.marketplace ? "marketplace" : "channels"
+  const marketplaceLabel = FEATURES.marketplace ? "Marketplace" : "Canaux recommandes"
+
   return (
     <header className="top-header">
       <div className="container inner">
@@ -27,7 +31,7 @@ export default function Header({ view, setView, apiOnline, theme, onToggleTheme 
           <WasteAiMark />
           <div>
             <h1 className="brand-title">WasteAI</h1>
-            <p className="brand-sub">Parce que les dechets valent de l'or</p>
+            <p className="brand-sub">D?cision industrielle, conformit? et valorisation locale</p>
           </div>
         </div>
 
@@ -35,14 +39,15 @@ export default function Header({ view, setView, apiOnline, theme, onToggleTheme 
           <button className={`nav-tab ${view === "presentation" ? "active" : ""}`} onClick={() => setView("presentation")}>Presentation</button>
           <button className={`nav-tab ${view === "analyse" ? "active" : ""}`} onClick={() => setView("analyse")}>Analyse</button>
           <button className={`nav-tab ${view === "dashboard" ? "active" : ""}`} onClick={() => setView("dashboard")}>Dashboard</button>
-          <button className={`nav-tab ${view === "marketplace" ? "active" : ""}`} onClick={() => setView("marketplace")}>Marketplace</button>
+          <button className={`nav-tab ${view === "analytics" ? "active" : ""}`} onClick={() => setView("analytics")}>Analytics + Channels</button>
+          <button className={`nav-tab ${view === marketplaceView ? "active" : ""}`} onClick={() => setView(marketplaceView)}>{marketplaceLabel}</button>
+          <button className={`nav-tab ${view === "admin" ? "active" : ""}`} onClick={() => setView("admin")}>Admin</button>
         </nav>
 
         <div className="header-actions">
           <span className={`api-dot ${apiOnline ? "api-online" : "api-offline"}`} aria-hidden="true" />
-          <small>{apiOnline ? "API connectee" : "API hors ligne"}</small>
+          <small>{apiOnline ? "Syst?me disponible" : "API hors ligne"}</small>
           <button className="btn btn-secondary" type="button" onClick={onToggleTheme}>{theme === "dark" ? "Clair" : "Sombre"}</button>
-          <button className="btn" type="button">Connexion / Mon compte</button>
         </div>
       </div>
     </header>

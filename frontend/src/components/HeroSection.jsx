@@ -8,55 +8,81 @@ export default function HeroSection({ onAnalyzeNow }) {
     const timer = setInterval(() => {
       frame += 1
       setValues((prev) => ({
-        a: Math.min(500, prev.a + 80),
-        b: Math.min(3, prev.b + 1),
-        c: Math.min(15, prev.c + 3),
+        a: Math.min(1250, prev.a + 180),
+        b: Math.min(6, prev.b + 1),
+        c: Math.min(18, prev.c + 2),
       }))
-      if (frame > 6) clearInterval(timer)
-    }, 120)
+      if (frame > 7) clearInterval(timer)
+    }, 110)
 
     return () => clearInterval(timer)
   }, [])
 
   return (
     <section className="hero card">
-      <div>
-        <h2>Parce que les dechets valent de l'or</h2>
-        <p>WasteAI transforme vos flux de dechets en decisions actionnables, rentables et conformes dans toute la CEDEAO.</p>
+      <div className="hero-copy">
+        <p className="eyebrow">Pilotage industriel & conformit?</p>
+        <h2>Des recommandations de valorisation plus fiables, plus lisibles et directement actionnables.</h2>
+        <p>WasteAI structure la d?cision autour du co?t, du gain, de l?impact et du cadre r?glementaire pour aider les sites industriels ? r?duire les risques et capter la valeur.</p>
 
         <div className="hero-stats">
           <div className="hero-stat">
-            <strong>{values.a}+</strong>
-            <span>dechets identifies</span>
+            <strong>{values.a.toLocaleString("fr-FR")}</strong>
+            <span>analyses exploitables</span>
           </div>
           <div className="hero-stat">
             <strong>{values.b}</strong>
-            <span>filieres prioritaires</span>
+            <span>couches de conformit?</span>
           </div>
           <div className="hero-stat">
             <strong>{values.c}</strong>
-            <span>pays CEDEAO couverts</span>
+            <span>canaux locaux suivis</span>
           </div>
         </div>
 
         <div className="actions-row">
-          <button className="btn btn-primary" type="button" onClick={onAnalyzeNow}>Analyser maintenant</button>
+          <button className="btn btn-primary" type="button" onClick={onAnalyzeNow}>Analyser un flux</button>
         </div>
       </div>
 
-      <div className="hero-svg" aria-hidden="true">
-        <svg viewBox="0 0 480 280" width="100%" height="100%">
-          <rect x="0" y="0" width="480" height="280" fill="#f5f9f5" />
-          <rect x="40" y="70" width="120" height="140" rx="12" fill="#dcedc8" stroke="#4caf50" />
-          <rect x="180" y="95" width="120" height="115" rx="12" fill="#c8e6c9" stroke="#1b5e20" />
-          <rect x="320" y="80" width="120" height="130" rx="12" fill="#fff8e1" stroke="#f9a825" />
-          <circle cx="100" cy="50" r="22" fill="#f9a825" />
-          <path d="M70 232C120 192 168 192 216 232" stroke="#4caf50" strokeWidth="6" fill="none" />
-          <path d="M180 232C230 182 280 182 330 232" stroke="#1b5e20" strokeWidth="6" fill="none" />
-          <circle cx="110" cy="130" r="20" fill="#4caf50" />
-          <rect x="202" y="126" width="70" height="42" rx="8" fill="#1b5e20" />
-          <rect x="346" y="124" width="68" height="48" rx="10" fill="#f9a825" />
-          <text x="34" y="258" fontSize="13" fill="#1b5e20">WasteAI CEDEAO - Industries et recycleurs dans tous les pays</text>
+      <div className="hero-visual" aria-hidden="true">
+        <div className="hero-card hero-card-main">
+          <span>Conformit?</span>
+          <strong>CEDEAO / Bamako</strong>
+          <small>Voies bloqu?es si non conformes</small>
+        </div>
+        <div className="hero-card hero-card-secondary">
+          <span>Valorisation</span>
+          <strong>Co?t / gain / CO2</strong>
+          <small>Lecture financi?re et environnementale</small>
+        </div>
+        <div className="hero-card hero-card-tertiary">
+          <span>Terrain</span>
+          <strong>Canaux locaux</strong>
+          <small>Op?rateurs identifi?s, contact direct</small>
+        </div>
+        <svg viewBox="0 0 520 300" width="100%" height="100%" className="hero-graph">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#17372f" stopOpacity="0.95" />
+              <stop offset="100%" stopColor="#2f6f5f" stopOpacity="0.95" />
+            </linearGradient>
+            <linearGradient id="g2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#c7d8d1" stopOpacity="0.9" />
+              <stop offset="100%" stopColor="#edf3f1" stopOpacity="0.6" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="520" height="300" rx="26" fill="url(#g2)" />
+          <rect x="44" y="42" width="118" height="182" rx="18" fill="#fff" stroke="#d8e2de" />
+          <rect x="184" y="76" width="118" height="148" rx="18" fill="#fff" stroke="#d8e2de" />
+          <rect x="324" y="58" width="152" height="166" rx="18" fill="#fff" stroke="#d8e2de" />
+          <path d="M70 182C105 155 133 155 160 182" stroke="#2f6f5f" strokeWidth="7" fill="none" strokeLinecap="round" />
+          <path d="M210 180C245 136 277 136 302 180" stroke="#17372f" strokeWidth="7" fill="none" strokeLinecap="round" />
+          <path d="M350 176C393 142 424 142 454 176" stroke="#7c8b87" strokeWidth="7" fill="none" strokeLinecap="round" />
+          <circle cx="102" cy="104" r="26" fill="url(#g1)" />
+          <circle cx="242" cy="116" r="26" fill="#2f6f5f" />
+          <circle cx="404" cy="104" r="26" fill="#8a9d96" />
+          <text x="60" y="240" fontSize="15" fill="#17372f">D?cision industrialis?e, tra?able et conforme</text>
         </svg>
       </div>
     </section>

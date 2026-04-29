@@ -61,6 +61,7 @@ class WasteInput(BaseModel):
     taux_lignine_pct: Optional[float] = None
     dbo_mg_l: Optional[float] = None
     dco_mg_l: Optional[float] = None
+    taux_humidite_pct: Optional[float] = None
     produit_principal: Optional[str] = None
 
     # Caracterisation textile
@@ -115,6 +116,7 @@ class WasteImageIdentificationResult(BaseModel):
     score_valorisation: Optional[int] = None
     confiance_identification: Optional[int] = None
     explication: Optional[str] = None
+    explication_detaillee: Optional[str] = None
     hypotheses: list[dict[str, object]] = Field(default_factory=list)
 
 
@@ -123,6 +125,7 @@ class DecisionResult(BaseModel):
     score: float
     confiance: str
     explication: str
+    explication_detaillee: Optional[str] = None
     resume_choix: str = ""
     details_scores: dict[str, float] = Field(default_factory=dict)
     details_scores_bruts: dict[str, float] = Field(default_factory=dict)
@@ -137,6 +140,11 @@ class DecisionResult(BaseModel):
     references_bibliographiques: list[str] = Field(default_factory=list)
     references_reglementaires: list[str] = Field(default_factory=list)
     valeur_estimee: Optional[float] = None
+    valeur_estimee_fcfa_tonne: Optional[float] = None
+    co2_evite_estime_kg: Optional[float] = None
+    cout_estime_fcfa_tonne: Optional[float] = None
+    gain_industriel_fcfa: Optional[float] = None
+    gain_industriel_fcfa_tonne: Optional[float] = None
     options_alternatives: list[str] = Field(default_factory=list)
 
     # Nouveau format multicriteres explicite
@@ -147,11 +155,8 @@ class DecisionResult(BaseModel):
     justification_sociale: Optional[str] = None
     score_global: Optional[float] = None
     alternatives: list[dict[str, object]] = Field(default_factory=list)
+    classement_filieres: list[dict[str, object]] = Field(default_factory=list)
     conditions_requises: Optional[str] = None
     avertissements: Optional[str] = None
     donnees_manquantes_critiques: list[str] = Field(default_factory=list)
     hypotheses_utilisees: list[str] = Field(default_factory=list)
-
-
-
-

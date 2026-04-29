@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 
 export default function Footer({ apiOnline }) {
   return (
@@ -7,27 +7,26 @@ export default function Footer({ apiOnline }) {
         <div className="footer-grid">
           <article>
             <h3 style={{ marginTop: 0 }}>WasteAI</h3>
-            <p style={{ color: "var(--muted)" }}>Plateforme d'aide a la decision pour la valorisation des dechets en Afrique de l'Ouest.</p>
-            <small>Fait avec amour au Benin</small>
+            <p style={{ color: "var(--muted)" }}>Plateforme de d?cision pour la valorisation des d?chets industriels en Afrique de l?Ouest.</p>
+            <small>Con?u pour les industriels, HSE, exploitation et conformit?</small>
           </article>
 
           <article>
-            <h4>Liens</h4>
+            <h4>Utilit?</h4>
             <div className="footer-links">
-              <a href="#">A propos</a>
-              <a href="#">Contact</a>
-              <a href="#">CGU</a>
-              <a href="#">Politique confidentialite</a>
+              <span>Valorisation</span>
+              <span>Conformit?</span>
+              <span>Tra?abilit?</span>
+              <span>Canaux locaux</span>
             </div>
           </article>
 
           <article>
-            <h4>Reseaux</h4>
+            <h4>?tat</h4>
             <div className="footer-links">
-              <a href="#">LinkedIn</a>
-              <a href="#">WhatsApp Business</a>
+              <span>API: <strong>{apiOnline ? "Connect?e" : "Hors ligne"}</strong></span>
             </div>
-            <p style={{ marginTop: 10 }}>API: <strong>{apiOnline ? "Connectee" : "Hors ligne"}</strong></p>
+            <p style={{ marginTop: 10 }}>Cadre CEDEAO et Convention de Bamako int?gr?s dans la logique de d?cision.</p>
           </article>
         </div>
       </section>

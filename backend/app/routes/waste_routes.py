@@ -21,6 +21,7 @@ from app.core.environmental_factors_db import (
 )
 from app.core.image_identifier import identify_waste_from_image
 from app.core.literature_db import get_literature_db, get_scientific_prefill
+from app.core.valorization_registry import get_valorization_filieres, get_valorization_registry, get_valorization_registry_audit, get_valorization_registry_template, update_valorization_registry, updateWeights, get_decision_history, export_recommendations
 from app.core.regulation_db import get_regulation_db
 from app.core.reporting import build_analytics_pdf, send_analytics_report_email
 from app.models.waste import (
@@ -50,6 +51,16 @@ class EnvironmentalFactorsUpdateRequest(BaseModel):
     countries: dict[str, dict[str, object]]
     references: list[str]
 
+
+
+class ValorizationRegistryUpdateRequest(BaseModel):
+    version: str
+    updated_at: str | None = None
+    filieres: list[dict[str, object]]
+
+
+class FiliereFeedbackRequest(BaseModel):
+    feedback: str
 
 class IdentificationCorrectionRequest(BaseModel):
     image_filename: str | None = None
@@ -311,6 +322,7 @@ def get_categories():
             "taux_lignine_pct",
             "dbo_mg_l",
             "dco_mg_l",
+            "taux_humidite_pct",
             "produit_principal",
             "composition_textile",
             "etat_textile",
@@ -329,6 +341,50 @@ def get_categories():
 @router.get("/references")
 def get_references():
     return get_literature_db()
+
+
+@router.get("/valorization-filieres")
+def get_valorization_filieres_payload():
+    return get_valorization_registry()
+
+
+@router.get("/valorization-filieres/audit")
+def get_valorization_filieres_audit():
+    return get_valorization_registry_audit()
+
+
+@router.get("/valorization-filieres/history")
+def get_valorization_history(limit: int = Query(default=100, ge=1, le=1000)):
+    return {"history": get_decision_history(limit=limit)}
+
+
+@router.post("/valorization-filieres/{filiere_id}/feedback")
+def update_valorization_filiere_feedback(filiere_id: str, payload: FiliereFeedbackRequest, x_admin_key: str | None = Header(default=None)):
+    _check_admin_access(x_admin_key)
+    try:
+        updated = updateWeights(filiere_id, payload.feedback)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", "data": updated}
+
+
+@router.post("/recommendations/export")
+def export_waste_recommendations(payload: WasteInput):
+    result = analyser_dechet(payload)
+    return export_recommendations(result.classement_filieres or [], payload.model_dump())
+@router.get("/valorization-filieres/template")
+def get_valorization_filieres_template_payload():
+    return get_valorization_registry_template()
+
+
+@router.put("/valorization-filieres")
+def update_valorization_filieres(payload: ValorizationRegistryUpdateRequest, x_admin_key: str | None = Header(default=None)):
+    _check_admin_access(x_admin_key)
+    try:
+        saved = update_valorization_registry(payload.model_dump())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", "data": saved}
 
 
 @router.get("/scientific-prefill")
@@ -378,6 +434,8 @@ def get_documentation():
         "reglementation_cedeao": get_regulation_db(),
         "facteurs_environnementaux_cedeao": get_environmental_factors_db(),
         "template_facteurs_environnementaux_cedeao": get_environmental_factors_template(),
+        "valorisation_filieres_cedeao": get_valorization_registry(),
+        "template_valorisation_filieres_cedeao": get_valorization_registry_template(),
     }
 
 

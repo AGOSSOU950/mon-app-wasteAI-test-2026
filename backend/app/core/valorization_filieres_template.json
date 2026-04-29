@@ -1,0 +1,263 @@
+﻿{
+  "version": "2.0",
+  "updated_at": null,
+  "filieres": [
+    {
+      "id": "reemploi",
+      "nom": "Reemploi / reutilisation",
+      "type": "reemploi",
+      "description": "Reutilisation directe pour les flux propres, stables et peu dangereux.",
+      "poids": 1.05,
+      "score_base": 28,
+      "conditions_techniques": {
+        "base": 28,
+        "all": [
+          { "field": "contamination_pct", "op": "le", "value": 15, "points": 24, "label": "Flux tres propre" },
+          { "field": "humidite_pct", "op": "le", "value": 35, "points": 10, "label": "Lot sec" },
+          { "field": "danger_level", "op": "in", "value": ["faible", "moyen"], "points": 12, "label": "Danger acceptable" }
+        ],
+        "any": [
+          { "field": "categorie", "op": "eq", "value": "plastique", "points": 6, "label": "Flux recyclable en reemploi" },
+          { "field": "categorie", "op": "eq", "value": "papier", "points": 6, "label": "Flux recuperable" }
+        ]
+      },
+      "penalites": [
+        { "if": { "field": "contamination_pct", "op": "gt", "value": 30 }, "points": -25, "label": "Contamination trop elevee" },
+        { "if": { "field": "danger_level", "op": "not_in", "value": ["faible", "moyen"] }, "points": -18, "label": "Danger eleve" },
+        { "if": { "field": "categorie", "op": "eq", "value": "chimique" }, "points": -60, "label": "Flux chimique non adapte au reemploi" }
+      ],
+      "contraintes": {
+        "all": [
+          { "field": "contamination_pct", "op": "le", "value": 30 },
+          { "field": "danger_level", "op": "ne", "value": "critique" },
+          { "field": "categorie", "op": "ne", "value": "chimique" }
+        ]
+      },
+      "economics": {
+        "market_value_fcfa_tonne": 90000,
+        "treatment_cost_fcfa_tonne": 35000,
+        "co2_avoided_kg_tonne": 300,
+        "social_score": 80
+      }
+    },
+    {
+      "id": "recyclage_matiere",
+      "nom": "Recyclage matiere",
+      "type": "matiere",
+      "description": "Recyclage mecanique ou preparation matiere pour flux techniquement propres.",
+      "poids": 1.1,
+      "score_base": 35,
+      "conditions_techniques": {
+        "base": 35,
+        "all": [
+          { "field": "contamination_pct", "op": "le", "value": 20, "points": 20, "label": "Flux assez propre" },
+          { "field": "humidite_pct", "op": "le", "value": 40, "points": 8, "label": "Humidite compatible" }
+        ],
+        "any": [
+          { "field": "metaux_pct", "op": "ge", "value": 25, "points": 14, "label": "Fraction valorisable" },
+          { "field": "categorie", "op": "eq", "value": "plastique", "points": 12, "label": "Flux plastique" },
+          { "field": "categorie", "op": "eq", "value": "papier", "points": 10, "label": "Flux papier" }
+        ]
+      },
+      "penalites": [
+        { "if": { "field": "contamination_pct", "op": "gt", "value": 35 }, "points": -20, "label": "Flux trop contamine" },
+        { "if": { "field": "presence_chlore", "op": "truthy" }, "points": -15, "label": "Chlore present" },
+        { "if": { "field": "categorie", "op": "eq", "value": "chimique" }, "points": -50, "label": "Flux chimique non recycle en matiere" }
+      ],
+      "contraintes": {
+        "all": [
+          { "field": "contamination_pct", "op": "le", "value": 40 },
+          { "field": "presence_chlore", "op": "falsy" },
+          { "field": "categorie", "op": "ne", "value": "chimique" }
+        ]
+      },
+      "economics": {
+        "market_value_fcfa_tonne": 180000,
+        "treatment_cost_fcfa_tonne": 105000,
+        "co2_avoided_kg_tonne": 610,
+        "social_score": 72
+      }
+    },
+    {
+      "id": "methanisation_biogaz",
+      "nom": "Methanisation",
+      "type": "biologique",
+      "description": "Valorisation biologique des flux humides et fortement charges en matiere organique.",
+      "poids": 1.15,
+      "score_base": 20,
+      "conditions_techniques": {
+        "base": 20,
+        "all": [
+          { "field": "humidite_pct", "op": "ge", "value": 60, "points": 24, "label": "Humidite favorable" },
+          { "field": "dbo_mg_l", "op": "ge", "value": 800, "points": 18, "label": "Charge organique forte" }
+        ],
+        "any": [
+          { "field": "dco_dbo_ratio", "op": "le", "value": 3, "points": 8, "label": "Ratio DCO/DBO favorable" },
+          { "field": "categorie", "op": "eq", "value": "organique", "points": 8, "label": "Flux organique" }
+        ]
+      },
+      "penalites": [
+        { "if": { "field": "humidite_pct", "op": "lt", "value": 45 }, "points": -16, "label": "Humidite trop faible" },
+        { "if": { "field": "danger_level", "op": "in", "value": ["eleve", "critique"] }, "points": -20, "label": "Risque sanitaire eleve" },
+        { "if": { "field": "categorie", "op": "eq", "value": "chimique" }, "points": -50, "label": "Flux chimique non methanisable" }
+      ],
+      "contraintes": {
+        "all": [
+          { "field": "categorie", "op": "ne", "value": "chimique" },
+          { "field": "humidite_pct", "op": "ge", "value": 45 }
+        ]
+      },
+      "economics": {
+        "market_value_fcfa_tonne": 155000,
+        "treatment_cost_fcfa_tonne": 90000,
+        "co2_avoided_kg_tonne": 360,
+        "social_score": 69
+      }
+    },
+    {
+      "id": "compostage",
+      "nom": "Compostage",
+      "type": "biologique",
+      "description": "Stabilisation biologique des flux organiques et lignocellulosiques peu dangereux.",
+      "poids": 1.0,
+      "score_base": 24,
+      "conditions_techniques": {
+        "base": 24,
+        "all": [
+          { "field": "humidite_pct", "op": "between", "value": [35, 75], "points": 26, "label": "Humidite exploitable" },
+          { "field": "contamination_pct", "op": "le", "value": 20, "points": 10, "label": "Contamination faible" }
+        ],
+        "any": [
+          { "field": "taux_lignine_pct", "op": "ge", "value": 20, "points": 8, "label": "Structure lignocellulosique" },
+          { "field": "categorie", "op": "eq", "value": "organique", "points": 8, "label": "Flux organique" }
+        ]
+      },
+      "penalites": [
+        { "if": { "field": "humidite_pct", "op": "lt", "value": 30 }, "points": -12, "label": "Flux trop sec" },
+        { "if": { "field": "contamination_pct", "op": "gt", "value": 35 }, "points": -12, "label": "Contamination excessive" },
+        { "if": { "field": "categorie", "op": "eq", "value": "chimique" }, "points": -50, "label": "Flux chimique non compostable" }
+      ],
+      "contraintes": {
+        "all": [
+          { "field": "humidite_pct", "op": "ge", "value": 30 },
+          { "field": "danger_level", "op": "ne", "value": "critique" },
+          { "field": "categorie", "op": "ne", "value": "chimique" }
+        ]
+      },
+      "economics": {
+        "market_value_fcfa_tonne": 50000,
+        "treatment_cost_fcfa_tonne": 40000,
+        "co2_avoided_kg_tonne": 110,
+        "social_score": 68
+      }
+    },
+    {
+      "id": "neutralisation_chimique",
+      "nom": "Neutralisation chimique",
+      "type": "chimique",
+      "description": "Traitement prioritaire des flux dangereux, reactifs ou necessitant une stabilisation chimique.",
+      "poids": 1.2,
+      "score_base": 22,
+      "conditions_techniques": {
+        "base": 22,
+        "all": [
+          { "field": "categorie", "op": "eq", "value": "chimique", "points": 34, "label": "Flux chimique prioritaire" }
+        ],
+        "any": [
+          { "field": "danger_level", "op": "eq", "value": "critique", "points": 28, "label": "Danger critique" },
+          { "field": "danger_level", "op": "eq", "value": "eleve", "points": 18, "label": "Danger eleve" },
+          { "field": "presence_chlore", "op": "truthy", "points": 10, "label": "Chlore present" }
+        ]
+      },
+      "penalites": [
+        { "if": { "field": "danger_level", "op": "eq", "value": "faible" }, "points": -18, "label": "Flux peu dangereux" },
+        { "if": { "field": "categorie", "op": "ne", "value": "chimique" }, "points": -20, "label": "Flux non chimique" }
+      ],
+      "contraintes": {
+        "any": [
+          { "field": "categorie", "op": "eq", "value": "chimique" },
+          { "field": "danger_level", "op": "in", "value": ["eleve", "critique"] },
+          { "field": "presence_chlore", "op": "truthy" },
+          { "field": "metaux_pct", "op": "gt", "value": 20 }
+        ]
+      },
+      "economics": {
+        "market_value_fcfa_tonne": 20000,
+        "treatment_cost_fcfa_tonne": 110000,
+        "co2_avoided_kg_tonne": 20,
+        "social_score": 42
+      }
+    },
+    {
+      "id": "co_incineration_cimenterie",
+      "nom": "Co-incineration cimenterie",
+      "type": "thermique",
+      "description": "Valorisation energetique sous condition d autorisation cimenterie et de compatibilite emissions.",
+      "poids": 0.95,
+      "score_base": 20,
+      "conditions_techniques": {
+        "base": 20,
+        "all": [
+          { "field": "pci_mj_kg", "op": "ge", "value": 15, "points": 18, "label": "PCI favorable" },
+          { "field": "humidite_pct", "op": "le", "value": 35, "points": 8, "label": "Flux sec" }
+        ],
+        "any": [
+          { "field": "categorie", "op": "eq", "value": "plastique", "points": 8, "label": "Flux a fort PCI" },
+          { "field": "categorie", "op": "eq", "value": "chimique", "points": 4, "label": "Flux stabilisable" }
+        ]
+      },
+      "penalites": [
+        { "if": { "field": "presence_chlore", "op": "truthy" }, "points": -20, "label": "Chlore present" },
+        { "if": { "field": "pci_mj_kg", "op": "lt", "value": 12 }, "points": -12, "label": "PCI insuffisant" }
+      ],
+      "contraintes": {
+        "necessite_cimenterie": true,
+        "all": [
+          { "field": "pci_mj_kg", "op": "ge", "value": 12 },
+          { "field": "presence_chlore", "op": "falsy" }
+        ]
+      },
+      "economics": {
+        "market_value_fcfa_tonne": 80000,
+        "treatment_cost_fcfa_tonne": 95000,
+        "co2_avoided_kg_tonne": 140,
+        "social_score": 45
+      }
+    },
+    {
+      "id": "pyrolyse_gazification",
+      "nom": "Pyrolyse / gazification",
+      "type": "thermique",
+      "description": "Conversion thermique des flux secs et energetiquement denses.",
+      "poids": 1.0,
+      "score_base": 22,
+      "conditions_techniques": {
+        "base": 22,
+        "all": [
+          { "field": "pci_mj_kg", "op": "ge", "value": 18, "points": 24, "label": "PCI tres favorable" }
+        ],
+        "any": [
+          { "field": "humidite_pct", "op": "le", "value": 35, "points": 12, "label": "Flux sec" },
+          { "field": "contamination_pct", "op": "le", "value": 25, "points": 8, "label": "Flux compatible" }
+        ]
+      },
+      "penalites": [
+        { "if": { "field": "presence_chlore", "op": "truthy" }, "points": -20, "label": "Chlore present" },
+        { "if": { "field": "categorie", "op": "eq", "value": "chimique" }, "points": -30, "label": "Flux chimique peu adapte" }
+      ],
+      "contraintes": {
+        "all": [
+          { "field": "pci_mj_kg", "op": "ge", "value": 12 },
+          { "field": "presence_chlore", "op": "falsy" },
+          { "field": "categorie", "op": "ne", "value": "chimique" }
+        ]
+      },
+      "economics": {
+        "market_value_fcfa_tonne": 165000,
+        "treatment_cost_fcfa_tonne": 130000,
+        "co2_avoided_kg_tonne": 240,
+        "social_score": 52
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
@@ -17,10 +17,15 @@ import PresentationSection from "./components/PresentationSection"
 import AnalysisForm from "./components/AnalysisForm"
 import ResultCard from "./components/ResultCard"
 import MarketplaceSection from "./components/MarketplaceSection"
+import RecommendedChannelsSection from "./components/RecommendedChannelsSection"
 import DashboardSection from "./components/DashboardSection"
+import AdminRegistryPanel from "./components/AdminRegistryPanel"
 import Footer from "./components/Footer"
+import { FEATURES } from "./config/features"
 
-const LazyMarketplacePanel = lazy(() => import("./MarketplacePanel"))
+const PHOTO_AI_ENABLED = FEATURES.photoIdentification
+const MARKETPLACE_ENABLED = FEATURES.marketplace
+const LazyMarketplacePanel = MARKETPLACE_ENABLED ? lazy(() => import("./MarketplacePanel")) : null
 
 const INITIAL_FORM = {
   nom: "Plastique melange",
@@ -37,6 +42,7 @@ const INITIAL_FORM = {
   dbo_mg_l: "",
   dco_mg_l: "",
   taux_lignine_pct: "",
+  taux_humidite_pct: "",
   taux_contamination_pct: "",
   type_plastique: "",
   presence_chlore: "",
@@ -45,6 +51,16 @@ const INITIAL_FORM = {
   sous_region_cedeao: "",
 }
 
+const PHYSICO_FIELDS = [
+  "pci_mj_kg",
+  "dbo_mg_l",
+  "dco_mg_l",
+  "taux_lignine_pct",
+  "taux_humidite_pct",
+  "taux_contamination_pct",
+  "type_plastique",
+  "presence_chlore",
+]
 
 function fileToBase64(file) {
   return new Promise((resolve, reject) => {
@@ -70,7 +86,8 @@ function buildLocalIdentificationFallback(form, file) {
       description: "Resultat local provisoire car l'identification IA distante n'a pas repondu a temps.",
       valeur_fcfa_tonne: 0,
     },
-    explication: "Mode resilient active: l'application fournit une proposition exploitable meme en cas d'indisponibilite temporaire de l'API image.",
+    explication:
+      "Mode resilient active: l'application fournit une proposition exploitable meme en cas d'indisponibilite temporaire de l'API image.",
   }
 }
 
@@ -78,6 +95,7 @@ function hasUsableIdentification(result) {
   const name = String(result?.nom_exact || result?.nom || "").trim()
   return name.length > 1
 }
+
 async function compressImage(file) {
   return new Promise((resolve, reject) => {
     const img = new Image()
@@ -138,13 +156,15 @@ function firstNonEmptyText(...values) {
   }
   return ""
 }
+
 function normalizeResultToCard(result) {
   if (!result) return null
   return {
     nom_exact: firstNonEmptyText(result.nom_exact, result.nom, result.mode_valorisation_propose, "Resultat analyse"),
     filiere: firstNonEmptyText(result.filiere, result.categorie, "autre"),
     score_valorisation: result.score_valorisation ?? result.score ?? 0,
-    confiance_identification: result.confiance_identification ?? (result.confiance === "elevee" ? 90 : result.confiance === "moyenne" ? 70 : 45),
+    confiance_identification:
+      result.confiance_identification ?? (result.confiance === "elevee" ? 90 : result.confiance === "moyenne" ? 70 : 45),
     valorisation_1: result.valorisation_1 || {
       methode: result.decision_principale || result.mode_valorisation_propose || result.decision || "Valorisation recommandee",
       description: result.resume_choix || result.explication || "Recommendation basee sur analyse multicritere.",
@@ -157,31 +177,28 @@ function normalizeResultToCard(result) {
     },
     acheteurs_benin: result.acheteurs_benin || [],
     impact_co2_kg: result.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0,
+    co2_evite_estime_kg: result.co2_evite_estime_kg || result?.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0,
+    cout_estime_fcfa_tonne: result.cout_estime_fcfa_tonne || result?.details_scores_bruts?.treatment_cost_fcfa || 0,
+    valeur_estimee_fcfa_tonne: result.valeur_estimee_fcfa_tonne || result?.details_scores_bruts?.market_value_fcfa || 0,
+    gain_industriel_fcfa: result.gain_industriel_fcfa || result?.details_scores_bruts?.gain_industriel_fcfa || 0,
+    gain_industriel_fcfa_tonne: result.gain_industriel_fcfa_tonne || result?.details_scores_bruts?.gain_industriel_fcfa_tonne || 0,
     impact_environnemental: result.impact_environnemental || null,
     conseil_stockage: result.conseil_stockage || "Stocker en zone seche, ventilee et tracee.",
     niveau_danger: result.niveau_danger || "faible",
     hypotheses: result.hypotheses || [],
     explication: result.explication || result.description_estimee || "",
+    explication_detaillee: result.explication_detaillee || result.explication || result.justification_technique || "",
     description_estimee: result.description_estimee || "",
     decision: result.decision || "",
     decision_principale: result.decision_principale || result.mode_valorisation_propose || result.decision || "",
     resume_choix: result.resume_choix || "",
     alternatives: Array.isArray(result.alternatives) ? result.alternatives : [],
+    classement_filieres: Array.isArray(result.classement_filieres) ? result.classement_filieres : [],
     details_scores: result.details_scores || {},
+    details_scores_bruts: result.details_scores_bruts || {},
     justification_technique: result.justification_technique || "",
   }
 }
-
-
-const PHYSICO_FIELDS = [
-  "pci_mj_kg",
-  "dbo_mg_l",
-  "dco_mg_l",
-  "taux_lignine_pct",
-  "taux_contamination_pct",
-  "type_plastique",
-  "presence_chlore",
-]
 
 function isBlankValue(value) {
   return value === null || value === undefined || String(value).trim() === ""
@@ -239,9 +256,11 @@ function persistAnalyticsSnapshot(result, payload) {
     }
     existing.unshift(row)
     localStorage.setItem(key, JSON.stringify(existing.slice(0, 250)))
-  } catch {
+  } catch (error) {
+    void error
   }
 }
+
 function mergeScientificDefaults(formState, defaults) {
   const next = { ...formState }
   let appliedCount = 0
@@ -257,6 +276,15 @@ function mergeScientificDefaults(formState, defaults) {
   return { mergedForm: next, appliedCount }
 }
 
+function analysisContextFromResult(resultCard, form) {
+  return {
+    name: resultCard?.nom_exact || resultCard?.nom || form.nom,
+    quantity: Number(form.quantite_kg || 0),
+    recommendation: resultCard?.decision_principale || resultCard?.decision || resultCard?.valorisation_1?.methode || "",
+    wasteType: resultCard?.filiere || form.filiere || form.categorie,
+  }
+}
+
 export default function App() {
   const [view, setView] = useState("presentation")
   const [theme, setTheme] = useState("light")
@@ -269,7 +297,6 @@ export default function App() {
   const [banner, setBanner] = useState("")
 
   const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState("")
   const [identifyLoading, setIdentifyLoading] = useState(false)
   const [identifyError, setIdentifyError] = useState("")
   const [identifyLoadingMessage, setIdentifyLoadingMessage] = useState("")
@@ -339,15 +366,8 @@ export default function App() {
     return () => clearTimeout(id)
   }, [toast])
 
-
-  useEffect(() => {
-    if (!imagePreview) return
-    return () => {
-      URL.revokeObjectURL(imagePreview)
-    }
-  }, [imagePreview])
   const resultCard = useMemo(() => normalizeResultToCard(analysisResult || aiProposal), [analysisResult, aiProposal])
-
+  const analysisContext = useMemo(() => analysisContextFromResult(resultCard, form), [resultCard, form])
 
   function handleTouchStart(event) {
     const touch = event.touches?.[0]
@@ -362,13 +382,16 @@ export default function App() {
     const dy = touch.clientY - touchStartRef.current.y
     if (Math.abs(dx) < 64 || Math.abs(dx) < Math.abs(dy)) return
 
-    const tabs = ["presentation", "analyse", "marketplace", "dashboard"]
+    const tabs = MARKETPLACE_ENABLED
+      ? ["presentation", "analyse", "marketplace", "dashboard", "analytics", "admin"]
+      : ["presentation", "analyse", "channels", "dashboard", "analytics", "admin"]
     const idx = tabs.indexOf(view)
     if (idx === -1) return
 
     if (dx < 0 && idx < tabs.length - 1) setView(tabs[idx + 1])
     if (dx > 0 && idx > 0) setView(tabs[idx - 1])
   }
+
   const onAnalyzeNow = () => {
     setView("analyse")
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
@@ -381,16 +404,17 @@ export default function App() {
     setAnalysisResult(null)
     setIdentifyError("")
     setIdentifyLoadingMessage("")
-    if (!file) {
-      setImagePreview("")
-      return
-    }
-
-    setImagePreview(URL.createObjectURL(file))
+    if (!file) return
     void handleIdentifyImage(file)
   }
 
   async function handleIdentifyImage(fileOverride = imageFile) {
+    if (!PHOTO_AI_ENABLED) {
+      setIdentifyError("Identification photo desactivee temporairement.")
+      setBanner("Identification photo temporairement indisponible.")
+      setToast("Photo AI desactivee")
+      return
+    }
     if (!fileOverride) return
 
     setIdentifyLoading(true)
@@ -407,13 +431,8 @@ export default function App() {
         ? compressed
         : new File([compressed], fileOverride.name || "waste.jpg", { type: compressed.type || "image/jpeg" })
       const imageBase64 = await fileToBase64(uploadFile)
-      const image = imageBase64
-      console.log("Image reçue:", image)
-      console.log("Image meta:", { mediaType: uploadFile.type || "image/jpeg", size: uploadFile.size, filename: fileOverride.name })
 
       let identified = null
-      let lastError = null
-
       for (let attempt = 1; attempt <= 2; attempt += 1) {
         try {
           if (attempt > 1) setIdentifyLoadingMessage(`Nouvelle tentative (${attempt}/2)...`)
@@ -425,13 +444,12 @@ export default function App() {
           })
           break
         } catch (err) {
-          lastError = err
+          void err
         }
       }
 
       if (!identified || !hasUsableIdentification(identified)) {
-        const localFallback = buildLocalIdentificationFallback(form, fileOverride)
-        setAiProposal(localFallback)
+        setAiProposal(buildLocalIdentificationFallback(form, fileOverride))
         setIdentifyError("Identification IA incomplete. Proposition locale affichee.")
       } else {
         setAiProposal(identified)
@@ -439,7 +457,8 @@ export default function App() {
       setApiOnline(true)
       setIdentifyLoadingMessage("Nom du dechet propose. Merci de valider ou corriger.")
       setToast("Identification photo terminee")
-    } catch {
+    } catch (error) {
+      void error
       setAiProposal(null)
       setIdentifyError("Identification IA indisponible. Veuillez renseigner le formulaire manuellement puis lancer l analyse.")
       setBanner("Identification photo indisponible: completez le formulaire pour continuer.")
@@ -490,9 +509,7 @@ export default function App() {
           const merged = mergeScientificDefaults(workingForm, profile.defaults)
           workingForm = merged.mergedForm
           scientificApplied = merged.appliedCount
-          if (scientificApplied > 0) {
-            setForm(workingForm)
-          }
+          if (scientificApplied > 0) setForm(workingForm)
         }
       }
 
@@ -506,7 +523,6 @@ export default function App() {
 
       const userProvided = PHYSICO_FIELDS.some((field) => !isBlankValue(form[field]))
       let dataMessage = ""
-
       if (scientificApplied > 0 && userProvided) {
         dataMessage = "Donnees utilisateur prioritaires + base scientifique pour champs manquants."
       } else if (scientificApplied > 0) {
@@ -554,7 +570,6 @@ export default function App() {
     setError("")
     setBanner("")
     setImageFile(null)
-    setImagePreview("")
     setIdentifyError("")
     setIdentifyLoadingMessage("")
     setShowCorrectionPanel(false)
@@ -586,13 +601,16 @@ export default function App() {
 
       setForm(merged.mergedForm)
       setToast(`Pre-remplissage applique (${merged.appliedCount} champ(s))`)
-    } catch {
+    } catch (error) {
+      void error
       setToast("Prefill indisponible")
     }
   }
 
   function openWhatsAppContact(buyerName) {
-    const txt = encodeURIComponent(`Bonjour, je vous contacte via WasteAI pour: ${resultCard?.nom_exact || resultCard?.nom || "dechet"} (${buyerName}).`)
+    const txt = encodeURIComponent(
+      `Bonjour, je vous contacte via WasteAI pour: ${resultCard?.nom_exact || resultCard?.nom || "dechet"} (${buyerName}).`,
+    )
     window.open(`https://wa.me/?text=${txt}`, "_blank", "noopener,noreferrer")
   }
 
@@ -618,11 +636,13 @@ export default function App() {
       setCorrectionStatus("Correction enregistree")
       setShowCorrectionPanel(false)
       setToast("Merci pour votre retour")
-    } catch {
+    } catch (error) {
+      void error
       setCorrectionStatus("Echec enregistrement correction")
       setToast("Erreur correction")
     }
   }
+
   function handleSaveResult() {
     if (!resultCard) return
     try {
@@ -631,10 +651,13 @@ export default function App() {
       existing.unshift({ ...resultCard, saved_at: new Date().toISOString() })
       localStorage.setItem(key, JSON.stringify(existing.slice(0, 30)))
       setToast("Resultat sauvegarde")
-    } catch {
+    } catch (error) {
+      void error
       setToast("Sauvegarde indisponible")
     }
   }
+
+  const channelsPanelResult = analysisContext
 
   return (
     <main className="app-shell" onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
@@ -647,9 +670,7 @@ export default function App() {
       />
 
       <div className="container page-section">
-        {view === "presentation" ? (
-          <PresentationSection onGoAnalyze={() => setView("analyse")} />
-        ) : null}
+        {view === "presentation" ? <PresentationSection onGoAnalyze={() => setView("analyse")} /> : null}
 
         {view === "analyse" ? (
           <>
@@ -659,7 +680,6 @@ export default function App() {
               <AnalysisForm
                 form={form}
                 setForm={setForm}
-                imagePreview={imagePreview}
                 identifyLoading={identifyLoading}
                 identifyLoadingMessage={identifyLoadingMessage}
                 loading={loading}
@@ -669,6 +689,7 @@ export default function App() {
                 onAnalyze={handleAnalyze}
                 onReset={handleReset}
                 onPrefill={handlePrefill}
+                photoAiEnabled={PHOTO_AI_ENABLED}
               />
             </section>
 
@@ -691,18 +712,20 @@ export default function App() {
               correctionOptions={beninWasteDb}
               onSubmitCorrection={submitCorrection}
               correctionStatus={correctionStatus}
-              onOpenMarketplace={() => setView("marketplace")}
+              onOpenMarketplace={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "channels")}
               onSave={handleSaveResult}
               compactMode={Boolean(aiProposal && !analysisResult)}
             />
 
             <div className="actions-row" style={{ marginTop: 10 }}>
-              <button className="btn" type="button" onClick={applyAiSuggestion} disabled={!aiProposal}>Appliquer identification IA</button>
-                          </div>
+              <button className="btn" type="button" onClick={applyAiSuggestion} disabled={!aiProposal}>
+                Appliquer identification IA
+              </button>
+            </div>
           </>
         ) : null}
 
-        {view === "marketplace" ? (
+        {view === "marketplace" && MARKETPLACE_ENABLED ? (
           <MarketplaceSection>
             <Suspense fallback={<div className="card" style={{ padding: 12 }}><div className="skeleton" style={{ height: 160, borderRadius: 12 }} /></div>}>
               <LazyMarketplacePanel />
@@ -710,9 +733,18 @@ export default function App() {
           </MarketplaceSection>
         ) : null}
 
-        {view === "dashboard" ? (
-          <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} />
+        {view === "channels" && !MARKETPLACE_ENABLED ? <RecommendedChannelsSection result={channelsPanelResult} /> : null}
+
+        {view === "dashboard" ? <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} /> : null}
+
+        {view === "analytics" ? (
+          <div className="space-y-6">
+            <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} />
+            <RecommendedChannelsSection result={channelsPanelResult} />
+          </div>
         ) : null}
+
+        {view === "admin" ? <AdminRegistryPanel /> : null}
 
         <Footer apiOnline={apiOnline} />
       </div>
@@ -720,8 +752,12 @@ export default function App() {
       <nav className="mobile-nav" aria-label="Navigation mobile">
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Presentation</button>
         <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyser</button>
-        <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Marche</button>
+        <button className={view === (MARKETPLACE_ENABLED ? "marketplace" : "channels") ? "active" : ""} onClick={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "channels")}>
+          {MARKETPLACE_ENABLED ? "Marketplace" : "Canaux recommandes"}
+        </button>
         <button className={view === "dashboard" ? "active" : ""} onClick={() => setView("dashboard")}>Stats</button>
+        <button className={view === "analytics" ? "active" : ""} onClick={() => setView("analytics")}>Analytics + Channels</button>
+        <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>
       </nav>
 
       <button className="fab" type="button" onClick={onAnalyzeNow} aria-label="Analyser maintenant">+</button>
@@ -730,57 +766,3 @@ export default function App() {
     </main>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -120,7 +120,6 @@ const WASTE_TYPE_RULES = regulatoryProfiles?.waste_type_rules || DEFAULT_WASTE_T
 const TYPE_ECONOMIC_MULTIPLIERS = regulatoryProfiles?.type_economic_multipliers || DEFAULT_TYPE_ECONOMIC_MULTIPLIERS
 
 function inferWasteFlags(payload) {
-  const category = normalizeText(payload?.categorie)
   const type = normalizeText(payload?.type_dechet)
   const plasticType = normalizeText(payload?.type_plastique)
   const chlorine = payload?.presence_chlore === true
@@ -372,11 +371,11 @@ function guessCategory(payload) {
 
 function computeRegulatoryGate(payload, decisionKey) {
   const countryKey = getCountryKey(payload)
+  const category = normalizeText(payload?.categorie)
   const countryPolicy = COUNTRY_POLICY[countryKey] || COUNTRY_POLICY.default
   const flags = inferWasteFlags(payload)
 
   const danger = normalizeText(payload?.niveau_danger || "faible")
-  const category = normalizeText(payload?.categorie)
   const type = normalizeText(payload?.type_dechet)
   const chlorine = payload?.presence_chlore === true
   const contamination = Number(payload?.taux_contamination_pct || 0)
@@ -837,6 +836,7 @@ export function buildAnalyzePayload(input) {
     dbo_mg_l: optionalNumber(input.dbo_mg_l),
     dco_mg_l: optionalNumber(input.dco_mg_l),
     taux_lignine_pct: optionalNumber(input.taux_lignine_pct),
+    taux_humidite_pct: optionalNumber(input.taux_humidite_pct),
     taux_contamination_pct: optionalNumber(input.taux_contamination_pct),
 
     produit_principal: optionalString(input.produit_principal),
@@ -1001,6 +1001,40 @@ export async function pingApi() {
   } catch {
     return false
   }
+}
+
+export async function getValorizationRegistry() {
+  const response = await requestWithFallback({
+    method: "get",
+    url: "/api/waste/valorization-filieres",
+  })
+  return response.data || { filieres: [] }
+}
+
+export async function getValorizationRegistryTemplate() {
+  const response = await requestWithFallback({
+    method: "get",
+    url: "/api/waste/valorization-filieres/template",
+  })
+  return response.data || { filieres: [] }
+}
+
+export async function getValorizationRegistryAudit() {
+  const response = await requestWithFallback({
+    method: "get",
+    url: "/api/waste/valorization-filieres/audit",
+  })
+  return response.data || { healthy: false, issues: [] }
+}
+
+export async function updateValorizationRegistry(payload, adminKey) {
+  const response = await requestWithFallback({
+    method: "put",
+    url: "/api/waste/valorization-filieres",
+    data: payload,
+    headers: adminKey ? { "x-admin-key": adminKey } : undefined,
+  })
+  return response.data || { status: "ok" }
 }
 
 export { API_BASE, API_URL, REMOTE_API_BASE }

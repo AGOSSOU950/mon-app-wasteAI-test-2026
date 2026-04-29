@@ -2,6 +2,7 @@ import heroImage from "./assets/hero.png"
 import wastePlasticImage from "./assets/waste-plastic.svg"
 import wasteTextileImage from "./assets/waste-textile.svg"
 import wasteOrganicImage from "./assets/waste-organic.svg"
+import { exportWasteResultPdf } from "./utils/pdfExport"
 
 
 const API_BASE = (import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev").replace(/\/$/, "")
@@ -65,6 +66,7 @@ const INITIAL_FORM = {
   taux_lignine_pct: "",
   dbo_mg_l: "",
   dco_mg_l: "",
+  taux_humidite_pct: "",
   produit_principal: "",
   composition_textile: "",
   etat_textile: "",
@@ -217,6 +219,10 @@ function FormSection({ title, form, setForm, onIdentifyImage, identifyingImage, 
             <label>DCO (mg/L)</label>
             <input style={inp} type="number" step="1" value={form.dco_mg_l} onChange={e => setForm({ ...form, dco_mg_l: e.target.value })} />
           </div>
+          <div>
+            <label>Humidite (%)</label>
+            <input style={inp} type="number" step="0.1" value={form.taux_humidite_pct} onChange={e => setForm({ ...form, taux_humidite_pct: e.target.value })} />
+          </div>
         </div>
       </details>
 
@@ -240,7 +246,7 @@ function FormSection({ title, form, setForm, onIdentifyImage, identifyingImage, 
             <input style={inp} value={form.type_plastique} onChange={e => setForm({ ...form, type_plastique: e.target.value })} />
           </div>
           <div>
-            <label>Taux contamination plastique (%)</label>
+            <label>Taux de contamination (%)</label>
             <input style={inp} type="number" step="0.1" value={form.taux_contamination_pct} onChange={e => setForm({ ...form, taux_contamination_pct: e.target.value })} />
           </div>
         </div>
@@ -262,14 +268,35 @@ function FormSection({ title, form, setForm, onIdentifyImage, identifyingImage, 
 }
 
 function ResultCard({ title, result }) {
+  const [loadingPdf, setLoadingPdf] = React.useState(false)
+  const [pdfError, setPdfError] = React.useState("")
+
   if (!result) return null
+
+  async function handleDownloadPdf() {
+    if (loadingPdf) return
+    setPdfError("")
+    try {
+      setLoadingPdf(true)
+      await exportWasteResultPdf({ sourceId: "results", result, filename: "wasteai-resultats.pdf" })
+    } catch (error) {
+      setPdfError(error?.message || "Echec de generation du PDF.")
+    } finally {
+      setLoadingPdf(false)
+    }
+  }
+
   return (
-    <div style={resultCard}>
-      <h3 style={{ marginTop: 0, color: "#2d6a4f" }}>{title}</h3>
+    <div style={resultCard} id="results">
+      <div style={{ display: "flex", gap: 12, justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap" }}>
+        <h3 style={{ marginTop: 0, color: "#2d6a4f" }}>{title}</h3>
+        <button type="button" style={secondaryBtn} onClick={handleDownloadPdf} disabled={loadingPdf}>{loadingPdf ? "Generation PDF..." : "Telecharger PDF"}</button>
+      </div>
       <p><strong>Decision:</strong> {result.decision}</p>
       <p><strong>Score:</strong> {result.score}/100</p>
       <p><strong>Confiance:</strong> {result.confiance}</p>
       {result.resume_choix && <p><strong>Pourquoi ce choix:</strong> {result.resume_choix}</p>}
+      {pdfError ? <p style={{ color: "#b42318" }}>{pdfError}</p> : null}
       {result.conformite_reglementaire?.status && <p><strong>Conformite CEDEAO:</strong> {result.conformite_reglementaire.status} ({result.conformite_reglementaire.max_severity || 'low'}) | <strong>Risque:</strong> {result.conformite_reglementaire.risk_score ?? 0}/100</p>}
       {result.conformite_reglementaire?.rule_hits?.length > 0 && <>
         <p><strong>Regles declenchees:</strong></p>
@@ -286,6 +313,10 @@ function ResultCard({ title, result }) {
       {result.details_scores && <>
         <p><strong>Scores appliques (apres contraintes):</strong> M {result.details_scores.matiere ?? 0} | E {result.details_scores.energetique ?? 0} | V {result.details_scores.vente ?? 0}</p>
         <p><strong>Scores bruts (avant blocages):</strong> M {result.details_scores_bruts?.matiere ?? result.details_scores.matiere ?? 0} | E {result.details_scores_bruts?.energetique ?? result.details_scores.energetique ?? 0} | V {result.details_scores_bruts?.vente ?? result.details_scores.vente ?? 0}</p>
+      </>}
+      {Array.isArray(result.classement_filieres) && result.classement_filieres.length > 0 && <>
+        <p><strong>Classement complet des filieres:</strong></p>
+        <ul>{result.classement_filieres.map((item, i) => <li key={`cf-${i}`}>{item.nom || item.id} - {Number(item.score || 0).toFixed(1)}/100 - {item.statut || "Peu pertinent"}</li>)}</ul>
       </>}
       {result.detail_scoring && Object.keys(result.detail_scoring).length > 0 && <>
         <p><strong>Attribution des scores (par regle):</strong></p>

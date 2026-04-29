@@ -16,6 +16,12 @@ def _is_pvc(waste: WasteInput) -> bool:
     return "pvc" in text or "chlorure de polyvinyle" in text or bool(waste.presence_chlore)
 
 
+def _effective_humidity_pct(waste: WasteInput) -> float | None:
+    if waste.taux_humidite_pct is None:
+        return None
+    return max(0.0, min(100.0, float(waste.taux_humidite_pct)))
+
+
 def _base_factors_per_tonne() -> dict[str, dict[str, float]]:
     # Factors are simplified engineering estimates in kgCO2e/tonne.
     return {
@@ -77,6 +83,18 @@ def _apply_type_adjustments(
 
     if wt == "huile_usagee":
         factors["energetique"]["avoided"] += 260.0
+
+    humidity = _effective_humidity_pct(waste)
+    if humidity is not None:
+        if humidity >= 75.0:
+            factors["energetique"]["avoided"] -= 110.0
+            factors["energetique"]["generated"] += 60.0
+            if wt in {"biomasse_lignocellulosique", "boue_de_vidange", "textile"}:
+                factors["matiere"]["avoided"] += 90.0
+        elif humidity <= 30.0:
+            factors["energetique"]["avoided"] += 90.0
+            if wt in {"biomasse_lignocellulosique", "boue_de_vidange"}:
+                factors["matiere"]["avoided"] -= 35.0
 
 
 def _apply_quality_adjustments(factors: dict[str, dict[str, float]], waste: WasteInput) -> None:
