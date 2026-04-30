@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react"
-import { FEATURES } from "../config/features"
+﻿import React, { useEffect, useMemo, useState } from "react"
 import { exportWasteResultPdf } from "../utils/pdfExport"
 
 function badgeClass(filiere) {
@@ -12,14 +11,6 @@ function badgeClass(filiere) {
 
 const money = (v) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(v || 0))
 
-function firstFiniteNumber(...values) {
-  for (const value of values) {
-    const n = Number(value)
-    if (Number.isFinite(n)) return n
-  }
-  return 0
-}
-
 function splitParagraphs(text) {
   return String(text || "")
     .split(/\n\s*\n/)
@@ -29,10 +20,10 @@ function splitParagraphs(text) {
 
 function confidenceStatus(confidence) {
   const c = Number(confidence || 0)
-  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette.", warn: true }
+  if (c < 40) return { label: "Identification faible", message: "Image difficile Ã  analyser. Essayez une photo plus nette.", warn: true }
   if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger.", warn: false }
   if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider.", warn: false }
-  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer.", warn: false }
+  return { label: "Identification certaine", message: "Identification trÃ¨s probable. Merci de confirmer.", warn: false }
 }
 
 export default function ResultCard({
@@ -50,7 +41,7 @@ export default function ResultCard({
   correctionOptions,
   onSubmitCorrection,
   correctionStatus,
-  onOpenMarketplace,
+  onOpenOperators,
   onSave,
   compactMode = false,
 }) {
@@ -65,7 +56,7 @@ export default function ResultCard({
   const confidence = Number(safeResult.confiance_identification || 0)
   const confidenceInfo = confidenceStatus(confidence)
   const shortDescription = String(safeResult.description_estimee || safeResult.resume_choix || safeResult.justification_technique || "").trim()
-  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "voie non spécifiée")
+  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "voie non spÃ©cifiÃ©e")
   const alternatives = Array.isArray(safeResult.alternatives) ? safeResult.alternatives : []
   const voiesExaminees = Array.isArray(safeResult.scores_par_voie) && safeResult.scores_par_voie.length > 0 ? safeResult.scores_par_voie.slice(0, 4) : alternatives.slice(0, 4)
   const whyPriority = String(safeResult.explication_detaillee || safeResult.explication || safeResult.justification_technique || safeResult.resume_choix || "").trim()
@@ -74,6 +65,16 @@ export default function ResultCard({
   const industrialGainTotal = Number(safeResult.gain_industriel_fcfa || safeResult?.details_scores_bruts?.gain_industriel_fcfa || 0)
   const saleValue = Number(safeResult.valeur_estimee_fcfa_tonne || safeResult?.details_scores_bruts?.market_value_fcfa || 0)
   const roi = Number(safeResult?.details_scores_bruts?.roi || 0)
+  const hasEconomicData =
+    [saleValue, treatmentCost, industrialGainTotal].some((value) => Number.isFinite(value) && value > 0) ||
+    (Number.isFinite(roi) && roi !== 0)
+
+  const topMetrics = useMemo(() => ([
+    { label: "Valeur", value: `${money(saleValue)} FCFA/t` },
+    { label: "CoÃ»t", value: `${money(treatmentCost)} FCFA/t` },
+    { label: "Gain net", value: `${money(industrialGainTotal)} FCFA` },
+    { label: "ROI", value: Number.isFinite(roi) ? roi.toFixed(2) : "n/d" },
+  ]), [saleValue, treatmentCost, industrialGainTotal, roi])
 
   async function handleDownloadPdf() {
     if (!result || pdfLoading) return
@@ -84,7 +85,7 @@ export default function ResultCard({
       await new Promise((resolve) => setTimeout(resolve, 50))
       await exportWasteResultPdf({ sourceId: "results", result: safeResult, filename: "wasteai-resultats.pdf" })
     } catch (error) {
-      setPdfError(error?.message || "Échec de génération du PDF.")
+      setPdfError(error?.message || "Ã‰chec de gÃ©nÃ©ration du PDF.")
     } finally {
       setPdfLoading(false)
     }
@@ -98,31 +99,33 @@ export default function ResultCard({
         <span className={badgeClass(filiere)}>{String(filiere || "AUTRE").toUpperCase()}</span>
       </div>
 
-      <h3 style={{ marginBottom: 4 }}>{safeResult.nom_exact || safeResult.nom || "Déchet non précisé"}</h3>
+      <h3 style={{ marginBottom: 4 }}>{safeResult.nom_exact || safeResult.nom || "DÃ©chet non prÃ©cisÃ©"}</h3>
       <p style={{ marginTop: 0, color: "var(--muted)" }}>Confiance: {confidenceInfo.label}</p>
       {shortDescription ? <p>{shortDescription}</p> : null}
 
       <div className="result-pane" style={{ margin: "10px 0 14px" }}>
-        <p style={{ marginTop: 0, marginBottom: 8 }}><strong>Synth?se ?conomique</strong></p>
+        <p style={{ marginTop: 0, marginBottom: 8 }}><strong>SynthÃ¨se Ã©conomique</strong></p>
         {hasEconomicData ? (
           <div className="result-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
-            <div><p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>Valeur</p><strong>{money(saleValue)} FCFA/t</strong></div>
-            <div><p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>Co?t</p><strong>{money(treatmentCost)} FCFA/t</strong></div>
-            <div><p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>Gain net</p><strong>{money(industrialGainTotal)} FCFA</strong></div>
-            <div><p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>ROI</p><strong>{Number.isFinite(roi) ? roi.toFixed(2) : "n/d"}</strong></div>
+            {topMetrics.map((metric) => (
+              <div key={metric.label}>
+                <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>{metric.label}</p>
+                <strong>{metric.value}</strong>
+              </div>
+            ))}
           </div>
         ) : (
-          <p style={{ marginBottom: 0, color: "var(--muted)" }}>Estimation ?conomique non disponible pour ce flux.</p>
+          <p style={{ marginBottom: 0, color: "var(--muted)" }}>Estimation Ã©conomique non disponible pour ce flux.</p>
         )}
       </div>
 
       <div className="actions-row">
         <button className="btn btn-primary" type="button" onClick={onCorrect}>Valider</button>
         <button className="btn" type="button" onClick={onIncorrect}>Corriger</button>
-        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>{showDetails ? "Masquer détails" : "Voir détails"}</button>
-        {!compactMode ? <button className="btn" type="button" onClick={onOpenMarketplace}>{FEATURES.marketplace ? "Voir Marketplace" : "Voir canaux"}</button> : null}
+        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>{showDetails ? "Masquer dÃ©tails" : "Voir dÃ©tails"}</button>
+        {!compactMode ? <button className="btn" type="button" onClick={onOpenOperators}>Voir opÃ©rateurs</button> : null}
         {!compactMode ? <button className="btn" type="button" onClick={onSave}>Sauver</button> : null}
-        <button className="btn btn-primary" type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>{pdfLoading ? "Génération PDF..." : "Télécharger PDF"}</button>
+        <button className="btn btn-primary" type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>{pdfLoading ? "GÃ©nÃ©ration PDF..." : "TÃ©lÃ©charger PDF"}</button>
       </div>
 
       {showDetails ? (
@@ -134,10 +137,10 @@ export default function ResultCard({
           </article>
 
           <article className="result-pane">
-            <h4>Voies examinées</h4>
+            <h4>Voies examinÃ©es</h4>
             <ul>
               {voiesExaminees.map((item, idx) => {
-                const statut = String(item?.statut || item?.status || (item?.compatible === false ? "Non conforme" : idx === 0 ? "Recommandée" : "Alternative")).trim()
+                const statut = String(item?.statut || item?.status || (item?.compatible === false ? "Non conforme" : idx === 0 ? "RecommandÃ©e" : "Alternative")).trim()
                 const explanation = String(item?.explication || item?.pourquoi_pas_prioritaire || "").trim()
                 return (
                   <li key={`route-${idx}`} style={{ marginBottom: 10 }}>
@@ -150,12 +153,12 @@ export default function ResultCard({
           </article>
 
           <article className="result-pane">
-            <h4>Repères clés</h4>
-            <p><strong>Valeur estimée:</strong> {money(saleValue)} FCFA/tonne</p>
-            <p><strong>Coût:</strong> {money(treatmentCost)} FCFA/tonne</p>
+            <h4>RepÃ¨res clÃ©s</h4>
+            <p><strong>Valeur estimÃ©e:</strong> {money(saleValue)} FCFA/tonne</p>
+            <p><strong>CoÃ»t:</strong> {money(treatmentCost)} FCFA/tonne</p>
             <p><strong>Gain brut:</strong> {money(industrialGainTotal)} FCFA</p>
-            <p><strong>CO2 évité:</strong> {money(co2)} kg</p>
-            <p><strong>ROI:</strong> {roi.toFixed(2)}</p>
+            <p><strong>CO2 Ã©vitÃ©:</strong> {money(co2)} kg</p>
+            <p><strong>ROI:</strong> {Number.isFinite(roi) ? roi.toFixed(2) : "n/d"}</p>
           </article>
         </div>
       ) : null}
@@ -169,9 +172,9 @@ export default function ResultCard({
           </div>
           {correctionMode === "incorrect" ? (
             <div className="field">
-              <label>Choisir le bon déchet</label>
+              <label>Choisir le bon dÃ©chet</label>
               <select value={correctionChoice} onChange={(e) => setCorrectionChoice(e.target.value)}>
-                <option value="">Sélectionner...</option>
+                <option value="">SÃ©lectionner...</option>
                 {correctionOptions.map((item) => <option key={item.id} value={item.nom_exact}>{item.nom_exact}</option>)}
               </select>
             </div>

@@ -8,12 +8,17 @@ import { exportWasteResultPdf } from "./utils/pdfExport"
 const API_BASE = (import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev").replace(/\/$/, "")
 
 const WASTE_TYPES = [
+  { value: "organique", label: "organique" },
+  { value: "biodéchets_menagers", label: "biodéchets ménagers" },
+  { value: "dechets_alimentaires", label: "déchets alimentaires" },
+  { value: "dechets_abattoir", label: "déchets abattoir" },
   { value: "biomasse_lignocellulosique", label: "biomasse lignocellulosique" },
   { value: "boue_de_vidange", label: "boue de vidange" },
-  { value: "huile_usagee", label: "huile usee" },
+  { value: "huile_usagee", label: "huile usée" },
   { value: "textile", label: "textile" },
   { value: "plastique", label: "plastique" },
   { value: "autre", label: "autre" }
+]
 ]
 
 const INDUSTRY_TYPES = [

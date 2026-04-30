@@ -352,7 +352,7 @@ function guessCategory(payload) {
   const flow = normalizeText(payload?.origine_flux)
   const merged = `${category} ${type} ${name} ${desc} ${flow}`
 
-  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "alimentaire"]
+  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodéchet", "biodechet", "biodéchets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
   if (organicHints.some((k) => merged.includes(k))) return "organique"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
@@ -1057,3 +1057,12 @@ export async function submitIdentificationCorrection(payload) {
 }
 
 
+
+export async function matchLocalActors(payload) {
+  const response = await requestWithFallback({
+    method: "post",
+    url: "/api/marketplace/actors/match",
+    data: payload,
+  })
+  return response.data || []
+}

@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 
 const CEDEAO_COUNTRIES = [
   "Benin",
@@ -37,6 +37,12 @@ const INDUSTRY_OPTIONS = [
 ]
 
 const WASTE_TYPES = [
+  "organique",
+  "biodégradable",
+  "biodéchets ménagers",
+  "déchets alimentaires",
+  "déchets d'abattoir",
+  "boues organiques",
   "plastique",
   "textile",
   "papier_carton",
@@ -71,6 +77,14 @@ export default function AnalysisForm({
 }) {
   return (
     <section className="card analysis-wrap" id="analysis-form">
+      <div className="analysis-header">
+        <p className="eyebrow">Analyse</p>
+        <h2>Préparer un flux exploitable</h2>
+        <p className="analysis-subtitle">
+          Renseignez le minimum utile pour obtenir une lecture rapide, une voie cohérente et un cadre de conformité clair.
+        </p>
+      </div>
+
       {photoAiEnabled ? (
         <>
           <h3 className="step-title">Étape 1 - Photo</h3>
@@ -91,20 +105,24 @@ export default function AnalysisForm({
 
       <h3 className="step-title" style={{ marginTop: photoAiEnabled ? 16 : 0 }}>Étape 2 - Informations utiles</h3>
       <div className="form-grid">
-        <div className="field"><label htmlFor="waste-name">Nom du déchet</label><input id="waste-name" placeholder="Ex: boues huileuses" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></div>
+        <div className="field"><label htmlFor="waste-name">Nom du déchet</label><input id="waste-name" placeholder="Ex: boues huileuses, restes alimentaires" value={form.nom} onChange={(e) => setForm({ ...form, nom: e.target.value })} /></div>
         <div className="field"><label htmlFor="waste-qty">Quantité (kg)</label><input id="waste-qty" type="number" placeholder="Ex: 500" value={form.quantite_kg} onChange={(e) => setForm({ ...form, quantite_kg: e.target.value })} /></div>
 
-        <div className="field"><label htmlFor="waste-category">Catégorie</label><select id="waste-category" value={form.categorie} onChange={(e) => setForm({ ...form, categorie: e.target.value })}><option value="textile">textile</option><option value="plastique">plastique</option><option value="papier">papier</option><option value="metal">metal</option><option value="biomasse">biomasse</option><option value="chimique">chimique</option><option value="verre">verre</option><option value="e_waste">e_waste</option><option value="autre">autre</option></select></div>
+        <div className="field"><label htmlFor="waste-category">Catégorie</label><select id="waste-category" value={form.categorie} onChange={(e) => setForm({ ...form, categorie: e.target.value })}><option value="organique">organique</option><option value="biodégradable">biodégradable</option><option value="biodéchets ménagers">biodéchets ménagers</option><option value="déchets alimentaires">déchets alimentaires</option><option value="déchets d'abattoir">déchets d'abattoir</option><option value="boues organiques">boues organiques</option><option value="textile">textile</option><option value="plastique">plastique</option><option value="papier">papier</option><option value="metal">metal</option><option value="biomasse">biomasse</option><option value="chimique">chimique</option><option value="verre">verre</option><option value="e_waste">e_waste</option><option value="autre">autre</option></select></div>
         <div className="field"><label htmlFor="waste-type">Type</label><select id="waste-type" value={form.type_dechet} onChange={(e) => setForm({ ...form, type_dechet: e.target.value })}>{WASTE_TYPES.map((w) => <option key={w} value={w}>{w}</option>)}</select></div>
 
         <div className="field"><label htmlFor="waste-industry">Industrie</label><select id="waste-industry" value={form.type_industrie} onChange={(e) => setForm({ ...form, type_industrie: e.target.value })}>{INDUSTRY_OPTIONS.map((i) => <option key={i} value={i}>{i}</option>)}</select></div>
-        <div className="field"><label htmlFor="waste-danger">Niveau de danger</label><select id="waste-danger" value={form.niveau_danger} onChange={(e) => setForm({ ...form, niveau_danger: e.target.value })}><option value="faible">faible</option><option value="moyen">moyen</option><option value="eleve">eleve</option><option value="critique">critique</option></select></div>
+        <div className="field"><label htmlFor="waste-danger">Niveau de danger</label><select id="waste-danger" value={form.niveau_danger} onChange={(e) => setForm({ ...form, niveau_danger: e.target.value })}><option value="faible">faible</option><option value="moyen">moyen</option><option value="eleve">élevé</option><option value="critique">critique</option></select></div>
 
         <div className="field"><label htmlFor="waste-country">Pays CEDEAO</label><select id="waste-country" value={form.pays_cedeao || "Benin"} onChange={(e) => setForm({ ...form, pays_cedeao: e.target.value })}>{CEDEAO_COUNTRIES.map((country) => <option key={country} value={country}>{country}</option>)}</select></div>
         <div className="field"><label htmlFor="waste-track">Filière cible</label><input id="waste-track" placeholder="Recyclage / biogaz / régénération..." value={form.filiere || ""} onChange={(e) => setForm({ ...form, filiere: e.target.value })} /></div>
 
         <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="waste-description">Description</label><textarea id="waste-description" placeholder="État, contamination, origine, process industriel..." value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
       </div>
+
+      <p style={{ margin: "10px 0 0", color: "var(--muted)", fontSize: 13 }}>
+        Conseil: pour les déchets organiques, précisez l’origine (abattoir, cuisine, marché, biodéchets ménagers, boues biologiques) et l’humidité si possible.
+      </p>
 
       <h3 className="step-title" style={{ marginTop: 16 }}>Étape 3 - Données physico-chimiques</h3>
       <p style={{ margin: "0 0 10px", color: "var(--muted)" }}>

@@ -1,16 +1,15 @@
-import React from "react"
+﻿import React from "react"
 import LocalWasteChannelsSection from "./LocalWasteChannelsSection"
-import { FEATURES } from "../config/features"
 
-export default function RecommendedChannelsSection({ result }) {
+export default function RecommendedChannelsSection({ result, form }) {
   return (
     <section className="space-y-4">
-      <div className="rounded-3xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-100">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-amber-300">Marketplace désactivée</p>
-        <p className="mt-2 text-sm text-amber-100/85">Bientôt disponible. En attendant, contactez directement les opérateurs locaux recommandés.</p>
-        <p className="mt-2 text-xs text-amber-100/70">Statut: {FEATURES.marketplace ? "activée" : "désactivée"}</p>
+      <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Canaux recommandés</p>
+        <p className="mt-2 text-sm text-emerald-900/85">Contact direct des opérateurs locaux les plus cohérents pour ce flux.</p>
+        <p className="mt-2 text-xs text-emerald-900/70">Biogaz, compost, biochar et recyclage matière sont mis en avant selon la filière.</p>
       </div>
-      <LocalWasteChannelsSection result={result} />
+      <LocalWasteChannelsSection result={result} form={form} />
     </section>
   )
 }

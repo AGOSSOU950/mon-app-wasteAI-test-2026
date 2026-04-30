@@ -3,7 +3,7 @@ import { FEATURES } from "../config/features"
 
 function WasteAiMark() {
   return (
-    <svg className="brand-mark" viewBox="0 0 64 64" role="img" aria-label="WasteAI logo">
+    <svg className="brand-mark" viewBox="0 0 64 64" role="img" aria-label="Logo WasteAI">
       <defs>
         <linearGradient id="wleaf" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#4caf50" />
@@ -24,25 +24,27 @@ export default function Header({ view, setView, apiOnline, theme, onToggleTheme 
   return (
     <header className="top-header">
       <div className="container inner">
-        <div className="brand-block">
+        <button className="brand-block brand-link" type="button" onClick={() => setView("presentation")} aria-label="Aller à l'accueil">
           <WasteAiMark />
           <div>
             <h1 className="brand-title">WasteAI</h1>
-            <p className="brand-sub">{"parce que les d\u00e9chets valent de l'or"}</p>
+            <p className="brand-sub">IA de tri et de conformité</p>
           </div>
-        </div>
+        </button>
 
         <nav className="nav-tabs desktop-nav" aria-label="Navigation principale">
-          <button className={`nav-tab ${view === "presentation" ? "active" : ""}`} onClick={() => setView("presentation")}>Accueil</button>
-          <button className={`nav-tab ${view === "analyse" ? "active" : ""}`} onClick={() => setView("analyse")}>Analyser</button>
-          {FEATURES.marketplace ? <button className={`nav-tab ${view === "marketplace" ? "active" : ""}`} onClick={() => setView("marketplace")}>Marketplace</button> : null}
-          <button className={`nav-tab ${view === "pilotage" ? "active" : ""}`} onClick={() => setView("pilotage")}>Pilotage</button>
+          <button className={`nav-tab ${view === "presentation" ? "active" : ""}`} type="button" onClick={() => setView("presentation")}>Accueil</button>
+          <button className={`nav-tab ${view === "analyse" ? "active" : ""}`} type="button" onClick={() => setView("analyse")}>Analyse</button>
+          {FEATURES.marketplace ? <button className={`nav-tab ${view === "marketplace" ? "active" : ""}`} type="button" onClick={() => setView("marketplace")}>Réseau local</button> : null}
+          <button className={`nav-tab ${view === "pilotage" ? "active" : ""}`} type="button" onClick={() => setView("pilotage")}>Pilotage</button>
         </nav>
 
         <div className="header-actions">
-          <span className={`api-dot ${apiOnline ? "api-online" : "api-offline"}`} aria-hidden="true" />
-          <small>{apiOnline ? "API disponible" : "API hors ligne"}</small>
-          <button className="btn btn-secondary" type="button" onClick={onToggleTheme}>{theme === "dark" ? "Clair" : "Sombre"}</button>
+          <div className="header-status">
+            <span className={`api-dot ${apiOnline ? "api-online" : "api-offline"}`} aria-hidden="true" />
+            <small>{apiOnline ? "En ligne" : "Hors ligne"}</small>
+          </div>
+          <button className="btn btn-secondary header-theme" type="button" onClick={onToggleTheme}>{theme === "dark" ? "Clair" : "Sombre"}</button>
         </div>
       </div>
     </header>

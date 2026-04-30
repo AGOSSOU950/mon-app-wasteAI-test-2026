@@ -1,9 +1,10 @@
-﻿import os
+import os
 from pathlib import Path
 from uuid import uuid4
 
 from fastapi import APIRouter, File, HTTPException, Query, UploadFile
 
+from app.core.actor_matching import LocalActorMatchInput, LocalActorMatchItem, match_local_actors
 from app.core.marketplace_agent import MarketplaceMatchInput, MarketplaceMatchOutput, run_marketplace_matching
 from app.core.marketplace_store import (
     add_traceability_event,
@@ -245,3 +246,8 @@ def get_traceability_timeline(lot_id: str):
 @router.post("/match", response_model=MarketplaceMatchOutput)
 def post_marketplace_match(payload: MarketplaceMatchInput):
     return run_marketplace_matching(payload)
+
+
+@router.post('/actors/match', response_model=list[LocalActorMatchItem])
+def post_actor_match(payload: LocalActorMatchInput):
+    return match_local_actors(payload)

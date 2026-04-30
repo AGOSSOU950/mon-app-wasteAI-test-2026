@@ -16,9 +16,10 @@ import HeroSection from "./components/HeroSection"
 import PresentationSection from "./components/PresentationSection"
 import AnalysisForm from "./components/AnalysisForm"
 import ResultCard from "./components/ResultCard"
-import MarketplaceSection from "./components/MarketplaceSection"
+import LocalChannelsSection from "./components/MarketplaceSection"
 import DashboardSection from "./components/DashboardSection"
-import AdminRegistryPanel from "./components/AdminRegistryPanel"
+import AdminRegistryPanel from "./components/AdminRegistryPanel"
+import RecommendedChannelsSection from "./components/RecommendedChannelsSection"
 import Footer from "./components/Footer"
 import { FEATURES } from "./config/features"
 
@@ -710,10 +711,12 @@ export default function App() {
               correctionOptions={beninWasteDb}
               onSubmitCorrection={submitCorrection}
               correctionStatus={correctionStatus}
-              onOpenMarketplace={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "pilotage")}
+              onOpenOperators={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "pilotage")}
               onSave={handleSaveResult}
               compactMode={Boolean(aiProposal && !analysisResult)}
             />
+
+            <RecommendedChannelsSection result={resultCard} form={form} />
 
             <div className="actions-row" style={{ marginTop: 10 }}>
               <button className="btn" type="button" onClick={applyAiSuggestion} disabled={!aiProposal}>
@@ -724,11 +727,11 @@ export default function App() {
         ) : null}
 
         {view === "marketplace" && MARKETPLACE_ENABLED ? (
-          <MarketplaceSection>
+          <LocalChannelsSection>
             <Suspense fallback={<div className="card" style={{ padding: 12 }}><div className="skeleton" style={{ height: 160, borderRadius: 12 }} /></div>}>
               <LazyMarketplacePanel />
             </Suspense>
-          </MarketplaceSection>
+          </LocalChannelsSection>
         ) : null}
 
         {view === "pilotage" ? <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} /> : null}
@@ -742,7 +745,7 @@ export default function App() {
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyser</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Marketplace</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
         ) : null}
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
         <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>

@@ -11,8 +11,6 @@ import {
 import { rankChannels } from "../services/localChannelsEngine"
 
 const CURRENCY = new Intl.NumberFormat("fr-FR", {
-  style: "currency",
-  currency: "EUR",
   maximumFractionDigits: 0,
 })
 
@@ -48,7 +46,7 @@ const MOCK_WASTE_DATA = [
 ]
 
 function formatCurrency(value) {
-  return CURRENCY.format(Number.isFinite(Number(value)) ? Number(value) : 0)
+  return `${CURRENCY.format(Number.isFinite(Number(value)) ? Number(value) : 0)} FCFA`
 }
 
 function formatQuantity(value) {
@@ -210,9 +208,9 @@ function DashboardSection({ analytics, loading, onRefresh }) {
     <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
       <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Pilotage WasteAI</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">Résumé de valorisation</h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">Un seul écran pour lire les chiffres clés, le canal le plus cohérent et les derniers flux.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Pilotage</p>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">Tableau de bord WasteAI</h2>
+          <p className="mt-1 max-w-2xl text-sm text-slate-600">Lecture des flux, cohérence économique et voie recommandée dans un seul écran.</p>
         </div>
         <button
           type="button"
@@ -220,15 +218,15 @@ function DashboardSection({ analytics, loading, onRefresh }) {
           disabled={loading}
           className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Actualisation" : "Rafraîchir"}
+          {loading ? "Actualisation..." : "Rafraîchir"}
         </button>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Gain total" value={formatCurrency(metrics.totalGain)} hint="Revenu valorisable" tone="positive" />
+        <StatCard label="Gain total" value={formatCurrency(metrics.totalGain)} hint="Valeur valorisable" tone="positive" />
         <StatCard label="Coût total" value={formatCurrency(metrics.totalCost)} hint="Traitement et logistique" tone="negative" />
         <StatCard label="Solde net" value={formatCurrency(metrics.net)} hint={metrics.net >= 0 ? "Position positive" : "Position négative"} tone={metrics.net >= 0 ? "positive" : "negative"} />
-        <StatCard label="Taux de valorisation" value={`${metrics.valorizationRate.toFixed(1)}%`} hint="Part des flux favorables" tone="amber" />
+        <StatCard label="Taux de valorisation" value={`${metrics.valorizationRate.toFixed(1)}%`} hint="Flux favorables" tone="amber" />
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_360px]">
@@ -255,8 +253,8 @@ function DashboardSection({ analytics, loading, onRefresh }) {
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Tendance mensuelle</h3>
-                <p className="text-sm text-slate-600">Coût et gain agrégés</p>
+                <h3 className="text-lg font-semibold text-slate-900">Tendance des flux</h3>
+                <p className="text-sm text-slate-600">Gain et coût agrégés par mois</p>
               </div>
               <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{visibleLignes.length} flux</span>
             </div>
@@ -266,9 +264,9 @@ function DashboardSection({ analytics, loading, onRefresh }) {
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                   <XAxis dataKey="label" stroke="#64748b" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
                   <YAxis stroke="#64748b" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tickFormatter={(value) => formatCurrency(value)} />
-                  <Tooltip />
-                  <Line type="monotone" dataKey="gain" name="Gain" stroke="#16a34a" strokeWidth={3} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="cost" name="Coût" stroke="#dc2626" strokeWidth={3} dot={{ r: 3 }} />
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                  <Line type="monotone" dataKey="gain" name="Gain" stroke="#0f766e" strokeWidth={3} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="cost" name="Coût" stroke="#ef4444" strokeWidth={3} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -291,7 +289,7 @@ function DashboardSection({ analytics, loading, onRefresh }) {
                   <p className="mt-1 text-xl font-semibold text-slate-900">{bestChannel.name}</p>
                   <p className="mt-1 text-sm text-slate-600">{bestChannel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
                   <p className="mt-2 text-sm text-slate-700">{channelContext.name} - {formatQuantity(channelContext.quantity)} - {channelContext.recommendation}</p>
-                  {!rankedChannels.hasDirectBuyer ? <p className="mt-2 text-sm text-amber-700">Aucun acheteur direct pertinent, on privilégie la voie de traitement cohérente.</p> : null}
+                  {!rankedChannels.hasDirectBuyer ? <p className="mt-2 text-sm text-amber-700">Aucun acheteur direct pertinent. La voie de traitement sert de référence.</p> : null}
                 </div>
                 <div className="grid gap-3">
                   {alternatives.map((channel, index) => <CompactChannel key={channel.id} channel={channel} isBest={index === 0} />)}
@@ -303,7 +301,7 @@ function DashboardSection({ analytics, loading, onRefresh }) {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <h3 className="text-lg font-semibold text-slate-900">Derniers flux</h3>
+            <h3 className="text-lg font-semibold text-slate-900">Flux récents</h3>
             <div className="mt-3 space-y-3">
               {recentRows.map((row) => {
                 const net = (row.gain_per_ton - row.cost_per_ton) * row.quantity
