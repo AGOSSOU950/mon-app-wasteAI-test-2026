@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { matchLocalActors } from "../services/api"
 import ChannelsList from "./ChannelsList"
 import { CHANNELS, normalizeWasteType } from "../services/localChannelsEngine"
@@ -28,8 +28,8 @@ function extractRecommendedSolutions(result) {
     result?.decision,
     result?.valorisation_1?.methode,
     result?.resume_choix,
-    ...(Array.isArray(result?.alternatives) ? result.alternatives.map((item) => item?.filiere || item?.nom) : []),
-    ...(Array.isArray(result?.scores_par_voie) ? result.scores_par_voie.map((item) => item?.filiere || item?.nom) : []),
+    ...(Array.isArray(result?.alternatives) ? result.alternatives.map((item) => item?.solution || item?.filiere || item?.nom) : []),
+    ...(Array.isArray(result?.scores_par_voie) ? result.scores_par_voie.map((item) => item?.solution || item?.filiere || item?.nom) : []),
   ]
 
   const cleaned = []

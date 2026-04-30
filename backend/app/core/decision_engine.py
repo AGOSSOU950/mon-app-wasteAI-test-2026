@@ -740,8 +740,8 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
     if w.categorie == WasteCategory.CHEMICAL and wt != WasteType.HUILE_USAGEE:
         paint_like = _is_paint_or_coating_waste(w)
         c += [
-            _cand("neutralisation_chimique", "matiere", 86 if paint_like else 74, "Traitement physico-chimique prioritaire pour stabiliser/neutraliser le flux chimique.", ["neutralisation", "controle pH", "gestion des boues"], feasible=True),
-            _cand("co_incineration_cimenterie", "energie", 58 if paint_like else 52, "Voie thermique uniquement si conformite emissions et autorisation locale.", ["analyse halogenes", "controle emissions"], feasible=(not bool(w.presence_chlore)), blocked="Presence de chlore: voie thermique non recommandee" if bool(w.presence_chlore) else None),
+            _cand("neutralisation_chimique", "matiere", 94 if paint_like else 74, "Traitement physico-chimique prioritaire pour stabiliser/neutraliser le flux chimique.", ["neutralisation", "controle pH", "gestion des boues"], feasible=True),
+            _cand("co_incineration_cimenterie", "energie", 38 if paint_like else 52, "Voie thermique uniquement si conformite emissions et autorisation locale.", ["analyse halogenes", "controle emissions"], feasible=(not paint_like and not bool(w.presence_chlore)), blocked="Presence de chlore ou profil peinture: voie thermique non recommandee" if (paint_like or bool(w.presence_chlore)) else None),
             _cand(DECISION_ELIMINATION, "elimination", 68, "Filet de securite en cas de non-conformite des filieres de valorisation chimique.", ["centre agree", "bordereau de suivi"]),
         ]
         _apply_combustion_safety_constraints(c, w, m, warnings)
@@ -767,7 +767,7 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
             _cand("reemploi_plastique", "reemploi", 80 if reusable_plastic else 50, f"Reemploi si contamination faible ({contamination:.1f}%).", ["tri", "lavage", "controle qualite"], feasible=reusable_plastic, blocked="Contamination trop elevee pour reemploi" if not reusable_plastic else None),
             _cand("recyclage_mecanique_plastique", "matiere", 86 if contamination <= 20 else 62, f"Contamination={contamination:.1f}%, tri et proprete determinants.", ["tri", "lavage", "extrusion"], feasible=(contamination <= 35), blocked="Contamination trop elevee" if contamination > 35 else None),
             _cand("pyrolyse_plastique", "energie", 76 if contamination > 20 else 61, "Pyrolyse pour plastiques melanges/contamines.", ["reacteur pyrolyse", "traitement gaz"]),
-            _cand("co_incineration_cimenterie", "energie", 72 if m["pci_mj_kg"] > 15 else 45, f"PCI={m['pci_mj_kg']:.1f} MJ/kg, co-incineration conditionnelle.", ["filiere cimenterie", "controle chlore"], feasible=(m["pci_mj_kg"] > 15 and (not _is_pvc(w) or bool(w.filiere_cimenterie_autorisee))), blocked="PCI<15 ou filiere cimenterie non autorisee pour flux chlore" if not (m["pci_mj_kg"] > 15 and (not _is_pvc(w) or bool(w.filiere_cimenterie_autorisee))) else None),
+            _cand("co_incineration_cimenterie", "energie", 72 if m["pci_mj_kg"] > 15 else 45, f"PCI={m['pci_mj_kg']:.1f} MJ/kg, co-incineration conditionnelle.", ["filiere cimenterie", "controle chlore"], feasible=(m["pci_mj_kg"] > 15 and not _is_pvc(w)), blocked="PCI<15 ou flux chlore non conforme" if not (m["pci_mj_kg"] > 15 and not _is_pvc(w)) else None),
         ]
     elif wt == WasteType.BOUE_DE_VIDANGE:
         is_abattoir = _is_abattoir_waste(w)
@@ -1204,46 +1204,180 @@ def _build_explication_paragraphs(
     waste: WasteInput,
     metrics: dict[str, Any],
     chosen: dict[str, Any],
-    alternatives: list[dict[str, Any]],
+    routes: list[dict[str, Any]],
     regulatory: dict[str, Any],
     reg_refs: list[str],
     hierarchy_reasons: list[str],
 ) -> str:
     physico = _format_physico_chemical_context(waste, metrics)
     process = _process_engineering_notes(waste, chosen, metrics)
+    top_routes = sorted(routes, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)[:3]
 
     route_lines: list[str] = []
-    for alt in alternatives[:4]:
+    for idx, route in enumerate(top_routes, start=1):
         route_lines.append(
-            f"- {alt.get('filiere')}: {alt.get('explication') or alt.get('pourquoi_pas_prioritaire') or 'Aucune justification detaillee disponible.'}"
+            f"{idx}. {route.get('filiere')}: {route.get('technical_reason') or route.get('blocked_reason') or route.get('explication') or 'Aucune justification detaillee disponible.'}"
         )
 
     p1 = (
-        f"La voie retenue est {chosen.get('filiere')}. Elle est coherente avec le profil du flux: {physico} {process} "
-        f"En pratique, le lot se comporte comme une biomasse humide a forte charge organique, ce qui rend la voie choisie plus stable que les options thermiques ou les usages directs au sol."
+        f"1) Lecture technique. Filiere retenue est {chosen.get('filiere')}. Elle est coherente avec le profil du flux: {physico} {process} "
+        f"La selection repose sur la nature physico-chimique du lot, la stabilite d'exploitation et la compatibilite avec les contraintes de traitement."
     )
 
     p2 = (
-        "Lecture des autres voies: "
+        "2) Comparison des voies. Alternatives examinees: "
         + (" ".join(route_lines) if route_lines else "Aucune alternative exploitable n'a pu etre maintenue.")
-        + "."
+        + " La presence de trois voies permet de comparer la robustesse technique plutot que de forcer un choix unique trop tot."
     )
 
-    co2 = float(chosen.get("co2_avoided_kg", 0.0))
     cost = float(chosen.get("treatment_cost_fcfa", 0.0))
     market = float(chosen.get("market_value_fcfa", 0.0))
     gain = float(chosen.get("gain_industriel_fcfa", market - cost))
-    gain_pt = float(chosen.get("gain_industriel_fcfa_tonne", (float(chosen.get("market_value_fcfa_tonne", 0.0)) - float(chosen.get("treatment_cost_fcfa_tonne", 0.0)))))
-    reg_status = str(regulatory.get('status', 'unknown'))
-    reg_warnings = regulatory.get('warnings') or []
+    co2 = float(chosen.get("co2_avoided_kg", 0.0))
+    reg_status = str(regulatory.get("status", "unknown"))
+    reg_warnings = regulatory.get("warnings") or []
     warning_txt = f" Alertes notables: {'; '.join(str(w) for w in reg_warnings[:2])}." if reg_warnings else ""
     p3 = (
-        f"Sur le plan economique, la valeur de marche du lot et le cout de traitement montrent si la voie reste defendable dans la duree. "
-        f"Sur le plan reglementaire, le filtre CEDEAO/Bamako a ete applique avant validation finale. La voie retenue reste exploitable tant que les obligations de transport, de tracabilite, d'hygienisation et d'autorisation locale sont respectees. "
-        f"La Convention de Bamako est {'referencee explicitement' if any('bamako' in _n(ref) for ref in reg_refs) else 'verifiee dans le corpus de references disponible'} pour les transferts transfrontaliers de dechets dangereux. Statut de conformite: {reg_status}.{warning_txt}"
+        f"3) Cout, impact et cadre reglementaire. Le cout de traitement estime est d'environ {cost:.0f} FCFA/t pour une valeur de marche de {market:.0f} FCFA/t, soit un gain industriel net de {gain:.0f} FCFA/t. "
+        f"L'impact environnemental associe est d'environ {co2:.1f} kgCO2e evites par tonne sur la voie retenue. "
+        f"Le filtre CEDEAO/Bamako a ete applique avant validation finale, avec un statut de conformite {reg_status}; points de vigilance: {(', '.join(str(w) for w in reg_warnings[:2]) if reg_warnings else 'aucun blocage majeur signale')}."
     )
 
     return "\n\n".join([p1, p2, p3])
+
+
+def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list[dict[str, Any]]:
+    humidity = _effective_humidity_pct(waste, metrics)
+    pci = float(metrics.get("pci_mj_kg", 0.0) or 0.0)
+    dco = float(metrics.get("dco_mg_l", 0.0) or 0.0)
+    dbo = float(metrics.get("dbo_mg_l", 0.0) or 0.0)
+    contamination = float(waste.taux_contamination_pct or 0.0)
+    has_metals = bool(waste.contient_metaux or waste.presence_metaux_lourds)
+    has_chlorine = bool(waste.presence_chlore)
+
+    dco_high = dco >= 100000 or (dco >= 1000 and dbo >= 500)
+    dbo_high = dbo >= 1000 or (dco > 0 and dbo > 0 and (dco / max(dbo, 1.0)) >= 2.0)
+    biodegradable = dco_high or dbo_high or _is_organic_waste_text(waste) or _is_abattoir_waste(waste)
+    low_organic_load = dco < 100000 and dbo < 1000
+    low_pci = pci < 10
+    metals_heavy = has_metals or bool(waste.presence_metaux_lourds)
+    chlorine_risk = has_chlorine or _is_pvc(waste)
+
+    def make_item(solution: str, score: float, conditions: list[str], justification: str, filiere: str) -> dict[str, Any]:
+        score = _b(score)
+        return {
+            "solution": solution,
+            "score": round(score, 1),
+            "conditions": list(dict.fromkeys(conditions)),
+            "justification": justification,
+        }
+
+    shared_conditions: list[str] = []
+    if contamination > 60:
+        shared_conditions.append("pretraitement requis")
+
+    meth_conditions = list(shared_conditions)
+    if metals_heavy:
+        meth_conditions.append("metaux a limiter avant digestion")
+    if chlorine_risk:
+        meth_conditions.append("chlore a verifier avant digestion")
+    meth_score = 20.0
+    if dco_high:
+        meth_score += 50
+    if dbo_high:
+        meth_score += 30
+    if humidity is not None and humidity > 60:
+        meth_score += 20
+    if metals_heavy:
+        meth_score -= 20
+    if chlorine_risk:
+        meth_score -= 20
+
+    comp_conditions = list(shared_conditions)
+    if metals_heavy:
+        comp_conditions.append("metaux a retirer pour stabilisation biologique")
+    if chlorine_risk:
+        comp_conditions.append("chlore a verifier avant compostage")
+    comp_score = 15.0
+    if biodegradable:
+        comp_score += 40
+    if humidity is not None and 40 <= humidity <= 70:
+        comp_score += 20
+    if contamination > 70:
+        comp_score -= 30
+    if metals_heavy:
+        comp_score -= 15
+    if chlorine_risk:
+        comp_score -= 10
+
+    energy_conditions = list(shared_conditions)
+    if chlorine_risk:
+        energy_conditions.append("limitation thermique liee au chlore")
+    if contamination > 60:
+        energy_conditions.append("homogeneisation avant valorisation thermique")
+    energy_score = 20.0
+    if pci > 10:
+        energy_score += 40
+    if humidity is not None and humidity < 50:
+        energy_score += 20
+    if humidity is not None and humidity > 60:
+        energy_score -= 40
+    if chlorine_risk:
+        energy_score -= 20
+    if contamination > 70:
+        energy_score -= 10
+
+    mater_conditions = list(shared_conditions)
+    if contamination > 60:
+        mater_conditions.append("tri et nettoyage renforces pour recyclage matiere")
+    if metals_heavy:
+        mater_conditions.append("recuperation metallique prioritaire")
+    mater_score = 10.0
+    if has_metals:
+        mater_score += 50
+    if low_pci and low_organic_load:
+        mater_score += 50
+    if contamination > 70:
+        mater_score -= 30
+    if humidity is not None and humidity > 70:
+        mater_score -= 10
+    if chlorine_risk:
+        mater_score -= 10
+
+    elim_conditions: list[str] = []
+    if contamination > 60:
+        elim_conditions.append("pretraitement requis")
+    elim_score = 5.0
+    if contamination > 80:
+        elim_score += 50
+    if metals_heavy:
+        elim_score += 40
+    if chlorine_risk:
+        elim_score += 30
+    if max(meth_score, comp_score, energy_score, mater_score) < 40:
+        elim_score += 20
+
+    solutions = [
+        make_item("methanisation", meth_score, meth_conditions, "Forte DCO/DBO et humidite favorable orientent vers un traitement biologique avec biogaz.", "methanisation_biogaz"),
+        make_item("compostage", comp_score, comp_conditions, "Charge biodegradable et humidite intermediaire compatibles avec une stabilisation aerobie.", "compostage"),
+        make_item("valorisation energetique", energy_score, energy_conditions, "PCI et humidite determinent la robustesse de l'option thermique; le chlore impose des controles renforces.", "valorisation_energetique"),
+        make_item("recyclage matiere", mater_score, mater_conditions, "Recuperation matiere privilegiee si la fraction utile est valorisable et si le flux reste maitrise.", "recyclage_matiere"),
+        make_item("elimination securisee", elim_score, elim_conditions, "Voie de dernier recours lorsque les contraintes sanitaires ou techniques restent trop fortes.", "elimination_securisee"),
+    ]
+
+    solutions.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
+    solutions.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
+
+    return solutions
+
+
+def _minimal_voie(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "solution": str(item.get("solution") or item.get("filiere") or item.get("nom") or "voie"),
+        "score": round(float(item.get("score") or item.get("global_score") or 0.0), 1),
+        "conditions": list(item.get("conditions") or item.get("contraintes") or []),
+        "justification": str(item.get("justification") or item.get("explication") or item.get("technical_reason") or ""),
+    }
 
 
 def _llm_enrichment(waste: WasteInput) -> str | None:
@@ -1297,22 +1431,19 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     evald = _apply_regulatory_priority(evald, blocked, regulatory, labels, reg_refs)
     expert_profile = _build_expert_valorization_profile(effective_waste, wt, metrics, evald, regulatory)
 
-    chosen, hierarchy_reasons = _select(evald)
+    chosen, hierarchy_reasons = _select(effective_waste, evald)
+    generic_scores = _score_generic_solutions(effective_waste, metrics)
+    if _is_paint_or_coating_waste(effective_waste):
+        paint_choice = next((x for x in evald if x.get("filiere") == "neutralisation_chimique" and x.get("feasible", True)), None)
+        if paint_choice is not None:
+            chosen = paint_choice
+            hierarchy_reasons = ["Flux peinture/revetement: neutralisation chimique prioritaire."] + hierarchy_reasons
+
     classement_filieres = [
-        {
-            "id": x.get("filiere"),
-            "nom": x.get("nom") or x.get("filiere"),
-            "type": x.get("type"),
-            "score": round(float(x.get("global_score", 0.0)), 2),
-            "statut": x.get("status") or ("Recommandee" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Alternative" if x.get("feasible", True) else "Non conforme"),
-            "compatible": bool(x.get("feasible", True)),
-            "raison": x.get("technical_reason"),
-            "contraintes": x.get("contraintes") or [],
-            "blocked_reason": x.get("blocked_reason"),
-        }
+        {**_minimal_voie(x), "statut": ("Recommandee" if x.get("filiere") == chosen["filiere"] and x.get("feasible", True) else "Alternative recommandee" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Alternative" if x.get("feasible", True) else "Non conforme")}
         for x in sorted(evald, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)
     ]
-    alternatives = _alternatives(chosen, evald)
+    alternatives = [_minimal_voie(x) for x in generic_scores if str(x.get("solution") or "") != str(chosen.get("filiere") or "")][:4]
 
     has_bamako_ref = any("bamako" in _n(ref) for ref in reg_refs)
     bamako_tag = " Accord de Bamako pris en compte." if has_bamako_ref else ""
@@ -1350,7 +1481,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         recommended_decision=chosen["filiere"],
     )
 
-    explication_detaillee = _build_explication_paragraphs(effective_waste, metrics, chosen, alternatives, regulatory, reg_refs, hierarchy_reasons)
+    explication_detaillee = _build_explication_paragraphs(effective_waste, metrics, chosen, evald, regulatory, reg_refs, hierarchy_reasons)
 
     exp_payload = {
         "decision_principale": chosen["filiere"],
@@ -1451,7 +1582,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         cout_estime_fcfa_tonne=round(float(chosen["treatment_cost_fcfa"]), 2),
         gain_industriel_fcfa=round(float(chosen.get("gain_industriel_fcfa", chosen["market_value_fcfa"] - chosen["treatment_cost_fcfa"])), 2),
         gain_industriel_fcfa_tonne=round(float(chosen.get("gain_industriel_fcfa_tonne", chosen.get("market_value_fcfa_tonne", 0.0) - chosen.get("treatment_cost_fcfa_tonne", 0.0))), 2),
-        options_alternatives=[f"{a['filiere']} ({a['score']})" for a in alternatives],
+        options_alternatives=[f"{a['solution']} ({a['score']})" for a in alternatives],
         decision_principale=chosen["filiere"],
         justification_technique=just_tech,
         justification_economique=just_eco,
@@ -1460,25 +1591,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         score_global=round(score_global, 2),
         alternatives=alternatives,
         classement_filieres=classement_filieres,
-        scores_par_voie=[
-            {
-                "filiere": x.get("filiere"),
-                "nom": x.get("nom") or x.get("filiere"),
-                "score": round(float(x.get("global_score", 0.0)), 2),
-                "statut": "Recommandee" if x.get("filiere") == chosen["filiere"] and x.get("feasible", True) else "Alternative recommandee" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Alternative" if x.get("feasible", True) else "Non conforme",
-                "compatible": bool(x.get("feasible", True)),
-                "raison": x.get("technical_reason"),
-                "contraintes": x.get("conditions", []),
-                "blocked_reason": x.get("blocked_reason"),
-                "explication": _route_explanation(x, chosen),
-                "technique": round(float(x.get("technical_score", 0.0)), 2),
-                "economique": round(float(x.get("economic_score", 0.0)), 2),
-                "environnement": round(float(x.get("environmental_score", 0.0)), 2),
-                "social": round(float(x.get("social_score", 0.0)), 2),
-                "reglementaire": round(float(x.get("regulatory_score", 0.0)), 2),
-            }
-            for x in sorted(evald, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)
-        ],
+        scores_par_voie=generic_scores,
         conditions_requises=_req(chosen.get("conditions", [])),
         avertissements=(" | ".join(warnings) if warnings else "Aucun avertissement majeur."),
         donnees_manquantes_critiques=missing_critical,
@@ -1577,7 +1690,6 @@ def _generic_profile(w: WasteInput, m: dict[str, float]) -> dict[str, Any]:
         "danger_level": str(getattr(w.niveau_danger, "value", w.niveau_danger) or "faible"),
         "categorie": str(getattr(w.categorie, "value", w.categorie) or "autre"),
         "type_dechet": str(getattr(w.type_dechet, "value", w.type_dechet) or "autre"),
-        "cimenterie_autorisee": bool(w.filiere_cimenterie_autorisee),
     }
 
 
@@ -1592,19 +1704,13 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
         feasible = bool(scored.get("feasible", True))
         blocked_reason = scored.get("blocked_reason")
         external_block = bool(scored.get("external_block", False))
-        if filiere.get("contraintes", {}).get("necessite_cimenterie") and not profile.get("cimenterie_autorisee"):
-            feasible = False
-            external_block = True
-            blocked_reason = blocked_reason or "pas de cimenterie autorisee"
-        status = scored.get("status") or ("Non disponible" if external_block else ("Recommande" if feasible and score >= 70 else "Non pertinent" if feasible else "Non disponible"))
-        if external_block:
-            status = "Non disponible (pas de cimenterie autorisee)"
-        elif str(status).lower() == "recommande":
+        status = scored.get("status") or ("Recommande" if feasible and score >= 70 else "Non pertinent" if feasible else "Non disponible")
+        if str(status).lower() == "recommande":
             status = "Recommande"
         elif str(status).lower() == "non pertinent":
             status = "Non pertinent"
         elif str(status).lower() == "non disponible":
-            status = "Non disponible (pas de cimenterie autorisee)"
+            status = "Non disponible"
         c.append({
             "filiere": filiere["id"],
             "nom": filiere["nom"],
@@ -1684,18 +1790,34 @@ def _evaluate(
     return out
 
 
-def _select(evald: list[dict[str, Any]]) -> tuple[dict[str, Any], list[str]]:
+def _select(waste: WasteInput, evald: list[dict[str, Any]]) -> tuple[dict[str, Any], list[str]]:
     reasons: list[str] = []
-    feasible = [x for x in evald if x.get("feasible", True)]
-    if feasible:
-        chosen = sorted(feasible, key=lambda z: (float(z.get("global_score", 0.0)), float(z.get("technical_score", 0.0))), reverse=True)[0]
-        reasons.append("Choix base sur le meilleur score global parmi les filieres compatibles.")
+    feasible = sorted(
+        [x for x in evald if x.get("feasible", True)],
+        key=lambda z: (float(z.get("global_score", 0.0)), float(z.get("technical_score", 0.0))),
+        reverse=True,
+    )
+    if not feasible:
+        chosen = sorted(
+            evald,
+            key=lambda z: (float(z.get("global_score", 0.0)), float(z.get("technical_score", 0.0))),
+            reverse=True,
+        )[0]
+        reasons.append("Aucune filiere pleinement compatible: meilleure option restante conservee comme reference.")
         return chosen, reasons
-    chosen = sorted(evald, key=lambda z: (float(z.get("global_score", 0.0)), float(z.get("technical_score", 0.0))), reverse=True)[0]
-    reasons.append("Aucune filiere pleinement compatible: meilleure option restante conservee comme reference.")
+
+    non_elimination = [x for x in feasible if x.get("filiere") != DECISION_ELIMINATION]
+    if non_elimination:
+        chosen = non_elimination[0]
+        if _is_abattoir_waste(waste) or _is_organic_waste_text(waste) or waste.categorie == WasteCategory.ORGANIC:
+            reasons.append("Flux organique/abattoir: une voie biologique est priorisee avant toute elimination.")
+        else:
+            reasons.append("Une voie de valorisation faisable existe: elimination ecartee au profit de la meilleure alternative.")
+        return chosen, reasons
+
+    chosen = feasible[0]
+    reasons.append("Aucune voie de valorisation faisable: elimination securisee retenue en dernier recours.")
     return chosen, reasons
-
-
 def _route_explanation(route: dict[str, Any], chosen: dict[str, Any]) -> str:
     filiere = str(route.get("filiere") or "").lower()
     blocked = str(route.get("blocked_reason") or "").strip()

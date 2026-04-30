@@ -55,7 +55,7 @@ function buildRecommendations(result) {
   if (explanation) items.push(`La voie retenue reste la plus coherente avec la chimie du lot, sa charge organique, son humidite et ses contraintes de securite.`)
   if (voies.length > 0) {
     const topVoies = voies.slice(0, 4).map((voie, index) => {
-      const nom = String(voie?.filiere || voie?.nom || `voie ${index + 1}`).trim()
+      const nom = String(voie?.solution || voie?.filiere || voie?.nom || `voie ${index + 1}`).trim()
       const statut = String(voie?.statut || voie?.status || (voie?.compatible === false ? 'Non conforme' : index === 0 ? 'Recommandee' : 'Alternative')).trim()
       const exp = String(voie?.explication || '').trim()
       return exp ? `${nom} - ${statut}. ${exp}` : `${nom} - ${statut}`

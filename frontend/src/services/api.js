@@ -32,7 +32,7 @@ const DECISION_LABELS = {
 const SPECIFIC_ROUTE_LABELS = {
   recyclage_mecanique_plastique: "Recyclage mecanique du plastique (tri-lavage-extrusion)",
   pyrolyse_plastique: "Pyrolyse des plastiques melanges",
-  co_incineration_cimenterie: "Co-incineration en cimenterie autorisee",
+  co_incineration_cimenterie: "Co-incineration / valorisation thermique",
   charbon_actif: "Valorisation en charbon actif (lignine elevee)",
   refonte_metaux: "Refonte metallurgique (fonderie/acierie)",
   reemploi_pieces_metalliques: "Reemploi de pieces metalliques",
@@ -178,7 +178,7 @@ const ROUTE_CONFIG = {
     decisionKey: "energetic",
     econFcfaTonne: 45000,
     base: { technique: 63, environnement: 52, reglementaire: 64, economique: 60, social: 54 },
-    description: "Substitution partielle de combustible en cimenterie autorisee.",
+    description: "Substitution partielle de combustible en installation thermique controlee.",
   },
   charbon_actif: {
     decisionKey: "material",
@@ -352,7 +352,7 @@ function guessCategory(payload) {
   const flow = normalizeText(payload?.origine_flux)
   const merged = `${category} ${type} ${name} ${desc} ${flow}`
 
-  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodéchet", "biodechet", "biodéchets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
+  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodÃƒÂ©chet", "biodechet", "biodÃƒÂ©chets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
   if (organicHints.some((k) => merged.includes(k))) return "organique"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
@@ -417,22 +417,10 @@ function computeRegulatoryGate(payload, decisionKey) {
     riskDelta += 6
   }
 
-  if (decisionKey === "energetic" && payload?.filiere_cimenterie_autorisee === false) {
-    blocked = true
-    warnings.push("Voie energetique bloquee: absence d'operateur autorise declare.")
-    riskDelta += 16
-  }
-
   if ((contamination >= 35 || flags.heavyMetals) && decisionKey !== "specialized") {
     blocked = true
     warnings.push("Contamination elevee: traitement specialise requis.")
     riskDelta += 24
-  }
-
-  if (countryKey === "benin" && decisionKey === "energetic" && payload?.filiere_cimenterie_autorisee !== true) {
-    blocked = true
-    warnings.push("Benin: voie energetique autorisee uniquement avec operateur/cimenterie declare.")
-    riskDelta += 10
   }
 
   if (flags.wasteOilOrSolvent && decisionKey === "reuse_sale") {
@@ -849,7 +837,6 @@ export function buildAnalyzePayload(input) {
     presence_colorants: optionalBoolean(input.presence_colorants),
     presence_additifs: optionalBoolean(input.presence_additifs),
     presence_chlore: optionalBoolean(input.presence_chlore),
-    filiere_cimenterie_autorisee: optionalBoolean(input.filiere_cimenterie_autorisee),
   }
 }
 

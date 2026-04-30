@@ -1,4 +1,4 @@
-from enum import Enum
+﻿from enum import Enum
 from typing import Literal, Optional
 
 from pydantic import BaseModel, Field
@@ -76,7 +76,6 @@ class WasteInput(BaseModel):
     presence_colorants: Optional[bool] = None
     presence_additifs: Optional[bool] = None
     presence_chlore: Optional[bool] = None
-    filiere_cimenterie_autorisee: Optional[bool] = None
 
 
 class WasteImageIdentificationInput(BaseModel):

@@ -18,7 +18,8 @@ import AnalysisForm from "./components/AnalysisForm"
 import ResultCard from "./components/ResultCard"
 import LocalChannelsSection from "./components/MarketplaceSection"
 import DashboardSection from "./components/DashboardSection"
-import AdminRegistryPanel from "./components/AdminRegistryPanel"
+import AdminRegistryPanel from "./components/AdminRegistryPanel"
+
 import RecommendedChannelsSection from "./components/RecommendedChannelsSection"
 import Footer from "./components/Footer"
 import { FEATURES } from "./config/features"
@@ -47,7 +48,6 @@ const INITIAL_FORM = {
   type_plastique: "",
   presence_chlore: "",
   presence_metaux_lourds: "",
-  filiere_cimenterie_autorisee: "",
   sous_region_cedeao: "",
 }
 
@@ -176,12 +176,28 @@ function normalizeResultToCard(result) {
       valeur_fcfa_tonne: 0,
     },
     acheteurs_benin: result.acheteurs_benin || [],
-    impact_co2_kg: result.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0,
-    co2_evite_estime_kg: result.co2_evite_estime_kg || result?.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0,
-    cout_estime_fcfa_tonne: result.cout_estime_fcfa_tonne || result?.details_scores_bruts?.treatment_cost_fcfa || 0,
-    valeur_estimee_fcfa_tonne: result.valeur_estimee_fcfa_tonne || result?.details_scores_bruts?.market_value_fcfa || 0,
-    gain_industriel_fcfa: result.gain_industriel_fcfa || result?.details_scores_bruts?.gain_industriel_fcfa || 0,
-    gain_industriel_fcfa_tonne: result.gain_industriel_fcfa_tonne || result?.details_scores_bruts?.gain_industriel_fcfa_tonne || 0,
+    impact_co2_kg: result.impact_co2_kg ?? result?.impact_environnemental?.bilan_net_recommande_kgco2e ?? 0,
+    co2_evite_estime_kg: result.co2_evite_estime_kg ?? result?.impact_co2_kg ?? result?.impact_environnemental?.bilan_net_recommande_kgco2e ?? 0,
+    cout_estime_fcfa_tonne:
+      result.cout_estime_fcfa_tonne ??
+      result?.details_scores_bruts?.treatment_cost_fcfa_tonne ??
+      result?.details_scores_bruts?.treatment_cost_fcfa ??
+      Math.max(0, Number(result?.valeur_estimee_fcfa_tonne ?? result?.valeur_fcfa ?? result?.valorisation_1?.valeur_fcfa_tonne ?? 0) * 0.65),
+    valeur_estimee_fcfa_tonne:
+      result.valeur_estimee_fcfa_tonne ??
+      result?.details_scores_bruts?.market_value_fcfa_tonne ??
+      result?.details_scores_bruts?.market_value_fcfa ??
+      result?.valorisation_1?.valeur_fcfa_tonne ??
+      result?.valeur_fcfa ??
+      0,
+    gain_industriel_fcfa:
+      result.gain_industriel_fcfa ??
+      result?.details_scores_bruts?.gain_industriel_fcfa ??
+      Math.max(0, Number(result?.valeur_estimee_fcfa_tonne ?? result?.valeur_fcfa ?? 0) - Number(result?.cout_estime_fcfa_tonne ?? 0)),
+    gain_industriel_fcfa_tonne:
+      result.gain_industriel_fcfa_tonne ??
+      result?.details_scores_bruts?.gain_industriel_fcfa_tonne ??
+      Math.max(0, Number(result?.valeur_estimee_fcfa_tonne ?? result?.valeur_fcfa ?? 0) - Number(result?.cout_estime_fcfa_tonne ?? 0)),
     impact_environnemental: result.impact_environnemental || null,
     conseil_stockage: result.conseil_stockage || "Stocker en zone seche, ventilee et tracee.",
     niveau_danger: result.niveau_danger || "faible",
@@ -198,6 +214,7 @@ function normalizeResultToCard(result) {
     details_scores: result.details_scores || {},
     details_scores_bruts: result.details_scores_bruts || {},
     justification_technique: result.justification_technique || "",
+    raw_api: result.raw_api || result,
   }
 }
 
@@ -745,7 +762,7 @@ export default function App() {
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyser</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃƒÂ©seau local</button>
         ) : null}
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
         <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>

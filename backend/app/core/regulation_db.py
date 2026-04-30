@@ -1,4 +1,4 @@
-﻿import json
+import json
 import unicodedata
 from pathlib import Path
 
@@ -185,10 +185,9 @@ def evaluate_regulatory_compliance(
     if waste_type_effectif_value == "plastique":
         tp = _normalize(waste.type_plastique)
         is_pvc = ("pvc" in tp) or bool(waste.presence_chlore)
-
-    if is_pvc and not waste.filiere_cimenterie_autorisee:
-        msg = "PVC/chlore: valorisation energetique interdite hors filiere cimenterie autorisee (screening CEDEAO)."
-        blocked[decision_labels["energetique"]].append(msg)
+    if is_pvc:
+        msg = "PVC/chlore: attention renforcee sur les emissions et la filiere thermique."
+        warnings.append(msg)
         _add_rule_hit(rule_hits, "ecowas_pvc_energy", msg, decision_labels["energetique"])
 
     if waste_type_effectif_value == "textile" and bool(waste.presence_metaux_lourds):

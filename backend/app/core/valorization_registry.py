@@ -326,8 +326,6 @@ def _evaluate_constraints(data: Mapping[str, Any] | dict[str, Any], constraints:
         return False, reasons
     if not constraints:
         return True, reasons
-    if constraints.get('necessite_cimenterie') and not bool(_plain_value(data, 'cimenterie_autorisee')):
-        return False, reasons + ['pas de cimenterie autorisee']
     return True, reasons
 
 

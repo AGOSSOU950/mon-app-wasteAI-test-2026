@@ -9,12 +9,12 @@ const API_BASE = (import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-g
 
 const WASTE_TYPES = [
   { value: "organique", label: "organique" },
-  { value: "biodéchets_menagers", label: "biodéchets ménagers" },
-  { value: "dechets_alimentaires", label: "déchets alimentaires" },
-  { value: "dechets_abattoir", label: "déchets abattoir" },
+  { value: "biodÃ©chets_menagers", label: "biodÃ©chets mÃ©nagers" },
+  { value: "dechets_alimentaires", label: "dÃ©chets alimentaires" },
+  { value: "dechets_abattoir", label: "dÃ©chets abattoir" },
   { value: "biomasse_lignocellulosique", label: "biomasse lignocellulosique" },
   { value: "boue_de_vidange", label: "boue de vidange" },
-  { value: "huile_usagee", label: "huile usée" },
+  { value: "huile_usagee", label: "huile usÃ©e" },
   { value: "textile", label: "textile" },
   { value: "plastique", label: "plastique" },
   { value: "autre", label: "autre" }
@@ -82,7 +82,6 @@ const INITIAL_FORM = {
   presence_colorants: false,
   presence_additifs: false,
   presence_chlore: false,
-  filiere_cimenterie_autorisee: false
 }
 
 function buildPayload(form) {
@@ -264,7 +263,6 @@ function FormSection({ title, form, setForm, onIdentifyImage, identifyingImage, 
           <label style={chk}><input type="checkbox" checked={form.presence_colorants} onChange={e => setForm({ ...form, presence_colorants: e.target.checked })} />Presence de colorants</label>
           <label style={chk}><input type="checkbox" checked={form.presence_additifs} onChange={e => setForm({ ...form, presence_additifs: e.target.checked })} />Presence d'additifs</label>
           <label style={chk}><input type="checkbox" checked={form.presence_chlore} onChange={e => setForm({ ...form, presence_chlore: e.target.checked })} />Presence de chlore (cas PVC)</label>
-          <label style={chk}><input type="checkbox" checked={form.filiere_cimenterie_autorisee} onChange={e => setForm({ ...form, filiere_cimenterie_autorisee: e.target.checked })} />Filiere cimenterie autorisee</label>
           <label style={chk}><input type="checkbox" checked={form.contient_metaux} onChange={e => setForm({ ...form, contient_metaux: e.target.checked })} />Contient des metaux</label>
         </div>
       </details>
@@ -321,7 +319,7 @@ function ResultCard({ title, result }) {
       </>}
       {Array.isArray(result.classement_filieres) && result.classement_filieres.length > 0 && <>
         <p><strong>Classement complet des filieres:</strong></p>
-        <ul>{result.classement_filieres.map((item, i) => <li key={`cf-${i}`}>{item.nom || item.id} - {Number(item.score || 0).toFixed(1)}/100 - {item.statut || "Peu pertinent"}</li>)}</ul>
+        <ul>{result.classement_filieres.map((item, i) => <li key={`cf-${i}`}>{item.solution || item.nom || item.id} - {Number(item.score || 0).toFixed(1)}/100 - {item.statut || "Peu pertinent"}</li>)}</ul>
       </>}
       {result.detail_scoring && Object.keys(result.detail_scoring).length > 0 && <>
         <p><strong>Attribution des scores (par regle):</strong></p>

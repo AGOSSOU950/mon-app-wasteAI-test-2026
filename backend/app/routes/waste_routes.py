@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 import json
 import base64
 import io
@@ -333,7 +333,6 @@ def get_categories():
             "presence_colorants",
             "presence_additifs",
             "presence_chlore",
-            "filiere_cimenterie_autorisee",
         ],
     }
 

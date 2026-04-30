@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 
 const CEDEAO_COUNTRIES = [
   "Benin",
@@ -22,7 +22,6 @@ const INDUSTRY_OPTIONS = [
   "agroalimentaire",
   "textile",
   "mines",
-  "cimenterie",
   "chimie",
   "petrole_gaz",
   "pharmaceutique",
@@ -142,7 +141,6 @@ export default function AnalysisForm({
         <div className="field"><label htmlFor="waste-chlore">Présence chlore</label><select id="waste-chlore" value={form.presence_chlore ?? ""} onChange={(e) => setForm({ ...form, presence_chlore: e.target.value })}><option value="">Non renseigné</option><option value="true">Oui</option><option value="false">Non</option></select></div>
         <div className="field"><label htmlFor="waste-heavy-metals">Métaux lourds</label><select id="waste-heavy-metals" value={form.presence_metaux_lourds ?? ""} onChange={(e) => setForm({ ...form, presence_metaux_lourds: e.target.value })}><option value="">Non renseigné</option><option value="true">Oui</option><option value="false">Non</option></select></div>
 
-        <div className="field"><label htmlFor="waste-cement">Opérateur cimenterie autorisé</label><select id="waste-cement" value={form.filiere_cimenterie_autorisee ?? ""} onChange={(e) => setForm({ ...form, filiere_cimenterie_autorisee: e.target.value })}><option value="">Non renseigné</option><option value="true">Oui</option><option value="false">Non</option></select></div>
       </div>
 
       <h3 className="step-title" style={{ marginTop: 16 }}>Actions</h3>
