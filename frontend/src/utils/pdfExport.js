@@ -1,4 +1,4 @@
-import { LOCAL_ACTORS } from "../data/localActors"
+﻿import { LOCAL_ACTORS } from "../data/localActors.js"
 
 function formatDate(value = new Date()) {
   return new Intl.DateTimeFormat('fr-FR', {
@@ -52,22 +52,35 @@ function boolLabel(value) {
   return 'N/R'
 }
 
+function coerceBoolean(...values) {
+  for (const value of values) {
+    if (value === true || value === false) return value
+    if (value === null || value === undefined || value === '') continue
+    const normalized = String(value).trim().toLowerCase()
+    if (['true', '1', 'oui', 'yes'].includes(normalized)) return true
+    if (['false', '0', 'non', 'no'].includes(normalized)) return false
+  }
+  return null
+}
+
 function splitLines(doc, text, width) {
   return doc.splitTextToSize(String(text || ''), width)
 }
 
-function buildWasteProfile(result = {}) {
+function buildWasteProfile(result = {}, form = {}) {
+  const source = result || {}
+  const input = form || {}
   return {
-    name: firstText(result.nom_exact, result.nom, result.name, 'Dechet non precise'),
-    type: firstText(result.type_dechet, result.type, result.categorie, result.filiere, 'Non precise'),
-    quantityKg: firstNumber(result.quantite_kg, result.quantity_kg, result.quantity),
-    humidity: firstNumber(result.taux_humidite_pct, result.humidity),
-    pci: firstNumber(result.pci_mj_kg, result.PCI),
-    dco: firstNumber(result.dco_mg_l, result.DCO),
-    dbo: firstNumber(result.dbo_mg_l, result.DBO),
-    contamination: firstNumber(result.taux_contamination_pct, result.contamination),
-    hasMetals: Boolean(result.presence_metaux_lourds ?? result.hasMetals ?? result.contient_metaux),
-    hasChlorine: Boolean(result.presence_chlore ?? result.hasChlorine),
+    name: firstText(input.nom, source.nom_exact, source.nom, source.name, 'Dechet non precise'),
+    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, 'Non precise'),
+    quantityKg: firstNumber(input.quantite_kg, source.quantite_kg, source.quantity_kg, source.quantity),
+    humidity: firstNumber(input.taux_humidite_pct, source.taux_humidite_pct, source.humidity),
+    pci: firstNumber(input.pci_mj_kg, source.pci_mj_kg, source.PCI),
+    dco: firstNumber(input.dco_mg_l, source.dco_mg_l, source.DCO),
+    dbo: firstNumber(input.dbo_mg_l, source.dbo_mg_l, source.DBO),
+    contamination: firstNumber(input.taux_contamination_pct, source.taux_contamination_pct, source.contamination),
+    hasMetals: coerceBoolean(input.presence_metaux_lourds, input.contient_metaux, source.presence_metaux_lourds, source.hasMetals, source.contient_metaux),
+    hasChlorine: coerceBoolean(input.presence_chlore, source.presence_chlore, source.hasChlorine),
   }
 }
 
@@ -83,7 +96,6 @@ function extractSolutions(result = {}) {
     ...(Array.isArray(result.classement_filieres) ? result.classement_filieres.map((item) => item?.solution || item?.filiere || item?.nom) : []),
     ...(Array.isArray(result.alternatives) ? result.alternatives.map((item) => item?.solution || item?.filiere || item?.nom) : []),
   ]
-
   return uniq(raw).slice(0, 5)
 }
 
@@ -143,9 +155,7 @@ function scoreActor(actor, profile, solutions) {
   const altMatch = secondary ? actorTypeMatches(actor, secondary) : false
   const familyMatch = familyMatches(actor, family)
 
-  if (!actorAllowedByWaste(actor, profile)) {
-    return null
-  }
+  if (!actorAllowedByWaste(actor, profile)) return null
 
   let score = 0
   if (familyMatch) score += 35
@@ -168,7 +178,7 @@ function scoreActor(actor, profile, solutions) {
   return {
     name: actor.name,
     score: Math.min(100, score),
-    justification: reasons.length > 0 ? reasons.join(', ') : 'Compatible sous reserve des contraintes du flux',
+    justification: reasons.length ? reasons.join(', ') : 'Compatible sous reserve des contraintes du flux',
   }
 }
 
@@ -205,9 +215,8 @@ function drawKeyValueList(doc, items, x, y, width, lineHeight = 5.2) {
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   items.forEach(([label, value]) => {
-    const left = `${label}:`
     doc.setFont('helvetica', 'bold')
-    doc.text(left, x, cursorY)
+    doc.text(`${label}:`, x, cursorY)
     doc.setFont('helvetica', 'normal')
     const lines = splitLines(doc, String(value ?? 'N/R'), width - 35)
     doc.text(lines, x + 34, cursorY)
@@ -233,15 +242,15 @@ function drawBullets(doc, bullets, x, y, width, maxItems = 3) {
   return cursorY
 }
 
-export async function exportWasteResultPdf({ sourceId = 'results', result, filename = 'wasteai-resultats.pdf' } = {}) {
+export async function exportWasteResultPdf({ sourceId = 'results', result, form, filename = 'wasteai-resultats.pdf' } = {}) {
   const source = document.getElementById(sourceId)
-  if (!source && !result) {
+  if (!source && !result && !form) {
     throw new Error('Aucun resultat a exporter.')
   }
 
-  const { jsPDF } = await import("jspdf")
+  const { jsPDF } = await import('jspdf')
   const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
-  const profile = buildWasteProfile(result || {})
+  const profile = buildWasteProfile(result || {}, form || {})
   const solutions = extractSolutions(result || {})
   const actors = rankActors(profile, solutions)
   const marginX = 12
@@ -292,7 +301,7 @@ export async function exportWasteResultPdf({ sourceId = 'results', result, filen
     ...solutions.slice(0, 4).map(formatRouteLabel),
     firstText(result?.resume_choix, result?.resume, result?.explication),
   ]).slice(0, 4)
-  y = drawBullets(doc, routeBullets.map((item) => item.includes(':') ? item : `Voie retenue: ${item}`), marginX, y, contentWidth, 4) + 1
+  y = drawBullets(doc, routeBullets.map((item) => (item.includes(':') ? item : `Voie retenue: ${item}`)), marginX, y, contentWidth, 4) + 1
 
   drawSectionTitle(doc, 'Operateurs locaux compatibles', marginX, y, contentWidth)
   y += 8
@@ -308,8 +317,7 @@ export async function exportWasteResultPdf({ sourceId = 'results', result, filen
       doc.text(actor.name, marginX + 3, cardY + 5)
       doc.setFont('helvetica', 'normal')
       doc.setFontSize(8.5)
-      const score = `${Math.round(actor.score)}/100`
-      doc.text(score, marginX + contentWidth - 15, cardY + 5)
+      doc.text(`${Math.round(actor.score)}/100`, marginX + contentWidth - 15, cardY + 5)
       const wrapped = splitLines(doc, actor.justification, contentWidth - 6)
       doc.text(wrapped.slice(0, 2), marginX + 3, cardY + 10)
       y += cardHeight + 2

@@ -714,10 +714,8 @@ export default function App() {
 
             <ResultCard
               result={resultCard}
+              form={form}
               onWhatsApp={openWhatsAppContact}
-              onCorrect={() => submitCorrection("correct")}
-              onIncorrect={() => setShowCorrectionPanel((v) => !v)}
-              showCorrection={showCorrectionPanel}
               correctionMode={correctionMode}
               setCorrectionMode={setCorrectionMode}
               correctionChoice={correctionChoice}
@@ -767,7 +765,7 @@ export default function App() {
       <nav className="mobile-nav" aria-label="Navigation mobile">
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃƒÆ’Ã‚Â©seau local</button>
         ) : null}
 
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
