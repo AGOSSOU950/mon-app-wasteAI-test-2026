@@ -7,8 +7,8 @@ const REMOTE_API_BASE = "https://wasteai-api.wasteai-gildas.workers.dev"
 const REMOTE_API_URL = REMOTE_API_BASE.replace(/\/$/, "")
 const SHOULD_TRY_REMOTE_FALLBACK = API_BASE !== REMOTE_API_URL && /(^https?:\/\/(127\.0\.0\.1|localhost))|(^https?:\/\/\[::1\])/.test(API_BASE)
 
-console.log("API URL:", API_URL)
-console.log("Mode:", import.meta.env.MODE)
+
+
 
 const http = axios.create({
   baseURL: API_BASE,
@@ -352,7 +352,7 @@ function guessCategory(payload) {
   const flow = normalizeText(payload?.origine_flux)
   const merged = `${category} ${type} ${name} ${desc} ${flow}`
 
-  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodÃƒÂ©chet", "biodechet", "biodÃƒÂ©chets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
+  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodéchet", "biodechet", "biodéchets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
   if (organicHints.some((k) => merged.includes(k))) return "organique"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"

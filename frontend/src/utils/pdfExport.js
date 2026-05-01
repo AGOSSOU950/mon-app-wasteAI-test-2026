@@ -1,35 +1,4 @@
-const HTML2PDF_CDN = "https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"
-
-let html2pdfLoader = null
-
-function loadHtml2Pdf() {
-  if (typeof window !== "undefined" && window.html2pdf) {
-    return Promise.resolve(window.html2pdf)
-  }
-
-  if (html2pdfLoader) {
-    return html2pdfLoader
-  }
-
-  html2pdfLoader = new Promise((resolve, reject) => {
-    const existing = document.querySelector('script[data-wasteai-html2pdf="true"]')
-    if (existing) {
-      existing.addEventListener('load', () => resolve(window.html2pdf), { once: true })
-      existing.addEventListener('error', () => reject(new Error('Impossible de charger la librairie PDF.')), { once: true })
-      return
-    }
-
-    const script = document.createElement('script')
-    script.src = HTML2PDF_CDN
-    script.async = true
-    script.setAttribute('data-wasteai-html2pdf', 'true')
-    script.onload = () => resolve(window.html2pdf)
-    script.onerror = () => reject(new Error('Impossible de charger la librairie PDF.'))
-    document.head.appendChild(script)
-  })
-
-  return html2pdfLoader
-}
+import { LOCAL_ACTORS } from "../data/localActors"
 
 function formatDate(value = new Date()) {
   return new Intl.DateTimeFormat('fr-FR', {
@@ -39,236 +8,329 @@ function formatDate(value = new Date()) {
 }
 
 function money(value) {
-  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number(value || 0))
+  const n = Number(value)
+  if (!Number.isFinite(n) || n === 0) return '0'
+  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n)
 }
 
-function buildRecommendations(result) {
-  const items = []
-  const route = String(result?.decision_principale || result?.decision || result?.filiere || '').trim()
-  const explanation = String(result?.explication_detaillee || result?.explication || result?.justification_technique || '').trim()
-  const stockage = String(result?.conseil_stockage || '').trim()
-  const co2 = Number(result?.co2_evite_estime_kg || result?.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0)
-  const cost = Number(result?.cout_estime_fcfa_tonne || result?.details_scores_bruts?.treatment_cost_fcfa || 0)
-  const voies = Array.isArray(result?.scores_par_voie) && result.scores_par_voie.length > 0 ? result.scores_par_voie : Array.isArray(result?.classement_filieres) ? result.classement_filieres : []
+function normalizeText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+}
 
-  if (route) items.push(`Voie retenue: ${route}`)
-  if (explanation) items.push(`La voie retenue reste la plus coherente avec la chimie du lot, sa charge organique, son humidite et ses contraintes de securite.`)
-  if (voies.length > 0) {
-    const topVoies = voies.slice(0, 4).map((voie, index) => {
-      const nom = String(voie?.solution || voie?.filiere || voie?.nom || `voie ${index + 1}`).trim()
-      const statut = String(voie?.statut || voie?.status || (voie?.compatible === false ? 'Non conforme' : index === 0 ? 'Recommandee' : 'Alternative')).trim()
-      const exp = String(voie?.explication || '').trim()
-      return exp ? `${nom} - ${statut}. ${exp}` : `${nom} - ${statut}`
-    })
-    items.push(`Voies examinees: ${topVoies.join(' | ')}`)
+function uniq(items) {
+  const out = []
+  for (const item of items) {
+    const text = String(item || '').trim()
+    if (text && !out.includes(text)) out.push(text)
   }
-  if (stockage) items.push(`Stockage / manipulation: ${stockage}`)
-  if (co2 > 0) items.push(`Impact CO2 evite estime: ${money(co2)} kgCO2e`)
-  if (cost > 0) items.push(`Cout de traitement estime: ${money(cost)} FCFA/tonne`)
-  if (Array.isArray(result?.alternatives) && result.alternatives.length > 0) {
-    const topAlt = result.alternatives.slice(0, 2).map((alt) => String(alt?.filiere || alt?.methode || '').trim()).filter(Boolean)
-    if (topAlt.length > 0) items.push(`Alternatives a surveiller: ${topAlt.join(', ')}`)
+  return out
+}
+
+function firstText(...values) {
+  for (const value of values) {
+    const text = String(value || '').trim()
+    if (text) return text
   }
-
-  return items.slice(0, 5)
+  return ''
 }
 
-function sanitizeExportNode(source) {
-  const clone = source.cloneNode(true)
-
-  clone.querySelectorAll('.whats-list').forEach((list) => {
-    const items = Array.from(list.querySelectorAll('button')).map((button) => {
-      const text = String(button.textContent || '').replace(/\s*-\s*Contacter via WhatsApp\s*$/i, '').trim()
-      const item = document.createElement('p')
-      item.style.margin = '0 0 6px'
-      item.textContent = text
-      return item
-    })
-    list.innerHTML = ''
-    items.forEach((item) => list.appendChild(item))
-  })
-
-  clone.querySelectorAll('.actions-row').forEach((node) => node.remove())
-  clone.querySelectorAll('.result-card button').forEach((node) => node.remove())
-  clone.querySelectorAll('input, textarea, select').forEach((node) => node.remove())
-  clone.querySelectorAll('iframe, video, audio').forEach((node) => node.remove())
-
-  clone.querySelectorAll('.result-pane').forEach((pane) => {
-    pane.style.background = '#ffffff'
-    pane.style.border = '1px solid #d7e6db'
-    pane.style.breakInside = 'avoid'
-    pane.style.pageBreakInside = 'avoid'
-  })
-
-  clone.querySelectorAll('h3, h4').forEach((title) => {
-    title.style.pageBreakAfter = 'avoid'
-    title.style.breakAfter = 'avoid'
-  })
-
-  return clone
+function firstNumber(...values) {
+  for (const value of values) {
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return 0
 }
 
-function createHeader(result) {
-  const header = document.createElement('div')
-  header.style.display = 'flex'
-  header.style.justifyContent = 'space-between'
-  header.style.alignItems = 'center'
-  header.style.gap = '16px'
-  header.style.padding = '18px 20px'
-  header.style.marginBottom = '14px'
-  header.style.borderRadius = '16px'
-  header.style.background = 'linear-gradient(135deg, #0f3d2e 0%, #1f7a55 100%)'
-  header.style.color = '#ffffff'
-
-  const brand = document.createElement('div')
-  brand.style.display = 'flex'
-  brand.style.alignItems = 'center'
-  brand.style.gap = '12px'
-
-  const logo = document.createElement('div')
-  logo.textContent = 'W'
-  logo.style.width = '42px'
-  logo.style.height = '42px'
-  logo.style.borderRadius = '12px'
-  logo.style.display = 'grid'
-  logo.style.placeItems = 'center'
-  logo.style.background = 'rgba(255,255,255,0.16)'
-  logo.style.border = '1px solid rgba(255,255,255,0.28)'
-  logo.style.fontWeight = '800'
-  logo.style.fontSize = '20px'
-
-  const titleWrap = document.createElement('div')
-  const title = document.createElement('div')
-  title.textContent = "WasteAI - Resultats d'analyse"
-  title.style.fontSize = '18px'
-  title.style.fontWeight = '800'
-  const subtitle = document.createElement('div')
-  subtitle.textContent = 'Rapport PDF genere cote client'
-  subtitle.style.fontSize = '12px'
-  subtitle.style.opacity = '0.9'
-
-  titleWrap.appendChild(title)
-  titleWrap.appendChild(subtitle)
-  brand.appendChild(logo)
-  brand.appendChild(titleWrap)
-
-  const meta = document.createElement('div')
-  meta.style.textAlign = 'right'
-  meta.style.fontSize = '12px'
-  meta.style.lineHeight = '1.5'
-  const date = document.createElement('div')
-  date.textContent = `Genere le ${formatDate()}`
-  const route = document.createElement('div')
-  route.textContent = `Voie retenue: ${String(result?.decision_principale || result?.decision || 'non specifiee')}`
-  meta.appendChild(date)
-  meta.appendChild(route)
-
-  header.appendChild(brand)
-  header.appendChild(meta)
-  return header
+function boolLabel(value) {
+  if (value === true) return 'Oui'
+  if (value === false) return 'Non'
+  return 'N/R'
 }
 
-function createRecommendationsSection(result) {
-  const section = document.createElement('section')
-  section.style.marginTop = '16px'
-  section.style.padding = '16px 18px'
-  section.style.border = '1px solid #d7e6db'
-  section.style.borderRadius = '14px'
-  section.style.background = '#f7fbf8'
-  section.style.breakInside = 'avoid'
-  section.style.pageBreakInside = 'avoid'
+function splitLines(doc, text, width) {
+  return doc.splitTextToSize(String(text || ''), width)
+}
 
-  const title = document.createElement('h3')
-  title.textContent = 'Recommandations WasteAI'
-  title.style.margin = '0 0 10px'
-  title.style.color = '#174937'
-  title.style.fontSize = '16px'
+function buildWasteProfile(result = {}) {
+  return {
+    name: firstText(result.nom_exact, result.nom, result.name, 'Dechet non precise'),
+    type: firstText(result.type_dechet, result.type, result.categorie, result.filiere, 'Non precise'),
+    quantityKg: firstNumber(result.quantite_kg, result.quantity_kg, result.quantity),
+    humidity: firstNumber(result.taux_humidite_pct, result.humidity),
+    pci: firstNumber(result.pci_mj_kg, result.PCI),
+    dco: firstNumber(result.dco_mg_l, result.DCO),
+    dbo: firstNumber(result.dbo_mg_l, result.DBO),
+    contamination: firstNumber(result.taux_contamination_pct, result.contamination),
+    hasMetals: Boolean(result.presence_metaux_lourds ?? result.hasMetals ?? result.contient_metaux),
+    hasChlorine: Boolean(result.presence_chlore ?? result.hasChlorine),
+  }
+}
 
-  const list = document.createElement('ul')
-  list.style.margin = '0'
-  list.style.paddingLeft = '20px'
-  list.style.color = '#28463a'
-  buildRecommendations(result).forEach((item) => {
-    const li = document.createElement('li')
-    li.style.marginBottom = '6px'
-    li.textContent = item
-    list.appendChild(li)
-  })
+function extractSolutions(result = {}) {
+  const raw = [
+    result.decision_principale,
+    result.decision,
+    result.mode_valorisation_propose,
+    result?.valorisation_1?.methode,
+    result?.valorisation_2?.methode,
+    result?.resume_choix,
+    ...(Array.isArray(result.scores_par_voie) ? result.scores_par_voie.map((item) => item?.solution || item?.filiere || item?.nom) : []),
+    ...(Array.isArray(result.classement_filieres) ? result.classement_filieres.map((item) => item?.solution || item?.filiere || item?.nom) : []),
+    ...(Array.isArray(result.alternatives) ? result.alternatives.map((item) => item?.solution || item?.filiere || item?.nom) : []),
+  ]
 
-  section.appendChild(title)
-  if (list.childElementCount === 0) {
-    const empty = document.createElement('p')
-    empty.style.margin = '0'
-    empty.textContent = 'Aucune recommandation disponible.'
-    section.appendChild(empty)
-  } else {
-    section.appendChild(list)
+  return uniq(raw).slice(0, 5)
+}
+
+function normalizeRoute(value) {
+  const raw = normalizeText(value)
+  if (!raw) return ''
+  if (raw.includes('methan') || raw.includes('biogaz')) return 'methanisation'
+  if (raw.includes('compost')) return 'compostage'
+  if (raw.includes('energet') || raw.includes('inciner') || raw.includes('ciment')) return 'valorisation energetique'
+  if (raw.includes('recycl') || raw.includes('mati')) return 'recyclage matiere'
+  if (raw.includes('elim') || raw.includes('depot')) return 'elimination securisee'
+  return raw
+}
+
+function inferFamily(profile) {
+  const merged = normalizeText([profile.name, profile.type].join(' '))
+  if (merged.includes('abattoir') || merged.includes('organ') || merged.includes('biod') || merged.includes('aliment') || merged.includes('boue') || merged.includes('fumier') || merged.includes('lisier')) return 'organic'
+  if (merged.includes('plast')) return 'plastic'
+  if (merged.includes('textile') || merged.includes('fibre')) return 'textile'
+  if (merged.includes('metal') || merged.includes('ferraille') || merged.includes('alu')) return 'metal'
+  if (merged.includes('papier') || merged.includes('carton')) return 'paper'
+  return 'industrial'
+}
+
+function actorTypeMatches(actor, route) {
+  const normalizedRoute = normalizeRoute(route)
+  const raw = normalizeText([actor.type, ...(actor.technologies || []), ...(actor.specialties || [])].join(' '))
+  if (!normalizedRoute) return false
+  if (normalizedRoute === 'methanisation') return raw.includes('methan') || raw.includes('biogaz') || raw.includes('compost')
+  if (normalizedRoute === 'compostage') return raw.includes('compost') || raw.includes('biogaz') || raw.includes('methan')
+  if (normalizedRoute === 'valorisation energetique') return raw.includes('biochar') || raw.includes('energet') || raw.includes('therm') || raw.includes('biogaz')
+  if (normalizedRoute === 'recyclage matiere') return raw.includes('recycl') || raw.includes('pave') || raw.includes('plast') || raw.includes('metal')
+  if (normalizedRoute === 'elimination securisee') return raw.includes('elim') || raw.includes('neutralis') || raw.includes('traitement')
+  return raw.includes(normalizedRoute)
+}
+
+function familyMatches(actor, family) {
+  return (actor.acceptedWaste || []).some((item) => normalizeText(item) === normalizeText(family))
+}
+
+function actorAllowedByWaste(actor, waste) {
+  if (!actor?.constraints) return true
+  const { maxContamination, requiresLowMetals, requiresLowChlorine, maxHumidity } = actor.constraints
+  if (Number.isFinite(Number(maxContamination)) && waste.contamination > Number(maxContamination)) return false
+  if (Number.isFinite(Number(maxHumidity)) && waste.humidity > Number(maxHumidity)) return false
+  if (requiresLowMetals && waste.hasMetals) return false
+  if (requiresLowChlorine && waste.hasChlorine) return false
+  return true
+}
+
+function scoreActor(actor, profile, solutions) {
+  const family = inferFamily(profile)
+  const normalizedSolutions = solutions.map(normalizeRoute)
+  const primary = normalizedSolutions[0] || ''
+  const secondary = normalizedSolutions[1] || ''
+  const typeMatch = actorTypeMatches(actor, primary)
+  const altMatch = secondary ? actorTypeMatches(actor, secondary) : false
+  const familyMatch = familyMatches(actor, family)
+
+  if (!actorAllowedByWaste(actor, profile)) {
+    return null
   }
 
-  return section
+  let score = 0
+  if (familyMatch) score += 35
+  if (typeMatch) score += 50
+  if (altMatch) score += 20
+  if (Number(actor.priority || 0) >= 8) score += 10
+  if (profile.humidity >= 60 && normalizeRoute(primary) === 'methanisation') score += 10
+  if (profile.pci >= 10 && normalizeRoute(primary) === 'valorisation energetique') score += 10
+  if (profile.hasMetals && normalizeText(actor.type).includes('metal')) score += 10
+  if (profile.hasChlorine && !actor.constraints?.requiresLowChlorine) score += 5
+
+  const reasons = []
+  if (typeMatch) reasons.push(`Compatible avec ${primary || 'la voie principale'}`)
+  if (altMatch) reasons.push(`Alternative coherente avec ${secondary}`)
+  if (familyMatch) reasons.push(`Famille ${family} acceptee`)
+  if (Number(actor.priority || 0) >= 8) reasons.push('Priorite locale elevee')
+  if (profile.contamination > 60) reasons.push('Prettraitement requis avant envoi')
+  if (profile.humidity > 70) reasons.push('Humidite elevee a surveiller')
+
+  return {
+    name: actor.name,
+    score: Math.min(100, score),
+    justification: reasons.length > 0 ? reasons.join(', ') : 'Compatible sous reserve des contraintes du flux',
+  }
+}
+
+function rankActors(profile, solutions) {
+  return (LOCAL_ACTORS || [])
+    .map((actor) => scoreActor(actor, profile, solutions))
+    .filter(Boolean)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3)
+}
+
+function formatRouteLabel(route) {
+  const normalized = normalizeRoute(route)
+  if (normalized === 'methanisation') return 'Methanisation'
+  if (normalized === 'compostage') return 'Compostage'
+  if (normalized === 'valorisation energetique') return 'Valorisation energetique'
+  if (normalized === 'recyclage matiere') return 'Recyclage matiere'
+  if (normalized === 'elimination securisee') return 'Elimination securisee'
+  return route
+}
+
+function drawSectionTitle(doc, text, x, y, width) {
+  doc.setFillColor(18, 83, 61)
+  doc.roundedRect(x, y - 4, width, 8, 2, 2, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(10)
+  doc.text(text, x + 3, y + 1.5)
+  doc.setTextColor(17, 24, 39)
+}
+
+function drawKeyValueList(doc, items, x, y, width, lineHeight = 5.2) {
+  let cursorY = y
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  items.forEach(([label, value]) => {
+    const left = `${label}:`
+    doc.setFont('helvetica', 'bold')
+    doc.text(left, x, cursorY)
+    doc.setFont('helvetica', 'normal')
+    const lines = splitLines(doc, String(value ?? 'N/R'), width - 35)
+    doc.text(lines, x + 34, cursorY)
+    cursorY += Math.max(lineHeight, lines.length * 4.2)
+  })
+  return cursorY
+}
+
+function drawBullets(doc, bullets, x, y, width, maxItems = 3) {
+  let cursorY = y
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  bullets.slice(0, maxItems).forEach((bullet) => {
+    const lines = splitLines(doc, bullet, width - 4)
+    doc.text(`- ${lines[0] || ''}`, x, cursorY)
+    if (lines.length > 1) {
+      doc.text(lines.slice(1), x + 4, cursorY + 4)
+      cursorY += 4 * lines.length
+    } else {
+      cursorY += 4.8
+    }
+  })
+  return cursorY
 }
 
 export async function exportWasteResultPdf({ sourceId = 'results', result, filename = 'wasteai-resultats.pdf' } = {}) {
   const source = document.getElementById(sourceId)
-  if (!source) {
-    throw new Error('Aucun bloc de resultats trouve.')
+  if (!source && !result) {
+    throw new Error('Aucun resultat a exporter.')
   }
 
-  if (!String(source.textContent || '').trim()) {
-    throw new Error('Le contenu des resultats est vide.')
+  const { jsPDF } = await import("jspdf")
+  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' })
+  const profile = buildWasteProfile(result || {})
+  const solutions = extractSolutions(result || {})
+  const actors = rankActors(profile, solutions)
+  const marginX = 12
+  const pageWidth = 210
+  const contentWidth = pageWidth - marginX * 2
+  const rightColX = 110
+  const leftColWidth = 86
+  const rightColWidth = 88
+  let y = 12
+
+  doc.setFillColor(15, 61, 46)
+  doc.roundedRect(marginX, y, contentWidth, 22, 4, 4, 'F')
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  doc.text('WasteAI - Fiche de synthese', marginX + 5, y + 8)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(9)
+  doc.text(`Genere le ${formatDate()}`, marginX + 5, y + 15)
+  doc.text('Rapport technique d une page', marginX + 120, y + 15)
+  y += 28
+
+  drawSectionTitle(doc, 'Dechet', marginX, y, leftColWidth)
+  drawSectionTitle(doc, 'Proprietes physicochimiques', rightColX, y, rightColWidth)
+  y += 8
+
+  const leftEndY = drawKeyValueList(doc, [
+    ['Nom', profile.name],
+    ['Type', profile.type],
+    ['Quantite', `${money(profile.quantityKg)} kg`],
+  ], marginX, y, leftColWidth)
+
+  const rightEndY = drawKeyValueList(doc, [
+    ['Humidite', `${profile.humidity || 0}%`],
+    ['PCI', `${profile.pci || 0} MJ/kg`],
+    ['DCO', `${profile.dco || 0} mg/L`],
+    ['DBO', `${profile.dbo || 0} mg/L`],
+    ['Contamination', `${profile.contamination || 0}%`],
+    ['Metaux', boolLabel(profile.hasMetals)],
+    ['Chlore', boolLabel(profile.hasChlorine)],
+  ], rightColX, y, rightColWidth)
+
+  y = Math.max(leftEndY, rightEndY) + 4
+
+  drawSectionTitle(doc, 'Voies de valorisation retenues', marginX, y, contentWidth)
+  y += 8
+  const routeBullets = uniq([
+    ...solutions.slice(0, 4).map(formatRouteLabel),
+    firstText(result?.resume_choix, result?.resume, result?.explication),
+  ]).slice(0, 4)
+  y = drawBullets(doc, routeBullets.map((item) => item.includes(':') ? item : `Voie retenue: ${item}`), marginX, y, contentWidth, 4) + 1
+
+  drawSectionTitle(doc, 'Operateurs locaux compatibles', marginX, y, contentWidth)
+  y += 8
+  if (actors.length > 0) {
+    actors.forEach((actor, index) => {
+      const cardY = y
+      const cardHeight = index === 0 ? 18 : 15
+      doc.setFillColor(index === 0 ? 237 : 248, index === 0 ? 251 : 248, index === 0 ? 245 : 250)
+      doc.setDrawColor(index === 0 ? 110 : 217, index === 0 ? 231 : 230, index === 0 ? 193 : 219)
+      doc.roundedRect(marginX, cardY, contentWidth, cardHeight, 3, 3, 'FD')
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(9.5)
+      doc.text(actor.name, marginX + 3, cardY + 5)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      const score = `${Math.round(actor.score)}/100`
+      doc.text(score, marginX + contentWidth - 15, cardY + 5)
+      const wrapped = splitLines(doc, actor.justification, contentWidth - 6)
+      doc.text(wrapped.slice(0, 2), marginX + 3, cardY + 10)
+      y += cardHeight + 2
+    })
+  } else {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.text('Aucun operateur local compatible identifie.', marginX, y)
+    y += 6
   }
 
-  const html2pdf = await loadHtml2Pdf()
+  const footerY = 286
+  doc.setDrawColor(220, 228, 222)
+  doc.line(marginX, footerY - 5, pageWidth - marginX, footerY - 5)
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.setTextColor(107, 114, 128)
+  doc.text(`CO2 evite estime: ${money(result?.co2_evite_estime_kg || result?.impact_co2_kg || result?.impact_environnemental?.bilan_net_recommande_kgco2e || 0)} kgCO2e`, marginX, footerY)
+  const cost = firstNumber(result?.cout_estime_fcfa_tonne, result?.details_scores_bruts?.treatment_cost_fcfa_tonne, result?.details_scores_bruts?.treatment_cost_fcfa)
+  doc.text(`Cout estime: ${money(cost)} FCFA/t`, marginX + 70, footerY)
+  doc.text('WasteAI', pageWidth - marginX - 16, footerY, { align: 'right' })
 
-  const wrapper = document.createElement('div')
-  wrapper.style.position = 'fixed'
-  wrapper.style.left = '-10000px'
-  wrapper.style.top = '0'
-  wrapper.style.width = '794px'
-  wrapper.style.padding = '0'
-  wrapper.style.background = '#ffffff'
-  wrapper.style.color = '#111827'
-  wrapper.style.fontFamily = 'Segoe UI, Arial, sans-serif'
-  wrapper.style.boxSizing = 'border-box'
-  wrapper.style.zIndex = '-1'
-
-  const style = document.createElement('style')
-  style.textContent = `
-    .wasteai-pdf-report { width: 100%; }
-    .wasteai-pdf-report * { box-sizing: border-box; }
-    .wasteai-pdf-report .result-card { background: #ffffff !important; box-shadow: none !important; border: 1px solid #d7e6db !important; }
-    .wasteai-pdf-report .result-pane { background: #ffffff !important; border: 1px solid #d7e6db !important; }
-    .wasteai-pdf-report h3, .wasteai-pdf-report h4 { page-break-after: avoid; break-after: avoid; }
-    .wasteai-pdf-report .actions-row { display: none !important; }
-    .wasteai-pdf-report button { display: none !important; }
-    .wasteai-pdf-report ul { margin-top: 6px; margin-bottom: 6px; }
-  `
-
-  const report = document.createElement('div')
-  report.className = 'wasteai-pdf-report'
-  report.style.width = '100%'
-
-  report.appendChild(createHeader(result))
-  report.appendChild(sanitizeExportNode(source))
-  report.appendChild(createRecommendationsSection(result))
-
-  wrapper.appendChild(style)
-  wrapper.appendChild(report)
-  document.body.appendChild(wrapper)
-
-  try {
-    await html2pdf()
-      .set({
-        margin: [10, 10, 12, 10],
-        filename,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy', 'avoid-all'] },
-      })
-      .from(report)
-      .save()
-  } finally {
-    wrapper.remove()
-  }
+  doc.save(filename)
 }

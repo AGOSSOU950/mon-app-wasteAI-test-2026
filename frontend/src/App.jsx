@@ -17,17 +17,16 @@ import PresentationSection from "./components/PresentationSection"
 import AnalysisForm from "./components/AnalysisForm"
 import ResultCard from "./components/ResultCard"
 import LocalChannelsSection from "./components/MarketplaceSection"
-import DashboardSection from "./components/DashboardSection"
-import AdminRegistryPanel from "./components/AdminRegistryPanel"
 
-import RecommendedChannelsSection from "./components/RecommendedChannelsSection"
 import Footer from "./components/Footer"
 import { FEATURES } from "./config/features"
 
 const PHOTO_AI_ENABLED = FEATURES.photoIdentification
 const MARKETPLACE_ENABLED = FEATURES.marketplace
 const LazyMarketplacePanel = MARKETPLACE_ENABLED ? lazy(() => import("./MarketplacePanel")) : null
-
+const LazyDashboardSection = lazy(() => import("./components/DashboardSection"))
+const LazyAdminRegistryPanel = lazy(() => import("./components/AdminRegistryPanel"))
+const LazyRecommendedChannelsSection = lazy(() => import("./components/RecommendedChannelsSection"))
 const INITIAL_FORM = {
   nom: "Plastique melange",
   categorie: "plastique",
@@ -733,7 +732,7 @@ export default function App() {
               compactMode={Boolean(aiProposal && !analysisResult)}
             />
 
-            <RecommendedChannelsSection result={resultCard} form={form} />
+            <Suspense fallback={<div className="card" style={{ padding: 12 }}><div className="skeleton" style={{ height: 160, borderRadius: 12 }} /></div>}><LazyRecommendedChannelsSection result={resultCard} form={form} /></Suspense>
 
             <div className="actions-row" style={{ marginTop: 10 }}>
               <button className="btn" type="button" onClick={applyAiSuggestion} disabled={!aiProposal}>
@@ -742,7 +741,6 @@ export default function App() {
             </div>
           </>
         ) : null}
-
         {view === "marketplace" && MARKETPLACE_ENABLED ? (
           <LocalChannelsSection>
             <Suspense fallback={<div className="card" style={{ padding: 12 }}><div className="skeleton" style={{ height: 160, borderRadius: 12 }} /></div>}>
@@ -751,19 +749,27 @@ export default function App() {
           </LocalChannelsSection>
         ) : null}
 
-        {view === "pilotage" ? <DashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} /> : null}
+        {view === "pilotage" ? (
+          <Suspense fallback={<div className="card" style={{ padding: 12 }}><div className="skeleton" style={{ height: 220, borderRadius: 12 }} /></div>}>
+            <LazyDashboardSection analytics={analytics} loading={dashboardLoading} onRefresh={refreshAnalytics} />
+          </Suspense>
+        ) : null}
 
-        {view === "admin" ? <AdminRegistryPanel /> : null}
+        {view === "admin" ? (
+          <Suspense fallback={<div className="card" style={{ padding: 12 }}><div className="skeleton" style={{ height: 220, borderRadius: 12 }} /></div>}>
+            <LazyAdminRegistryPanel />
+          </Suspense>
+        ) : null}
 
         <Footer apiOnline={apiOnline} />
       </div>
 
       <nav className="mobile-nav" aria-label="Navigation mobile">
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
-        <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyser</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃƒÂ©seau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
         ) : null}
+
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
         <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>
       </nav>

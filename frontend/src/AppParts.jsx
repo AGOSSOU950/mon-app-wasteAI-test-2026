@@ -9,16 +9,15 @@ const API_BASE = (import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-g
 
 const WASTE_TYPES = [
   { value: "organique", label: "organique" },
-  { value: "biodÃ©chets_menagers", label: "biodÃ©chets mÃ©nagers" },
-  { value: "dechets_alimentaires", label: "dÃ©chets alimentaires" },
-  { value: "dechets_abattoir", label: "dÃ©chets abattoir" },
+  { value: "biodéchets_menagers", label: "biodéchets ménagers" },
+  { value: "dechets_alimentaires", label: "déchets alimentaires" },
+  { value: "dechets_abattoir", label: "déchets abattoir" },
   { value: "biomasse_lignocellulosique", label: "biomasse lignocellulosique" },
   { value: "boue_de_vidange", label: "boue de vidange" },
-  { value: "huile_usagee", label: "huile usÃ©e" },
+  { value: "huile_usagee", label: "huile usée" },
   { value: "textile", label: "textile" },
   { value: "plastique", label: "plastique" },
-  { value: "autre", label: "autre" }
-]
+  { value: "autre", label: "autre" },
 ]
 
 const INDUSTRY_TYPES = [
