@@ -1,4 +1,4 @@
-﻿import { LOCAL_ACTORS } from "../data/localActors.js"
+﻿import { CHANNELS, rankChannels } from "../services/localChannelsEngine.js"
 
 function formatDate(value = new Date()) {
   return new Intl.DateTimeFormat('fr-FR', {
@@ -11,6 +11,12 @@ function money(value) {
   const n = Number(value)
   if (!Number.isFinite(n) || n === 0) return '0'
   return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n)
+}
+
+function plainQuantity(value) {
+  const n = Number(value)
+  if (!Number.isFinite(n) || n === 0) return '0'
+  return String(Math.round(n))
 }
 
 function normalizeText(value) {
@@ -183,11 +189,27 @@ function scoreActor(actor, profile, solutions) {
 }
 
 function rankActors(profile, solutions) {
-  return (LOCAL_ACTORS || [])
-    .map((actor) => scoreActor(actor, profile, solutions))
+  const context = {
+    name: profile.name,
+    quantity: profile.quantityKg,
+    recommendation: solutions[0] || '',
+    wasteType: profile.type,
+    type: profile.type,
+  }
+
+  const ranked = rankChannels(context, CHANNELS)
+  const ordered = [ranked.best, ranked.directBuyer, ranked.treatmentChannel, ...(ranked.alternatives || []), ...(ranked.all || [])]
     .filter(Boolean)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3)
+    .reduce((acc, item) => {
+      if (!acc.some((existing) => existing.id === item.id)) acc.push(item)
+      return acc
+    }, [])
+
+  return ordered.slice(0, 3).map((item) => ({
+    name: item.name,
+    score: Number(item.match_score || 0),
+    justification: (item.match_reason || []).slice(0, 3).join(', ') || 'Compatible avec le flux et les contraintes locales',
+  }))
 }
 
 function formatRouteLabel(route) {
@@ -280,7 +302,7 @@ export async function exportWasteResultPdf({ sourceId = 'results', result, form,
   const leftEndY = drawKeyValueList(doc, [
     ['Nom', profile.name],
     ['Type', profile.type],
-    ['Quantite', `${money(profile.quantityKg)} kg`],
+    ['Quantite', `${plainQuantity(profile.quantityKg)} kg`],
   ], marginX, y, leftColWidth)
 
   const rightEndY = drawKeyValueList(doc, [
