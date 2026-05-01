@@ -1,52 +1,65 @@
 ﻿import React from "react"
 
 const HIGHLIGHTS = [
-  { label: "Décision", value: "1 flux, 1 voie" },
+  { label: "Usage", value: "Décider vite" },
   { label: "Conformité", value: "CEDEAO / Bamako" },
-  { label: "Terrain", value: "Acteurs béninois" },
-  { label: "Impact", value: "Coût, valeur, risque" },
+  { label: "Terrain", value: "Acteurs locaux" },
+  { label: "Valeur", value: "Coût et CO2" },
 ]
 
 const FEATURES = [
   {
-    title: "Diagnostic utile",
-    text: "WasteAI transforme les données du déchet en signal de décision exploitable, sans jargon inutile.",
+    title: "Caractérisation utile",
+    text: "WasteAI transforme un déchet décrit ou analysé en profil exploitable: type, propriétés physico-chimiques et niveau de risque.",
   },
   {
-    title: "Arbitrage clair",
-    text: "Le système compare les voies matière, énergie et spécialité pour faire ressortir l’option la plus robuste.",
+    title: "Voies de valorisation pertinentes",
+    text: "Le moteur compare plusieurs options au lieu de bloquer trop tôt: matière, énergie, biologique ou élimination sécurisée.",
   },
   {
-    title: "Conformité intégrée",
-    text: "Les recommandations tiennent compte des contraintes CEDEAO et de la Convention de Bamako dès le départ.",
+    title: "Réglementation intégrée",
+    text: "Les recommandations intègrent les contraintes CEDEAO et la Convention de Bamako pour réduire les choix non conformes.",
   },
   {
-    title: "Réseau local",
-    text: "Les opérateurs béninois pertinents sont mis en avant pour accélérer la mise en action sur le terrain.",
+    title: "Ancrage industriel local",
+    text: "WasteAI met en avant les opérateurs et canaux béninois compatibles pour accélérer l’exécution sur le terrain.",
   },
 ]
 
-const PIPELINE = [
-  { id: "01", title: "Capture", text: "Nom, contexte, quantité, photo ou données de procédé." },
-  { id: "02", title: "Analyse", text: "Comparaison des voies, coûts, gains et risques." },
-  { id: "03", title: "Décision", text: "Une recommandation lisible, prête à être appliquée." },
+const STEPS = [
+  {
+    id: "01",
+    title: "Qualifier",
+    text: "Nom, type, quantité, contexte d’origine et propriétés physico-chimiques du flux.",
+  },
+  {
+    id: "02",
+    title: "Comparer",
+    text: "Scores multi-voies, coûts estimés, CO2 évité et contraintes techniques.",
+  },
+  {
+    id: "03",
+    title: "Orienter",
+    text: "Voies retenues, opérateurs compatibles et synthèse actionnable.",
+  },
 ]
 
 export default function PresentationSection({ onGoAnalyze }) {
   return (
     <section className="card presentation-wrap presentation-home presentation-saas">
       <div className="presentation-topline">
-        <span>WasteAI / decision engine</span>
-        <span>Industries · HSE · Conformité</span>
+        <span>WasteAI / plateforme d’aide à la décision déchets</span>
+        <span>Industries · Réglementation · Valorisation</span>
       </div>
 
       <div className="presentation-hero">
         <div className="presentation-hero-copy">
-          <p className="presentation-kicker">Couche de décision industrielle</p>
+          <p className="presentation-kicker">Décision industrielle</p>
           <p className="eyebrow">WasteAI</p>
-          <h2>Du déchet à la décision.</h2>
+          <h2>Du déchet à une décision de valorisation claire.</h2>
           <p className="presentation-subtitle">
-            Qualifier un flux, arbitrer une voie de traitement et intégrer CEDEAO / Bamako dans une lecture nette, rapide et actionnable.
+            Une lecture technique pour les déchets ménagers et industriels, avec prise en compte des voies locales,
+            de la conformité CEDEAO / Bamako, des coûts et de l’impact environnemental.
           </p>
 
           <div className="presentation-chips">
@@ -58,35 +71,28 @@ export default function PresentationSection({ onGoAnalyze }) {
             ))}
           </div>
 
-          <div className="presentation-metric-row" aria-label="Repères clés">
-            {PIPELINE.map((metric) => (
-              <div key={metric.label || metric.id} className="presentation-metric">
-                <strong>{metric.id}</strong>
-                <span>{metric.title}</span>
+          <div className="presentation-metric-row" aria-label="Fonctionnement">
+            {STEPS.map((step) => (
+              <div key={step.id} className="presentation-metric">
+                <strong>{step.id}</strong>
+                <span>{step.title}</span>
               </div>
             ))}
           </div>
 
           <div className="presentation-actions">
             <button className="btn btn-primary" type="button" onClick={onGoAnalyze}>Lancer une analyse</button>
-            <p className="presentation-action-note">Lecture immédiate. Arbitrage net.</p>
+            <p className="presentation-action-note">Rapide, exploitable, orienté terrain.</p>
           </div>
         </div>
 
         <div className="presentation-dashcard">
           <div className="presentation-dashheader">
-            <span>Signal</span>
-            <strong>Lecture instantanée</strong>
-          </div>
-          <div className="presentation-bars" aria-hidden="true">
-            <span style={{ height: "30%" }} />
-            <span style={{ height: "56%" }} />
-            <span style={{ height: "78%" }} />
-            <span style={{ height: "48%" }} />
-            <span style={{ height: "88%" }} />
+            <span>Ce que WasteAI apporte</span>
+            <strong>Lecture opérationnelle</strong>
           </div>
           <div className="presentation-dashgrid">
-            {PIPELINE.map((step) => (
+            {STEPS.map((step) => (
               <div key={step.id} className="presentation-dashstep">
                 <strong>{step.id}</strong>
                 <div>

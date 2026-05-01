@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+﻿import React, { useEffect, useMemo, useState } from "react"
 import { matchLocalActors } from "../services/api"
 import ChannelsList from "./ChannelsList"
 import { CHANNELS, normalizeWasteType } from "../services/localChannelsEngine"

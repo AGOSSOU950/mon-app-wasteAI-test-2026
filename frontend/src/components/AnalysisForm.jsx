@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 
 const CEDEAO_COUNTRIES = [
   "Benin",
@@ -25,7 +25,7 @@ const INDUSTRY_OPTIONS = [
   "chimie",
   "petrole_gaz",
   "pharmaceutique",
-  "metalurgie",
+  "metallurgie",
   "electronique",
   "automobile",
   "construction_btp",
@@ -80,7 +80,7 @@ export default function AnalysisForm({
         <p className="eyebrow">Analyse</p>
         <h2>Préparer un flux exploitable</h2>
         <p className="analysis-subtitle">
-          Renseignez le minimum utile pour obtenir une lecture rapide, une voie cohérente et un cadre de conformité clair.
+          Renseignez l’essentiel pour obtenir une lecture rapide, une voie cohérente et un cadre de conformité clair.
         </p>
       </div>
 
@@ -140,7 +140,6 @@ export default function AnalysisForm({
 
         <div className="field"><label htmlFor="waste-chlore">Présence chlore</label><select id="waste-chlore" value={form.presence_chlore ?? ""} onChange={(e) => setForm({ ...form, presence_chlore: e.target.value })}><option value="">Non renseigné</option><option value="true">Oui</option><option value="false">Non</option></select></div>
         <div className="field"><label htmlFor="waste-heavy-metals">Métaux lourds</label><select id="waste-heavy-metals" value={form.presence_metaux_lourds ?? ""} onChange={(e) => setForm({ ...form, presence_metaux_lourds: e.target.value })}><option value="">Non renseigné</option><option value="true">Oui</option><option value="false">Non</option></select></div>
-
       </div>
 
       <h3 className="step-title" style={{ marginTop: 16 }}>Actions</h3>

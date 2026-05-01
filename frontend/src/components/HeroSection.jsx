@@ -21,11 +21,11 @@ export default function HeroSection({ onAnalyzeNow }) {
   return (
     <section className="hero card">
       <div className="hero-copy">
-        <p className="eyebrow">WasteAI / intelligence de valorisation</p>
-        <h2>Transformer chaque flux en décision rentable.</h2>
+        <p className="eyebrow">WasteAI / analyse procédés</p>
+        <h2>Qualifier un flux sans perdre les contraintes terrain.</h2>
         <p>
-          WasteAI aide les industries à qualifier, orienter et valoriser leurs déchets avec une lecture claire,
-          des critères techniques utiles et un ancrage local CEDEAO / Bamako.
+          Saisie guidée, propriétés physico-chimiques, coûts et impact carbone: WasteAI structure l’analyse pour
+          orienter rapidement vers la voie la plus réaliste.
         </p>
 
         <div className="hero-stats">
