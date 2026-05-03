@@ -27,6 +27,7 @@ HIERARCHY = ["reemploi", "matiere", "energie", "vente"]
 WEIGHT_TECH, WEIGHT_ECO, WEIGHT_ENV, WEIGHT_SOCIAL, WEIGHT_REG = 0.35, 0.2, 0.15, 0.1, 0.2
 
 LOCAL_MARKET = {
+    "biochar": 310000,
     "charbon_actif": 330000,
     "recyclage_papetier": 125000,
     "recyclage_mecanique_plastique": 180000,
@@ -47,6 +48,7 @@ LOCAL_MARKET = {
     "elimination_securisee": -20000,
 }
 TREATMENT_COST = {
+    "biochar": 105000,
     "charbon_actif": 120000,
     "recyclage_papetier": 70000,
     "recyclage_mecanique_plastique": 105000,
@@ -67,6 +69,7 @@ TREATMENT_COST = {
     "elimination_securisee": 140000,
 }
 CO2_AVOIDED = {
+    "biochar": 490,
     "charbon_actif": 520,
     "recyclage_papetier": 420,
     "recyclage_mecanique_plastique": 610,
@@ -87,6 +90,7 @@ CO2_AVOIDED = {
     "elimination_securisee": -50,
 }
 SOCIAL = {
+    "biochar": 76,
     "charbon_actif": 78,
     "recyclage_papetier": 70,
     "recyclage_mecanique_plastique": 72,
@@ -107,6 +111,7 @@ SOCIAL = {
     "elimination_securisee": 35,
 }
 AVAIL_BENIN = {
+    "biochar": 7,
     "charbon_actif": 8,
     "recyclage_papetier": 5,
     "recyclage_mecanique_plastique": 7,
@@ -574,7 +579,7 @@ def _estimate_composition_labels(w: WasteInput, wt: WasteType, metrics: dict[str
 
 
 def _priority_from_filiere(filiere: str) -> str:
-    high = {"methanisation_biogaz", "biodiesel_combustible", "regeneration_huiles", "neutralisation_chimique", "refonte_metaux", "recyclage_mecanique_plastique", "charbon_actif", "recyclage_papetier", "pyrolyse_plastique", "farines_animales_engrais"}
+    high = {"biochar", "methanisation_biogaz", "biodiesel_combustible", "regeneration_huiles", "neutralisation_chimique", "refonte_metaux", "recyclage_mecanique_plastique", "charbon_actif", "recyclage_papetier", "pyrolyse_plastique", "farines_animales_engrais"}
     medium = {"compostage", "epandage_agricole", "effilochage_textile", "reemploi_textile", "reemploi_pieces_metalliques", "reemploi_plastique", "reemploi_carton_emballage"}
     if filiere in high:
         return "haute"
@@ -727,91 +732,6 @@ def _cand(f: str, h: str, t: float, reason: str, conds: list[str], feasible: boo
     return {"filiere": f, "hierarchy": h, "technical_score": _b(t), "technical_reason": reason, "conditions": conds, "feasible": feasible, "blocked_reason": blocked}
 
 
-def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tuple[list[dict[str, Any]], list[str]]:
-    c: list[dict[str, Any]] = []
-    warnings: list[str] = []
-    humidity_pct = float(m.get("humidite_pct", max(0.0, 100.0 - float(m.get("siccite_pct", 0.0) or 0.0))) or 0.0)
-
-    if w.niveau_danger == "critique" or (w.categorie == WasteCategory.CHEMICAL and w.niveau_danger in {"eleve", "critique"}):
-        return [
-            _cand(DECISION_ELIMINATION, "elimination", 95, "Dangerosite critique/chimique: elimination securisee obligatoire.", ["transport ADR", "centre agree", "bordereau de suivi"])
-        ], warnings
-
-    if w.categorie == WasteCategory.CHEMICAL and wt != WasteType.HUILE_USAGEE:
-        paint_like = _is_paint_or_coating_waste(w)
-        c += [
-            _cand("neutralisation_chimique", "matiere", 94 if paint_like else 74, "Traitement physico-chimique prioritaire pour stabiliser/neutraliser le flux chimique.", ["neutralisation", "controle pH", "gestion des boues"], feasible=True),
-            _cand("co_incineration_cimenterie", "energie", 38 if paint_like else 52, "Voie thermique uniquement si conformite emissions et autorisation locale.", ["analyse halogenes", "controle emissions"], feasible=(not paint_like and not bool(w.presence_chlore)), blocked="Presence de chlore ou profil peinture: voie thermique non recommandee" if (paint_like or bool(w.presence_chlore)) else None),
-            _cand(DECISION_ELIMINATION, "elimination", 68, "Filet de securite en cas de non-conformite des filieres de valorisation chimique.", ["centre agree", "bordereau de suivi"]),
-        ]
-        _apply_combustion_safety_constraints(c, w, m, warnings)
-        return c, warnings
-    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
-        dry_biomass = humidity_pct <= 35.0
-        c += [
-            _cand("charbon_actif", "matiere", 88 if (m["taux_lignine_pct"] >= 20 and dry_biomass) else 70 if humidity_pct <= 55.0 else 60, f"Biomasse lignocellulosique, lignine={m['taux_lignine_pct']:.1f}%, humidite={humidity_pct:.1f}%.", ["pyrolyse", "activation", "QC"], feasible=dry_biomass or humidity_pct <= 55.0, blocked="Humidite trop elevee pour carbonisation directe" if humidity_pct > 55.0 else None),
-            _cand("combustion_gazeification", "energie", 82 if (m["pci_mj_kg"] > 15 and dry_biomass) else 58 if m["pci_mj_kg"] > 15 else 50, f"PCI={m['pci_mj_kg']:.1f} MJ/kg, siccite={m['siccite_pct']:.1f}%, humidite={humidity_pct:.1f}%.", ["chaudiere/gazogeniere", "controle emissions"], feasible=(m["pci_mj_kg"] > 12 and humidity_pct <= 60.0), blocked="PCI insuffisant ou flux trop humide" if (m["pci_mj_kg"] <= 12 or humidity_pct > 60.0) else None),
-            _cand("compostage", "matiere", 70 if 35.0 <= humidity_pct <= 70.0 else 55 if humidity_pct > 70.0 else 45, "Compostage en fallback si flux humide.", ["plateforme compostage"], feasible=(humidity_pct >= 30.0), blocked="Humidite insuffisante pour compostage stable" if humidity_pct < 30.0 else None),
-        ]
-    elif w.categorie == WasteCategory.METAL:
-        reusable_metal = m["metaux_pct"] >= 80 and w.niveau_danger in {"faible", "moyen"}
-        c += [
-            _cand("reemploi_pieces_metalliques", "reemploi", 82 if reusable_metal else 55, f"Reemploi possible si pieces intactes; teneur metaux estimee a {m['metaux_pct']:.1f}%.", ["tri qualite", "controle integrite", "tracabilite"], feasible=reusable_metal, blocked="Flux metal trop heterogene/risque pour reemploi" if not reusable_metal else None),
-            _cand("refonte_metaux", "matiere", 90 if m["metaux_pct"] > 50 else 65, f"Teneur metaux estimee a {m['metaux_pct']:.1f}%.", ["tri metallique", "fonderie/acierie"], feasible=(m["metaux_pct"] > 40), blocked="Teneur metallique insuffisante" if m["metaux_pct"] <= 40 else None),
-            _cand("vente_ferrailleur_certifie", "vente", 58, "Dernier recours vers ferrailleur certifie.", ["tracabilite lot", "conformite"]),
-        ]
-    elif wt == WasteType.PLASTIQUE:
-        contamination = float(w.taux_contamination_pct or 15.0)
-        reusable_plastic = contamination <= 10 and w.niveau_danger in {"faible", "moyen"}
-        c += [
-            _cand("reemploi_plastique", "reemploi", 80 if reusable_plastic else 50, f"Reemploi si contamination faible ({contamination:.1f}%).", ["tri", "lavage", "controle qualite"], feasible=reusable_plastic, blocked="Contamination trop elevee pour reemploi" if not reusable_plastic else None),
-            _cand("recyclage_mecanique_plastique", "matiere", 86 if contamination <= 20 else 62, f"Contamination={contamination:.1f}%, tri et proprete determinants.", ["tri", "lavage", "extrusion"], feasible=(contamination <= 35), blocked="Contamination trop elevee" if contamination > 35 else None),
-            _cand("pyrolyse_plastique", "energie", 76 if contamination > 20 else 61, "Pyrolyse pour plastiques melanges/contamines.", ["reacteur pyrolyse", "traitement gaz"]),
-            _cand("co_incineration_cimenterie", "energie", 72 if m["pci_mj_kg"] > 15 else 45, f"PCI={m['pci_mj_kg']:.1f} MJ/kg, co-incineration conditionnelle.", ["filiere cimenterie", "controle chlore"], feasible=(m["pci_mj_kg"] > 15 and not _is_pvc(w)), blocked="PCI<15 ou flux chlore non conforme" if not (m["pci_mj_kg"] > 15 and not _is_pvc(w)) else None),
-        ]
-    elif wt == WasteType.BOUE_DE_VIDANGE:
-        is_abattoir = _is_abattoir_waste(w)
-        lipid_rich = _is_lipid_rich(w, wt)
-        protein_rich = _is_animal_protein_rich(w)
-        c += [
-            _cand("methanisation_biogaz", "energie", 96 if (is_abattoir or m["dbo_mg_l"] > 1000 or humidity_pct >= 70.0) else 68 if humidity_pct >= 55.0 else 56, f"DBO={m['dbo_mg_l']:.0f} mg/L, DCO={m['dco_mg_l']:.0f} mg/L, humidite={humidity_pct:.1f}%.", ["digesteur", "epuration biogaz", "hygienisation des intrants"], feasible=(m["dbo_mg_l"] > 500 or is_abattoir or humidity_pct >= 60.0), blocked="Charge organique ou humidite insuffisante" if (m["dbo_mg_l"] <= 500 and not is_abattoir and humidity_pct < 60.0) else None),
-            _cand("biodiesel_combustible", "energie", 84 if lipid_rich and humidity_pct <= 35.0 else 58 if lipid_rich else 45, "Fraction lipidique valorisable en biocarburant apres pretraitement.", ["separation des graisses", "transesterification", "controle qualite"], feasible=lipid_rich, blocked="Fraction lipidique insuffisante" if not lipid_rich else None),
-            _cand("farines_animales_engrais", "matiere", 72 if protein_rich else 50, "Valorisation proteique conditionnee a une maitrise sanitaire stricte.", ["sterilisation", "controle pathogenes", "conformite sanitaire"], feasible=protein_rich and w.niveau_danger != "critique", blocked="Profil proteique animal non confirme ou risque sanitaire eleve" if not (protein_rich and w.niveau_danger != "critique") else None),
-            _cand("compostage", "matiere", 78 if 45.0 <= humidity_pct <= 75.0 else 60 if humidity_pct > 75.0 else 50, f"Humidite={humidity_pct:.1f}%, siccite={m['siccite_pct']:.1f}%.", ["compostage", "stabilisation"], feasible=(m["siccite_pct"] > 12), blocked="Siccite trop faible" if m["siccite_pct"] <= 12 else None),
-            _cand("epandage_agricole", "matiere", 58, "Epandage possible si conformite sanitaire.", ["analyse sanitaire", "autorisation locale"], feasible=(w.niveau_danger in {"faible", "moyen"}), blocked="Niveau de danger incompatible" if w.niveau_danger in {"eleve", "critique"} else None),
-        ]
-    elif wt == WasteType.HUILE_USAGEE:
-        c += [
-            _cand("regeneration_huiles", "matiere", 90, "Regeneration en base oils prioritaire.", ["unite regeneration", "controle impuretes"]),
-            _cand("biodiesel_combustible", "energie", 72, "Alternative biodiesel/combustible industriel.", ["transesterification/blending"]),
-        ]
-    elif wt == WasteType.TEXTILE:
-        reusable_textile = _textile_reusable(w)
-        c += [
-            _cand("reemploi_textile", "reemploi", 84 if reusable_textile else 55, "Reemploi prioritaire si etat correct.", ["tri qualite", "desinfection"], feasible=reusable_textile, blocked="Etat textile insuffisant" if not reusable_textile else None),
-            _cand("effilochage_textile", "matiere", 74 if humidity_pct <= 45.0 else 60, "Effilochage en fibres techniques.", ["ligne effilochage"], feasible=(humidity_pct <= 60.0), blocked="Humidite trop elevee pour effilochage direct" if humidity_pct > 60.0 else None),
-            _cand("co_incineration_cimenterie", "energie", 62 if humidity_pct <= 30.0 else 50, "Reserve aux textiles souilles.", ["cimenterie", "controle emissions"], feasible=(humidity_pct <= 50.0), blocked="Texile trop humide pour voie thermique directe" if humidity_pct > 50.0 else None),
-        ]
-    elif w.categorie == WasteCategory.PAPER:
-        contamination = float(w.taux_contamination_pct or 12.0)
-        reusable_paper = contamination <= 8 and w.niveau_danger in {"faible", "moyen"}
-        c += [
-            _cand("reemploi_carton_emballage", "reemploi", 78 if reusable_paper else 50, "Reemploi de cartons/emballages si qualite suffisante.", ["tri", "reconditionnement"], feasible=reusable_paper, blocked="Qualite insuffisante pour reemploi" if not reusable_paper else None),
-            _cand("recyclage_papetier", "matiere", 85 if contamination <= 20 else 58, "Recyclage papetier prioritaire.", ["tri papier", "ballage"], feasible=(contamination <= 35), blocked="Contamination trop elevee" if contamination > 35 else None),
-            _cand("compostage", "matiere", 63 if m["siccite_pct"] < 30 else 45, "Compostage si humide/contamine.", ["plateforme compostage"]),
-            _cand("combustion_gazeification", "energie", 68 if m["pci_mj_kg"] > 15 else 46, f"PCI={m['pci_mj_kg']:.1f}.", ["chaudiere biomasse"], feasible=(m["pci_mj_kg"] > 12), blocked="PCI insuffisant" if m["pci_mj_kg"] <= 12 else None),
-        ]
-    else:
-        c += [
-            _cand("tri_preparation_matiere", "matiere", 58, "Tri avance et preparation matiere avant orientation filiere locale.", ["tri source", "broyage", "controle qualite"]),
-            _cand("combustible_solide_recupere", "energie", 54, "Production de combustible solide de recuperation si conformite emissions.", ["preparation CSR", "controle emissions", "autorisation installation"]),
-            _cand("vente_marketplace", "vente", 42, "Vente en dernier recours.", ["certificat qualite"]),
-        ]
-
-    _apply_combustion_safety_constraints(c, w, m, warnings)
-    return c, warnings
-
-
 def _eco(f: str, qt: float, country: str | None) -> tuple[float, float, float, float, float, float]:
     price, cost = float(LOCAL_MARKET.get(f, 90000.0)), float(TREATMENT_COST.get(f, 70000.0))
     if _n(country) == "benin":
@@ -854,6 +774,28 @@ def _evaluate(
         dco = float(metrics.get("dco_mg_l", 0.0) or 0.0)
         humidity_pct = float(metrics.get("humidite_pct", max(0.0, 100.0 - float(metrics.get("siccite_pct", 0.0) or 0.0))) or 0.0)
         dco_dbo = (dco / dbo) if dbo > 0 else 99.0
+        if c["filiere"] == "biochar":
+            if float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 20 and humidity_pct <= 25.0 and pci >= 15.0:
+                tech += 18.0
+            elif float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 15 and humidity_pct <= 30.0:
+                tech += 10.0
+        if c["filiere"] == "methanisation_biogaz":
+            if dbo >= 1200 and dco_dbo <= 3.5:
+                tech += 18.0
+            elif dbo >= 800 and dco_dbo <= 4.5:
+                tech += 10.0
+            elif dbo < 500:
+                tech -= 20.0
+        if c["filiere"] == "compostage":
+            if 45.0 <= humidity_pct <= 70.0 and dco_dbo <= 4.5:
+                tech += 12.0
+            elif humidity_pct < 30.0:
+                tech -= 6.0
+        if c["filiere"] == "charbon_actif":
+            if float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 25 and humidity_pct <= 25.0:
+                tech += 12.0
+            elif float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 15 and humidity_pct <= 30.0:
+                tech += 5.0
 
         if humidity_pct >= 70.0:
             if c["hierarchy"] == "energie":
@@ -1118,6 +1060,12 @@ def _format_physico_chemical_context(waste: WasteInput, metrics: dict[str, Any])
         cues.append(f"charge organique mesuree via DBO {float(dbo):.0f} mg/L et DCO {float(dco):.0f} mg/L, utile pour arbitrer vers methanisation ou traitement biologique")
     if humidity_pct is not None:
         cues.append(f"humidite mesuree a {float(humidity_pct):.1f}% qui oriente la preparation (sechage, drainage, broyage ou digestion selon la filiere)")
+    if _is_abattoir_waste(waste):
+        cues.append("flux d'abattoir interprete comme flux organique humide a forte charge biodegradables, donc prioritairement oriente vers methanisation ou compostage apres hygienisation")
+    if getattr(waste.categorie, 'value', waste.categorie) == WasteCategory.PLASTIC.value or waste.type_dechet == WasteType.PLASTIQUE:
+        cues.append("flux plastique: le recyclage mecanique domine si le lot est propre; le chlore ou la contamination poussent vers une autre voie")
+    if waste.type_dechet == WasteType.TEXTILE:
+        cues.append("flux textile: le reemploi ou l'effilochage sont favorises si le lot est propre, homogene et reutilisable")
     if contamination is not None:
         cues.append(f"taux de contamination estime a {float(contamination):.1f}% qui penalise les voies exigeant une matiere tres propre")
     if waste.presence_chlore:
@@ -1157,12 +1105,17 @@ def _process_engineering_notes(waste: WasteInput, chosen: dict[str, Any], metric
             pretreatment.append('controle DBO/DCO avant envoi en filiere biologique')
         hse.append('maitrise des odeurs, lixiviats et risques biologiques')
         yield_note = 'Rendement attendu plus stable lorsque le lot est homogene et peu contamine; une humidite elevee favorise les voies biologiques mais impose souvent drainage, homogenisation et eventuel co-substrat.'
-    elif filiere in {'recyclage_mecanique_plastique', 'tri_preparation_matiere', 'recyclage_papetier', 'reemploi_carton_emballage'}:
-        pretreatment += ['tri fin', 'deferrage si besoin', 'controle humidite et corps etrangers']
-        if contamination > 15 or (humidity_pct is not None and humidity_pct > 40):
-            pretreatment.append('lavage ou re-tri avant extrusion/recyclage')
-        hse.append('poussieres, bruit, manutention et risques de coupes')
-        yield_note = 'Le rendement matiere depend surtout de la purete du flux, de la stabilite de composition et de l humidite; plus la contamination ou l humidite montent, plus le taux de rebuts augmente.'
+    elif filiere in {'recyclage_matiere', 'reemploi'}:
+        pretreatment += ['tri fin', 'controle qualite', 'conditionnement du lot']
+        if filiere == 'recyclage_matiere':
+            if contamination > 15 or (humidity_pct is not None and humidity_pct > 40):
+                pretreatment.append('lavage ou re-tri avant recyclage')
+            yield_note = 'Le rendement matiere depend surtout de la purete du flux, de la stabilite de composition et de l humidite; plus la contamination ou l humidite montent, plus le taux de rebuts augmente.'
+        else:
+            if contamination > 15:
+                pretreatment.append('reparation ou reconditionnement avant reemploi')
+            yield_note = 'Le reemploi reste pertinent seulement pour un lot propre, homogene et visuellement acceptable; la contamination ou l usure degradent rapidement la valeur.'
+        hse.append('poussieres, manutention, hygiene et integrite du lot')
     elif filiere in {'pyrolyse_plastique', 'combustion_gazeification', 'co_incineration_cimenterie', 'combustible_solide_recupere'}:
         pretreatment += ['broyage', 'sechage', 'homogeneisation PCI']
         if humidity_pct is not None and humidity_pct > 40:
@@ -1179,6 +1132,10 @@ def _process_engineering_notes(waste: WasteInput, chosen: dict[str, Any], metric
             pretreatment.append('sechage avant refonte pour limiter pertes et corrosion')
         hse.append('gestion des copeaux, huiles et poussieres metalliques')
         yield_note = 'Le rendement economique est surtout lie au taux de recuperation metallique et au niveau de contamination residuelle.'
+    elif filiere == 'neutralisation_chimique':
+        pretreatment += ['identification des reactifs', 'neutralisation controlee', 'gestion des effluents']
+        hse.append('protocole chimique renforce et confinement')
+        yield_note = 'La neutralisation chimique est reservee aux flux reactifs ou incompatibles avec les autres filieres.'
     else:
         pretreatment += ['tri initial', 'controle qualite', 'conditionnement du lot']
         hse.append('mesures standard de manutention et tracabilite')
@@ -1309,6 +1266,21 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
         comp_score -= 15
     if chlorine_risk:
         comp_score -= 10
+    bio_score = 18.0
+    bio_conditions = list(shared_conditions)
+    bio_conditions.append("pyrolyse lente")
+    if humidity is not None and humidity > 30:
+        bio_conditions.append("sechage requis avant carbonisation")
+    if pci > 15 and humidity is not None and humidity <= 25:
+        bio_score += 45
+    elif pci > 15 and humidity is not None and humidity <= 30:
+        bio_score += 25
+    if not biodegradable:
+        bio_score -= 10
+    if contamination > 70:
+        bio_score -= 10
+    if chlorine_risk:
+        bio_score -= 20
 
     energy_conditions = list(shared_conditions)
     if chlorine_risk:
@@ -1360,6 +1332,7 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
     solutions = [
         make_item("methanisation", meth_score, meth_conditions, "Forte DCO/DBO et humidite favorable orientent vers un traitement biologique avec biogaz.", "methanisation_biogaz"),
         make_item("compostage", comp_score, comp_conditions, "Charge biodegradable et humidite intermediaire compatibles avec une stabilisation aerobie.", "compostage"),
+        make_item("biochar", bio_score, bio_conditions, "Flux sec avec PCI eleve compatible avec pyrolyse lente et stockage du carbone.", "biochar"),
         make_item("valorisation energetique", energy_score, energy_conditions, "PCI et humidite determinent la robustesse de l'option thermique; le chlore impose des controles renforces.", "valorisation_energetique"),
         make_item("recyclage matiere", mater_score, mater_conditions, "Recuperation matiere privilegiee si la fraction utile est valorisable et si le flux reste maitrise.", "recyclage_matiere"),
         make_item("elimination securisee", elim_score, elim_conditions, "Voie de dernier recours lorsque les contraintes sanitaires ou techniques restent trop fortes.", "elimination_securisee"),
@@ -1432,6 +1405,37 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     expert_profile = _build_expert_valorization_profile(effective_waste, wt, metrics, evald, regulatory)
 
     chosen, hierarchy_reasons = _select(effective_waste, evald)
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        humidity_pct = float(metrics.get("humidite_pct", 100.0 - float(metrics.get("siccite_pct", 0.0) or 0.0)) or 0.0)
+        lignine = float(metrics.get("taux_lignine_pct", 0.0) or 0.0)
+        pci = float(metrics.get("pci_mj_kg", 0.0) or 0.0)
+        if humidity_pct <= 25.0 and lignine >= 20.0 and pci >= 15.0:
+            qt = max(0.01, float(effective_waste.quantite_kg) / 1000.0)
+            val, treat, roi, eco, value_pt, cost_pt = _eco("biochar", qt, effective_waste.pays_cedeao or "Benin")
+            env, social, co2 = _env_social(effective_waste, "biochar", effective_waste.pays_cedeao or "Benin")
+            chosen = {
+                "filiere": "biochar",
+                "hierarchy": "matiere",
+                "technical_score": 94.0,
+                "technical_reason": f"Biomasse lignocellulosique seche, lignine={lignine:.1f}%, PCI={pci:.1f} MJ/kg et humidite={humidity_pct:.1f}%: biochar prioritaire.",
+                "conditions": ["pyrolyse lente", "condensation des vapeurs", "controle cendres"],
+                "feasible": True,
+                "blocked_reason": None,
+                "economic_score": round(eco, 2),
+                "environmental_score": round(env, 2),
+                "social_score": round(social, 2),
+                "regulatory_score": 82.0,
+                "global_score": round(_b(WEIGHT_TECH * 94.0 + WEIGHT_ECO * eco + WEIGHT_ENV * env + WEIGHT_SOCIAL * social + WEIGHT_REG * 82.0), 2),
+                "market_value_fcfa": round(val, 2),
+                "market_value_fcfa_tonne": round(value_pt, 2),
+                "treatment_cost_fcfa": round(treat, 2),
+                "treatment_cost_fcfa_tonne": round(cost_pt, 2),
+                "gain_industriel_fcfa": round(val - treat, 2),
+                "gain_industriel_fcfa_tonne": round(value_pt - cost_pt, 2),
+                "roi": round(roi, 4),
+                "co2_avoided_kg": round(co2, 2),
+            }
+            hierarchy_reasons = ["Biomasse lignocellulosique seche: biochar prioritaire avant les autres voies."]
     generic_scores = _score_generic_solutions(effective_waste, metrics)
     if _is_paint_or_coating_waste(effective_waste):
         paint_choice = next((x for x in evald if x.get("filiere") == "neutralisation_chimique" and x.get("feasible", True)), None)
@@ -1693,6 +1697,179 @@ def _generic_profile(w: WasteInput, m: dict[str, float]) -> dict[str, Any]:
     }
 
 
+def _scientific_profile(w: WasteInput, wt: WasteType, m: dict[str, float]) -> dict[str, Any]:
+    humidity = float(m.get("humidite_pct", max(0.0, 100.0 - float(m.get("siccite_pct", 0.0) or 0.0))) or 0.0)
+    pci = float(m.get("pci_mj_kg", 0.0) or 0.0)
+    lignine = float(m.get("taux_lignine_pct", 0.0) or 0.0)
+    dbo = float(m.get("dbo_mg_l", 0.0) or 0.0)
+    dco = float(m.get("dco_mg_l", 0.0) or 0.0)
+    dco_dbo = (dco / dbo) if dbo > 0 else None
+    contamination = float(w.taux_contamination_pct if w.taux_contamination_pct is not None else m.get("metaux_pct", 0.0) or 0.0)
+    category = getattr(w.categorie, "value", w.categorie) or "autre"
+    danger = getattr(w.niveau_danger, "value", w.niveau_danger) or "faible"
+    abattoir = _is_abattoir_waste(w)
+    wet_organic = abattoir or _is_organic_waste_text(w) or category == WasteCategory.ORGANIC.value or wt == WasteType.BOUE_DE_VIDANGE
+    lignocellulosic = wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE or any(k in _waste_text(w) for k in ["bagasse", "sciure", "coque", "tige", "bois", "lignine", "cellulose"])
+    plastic = category == WasteCategory.PLASTIC.value or wt == WasteType.PLASTIQUE
+    textile = wt == WasteType.TEXTILE or category == WasteCategory.OTHER.value and any(k in _waste_text(w) for k in ["textile", "tissu", "vetement", "vetement", "cloth"])
+    chlorine_risk = bool(w.presence_chlore or _is_pvc(w))
+
+    return {
+        "humidity_pct": humidity,
+        "pci_mj_kg": pci,
+        "lignine_pct": lignine,
+        "dbo_mg_l": dbo,
+        "dco_mg_l": dco,
+        "dco_dbo_ratio": dco_dbo,
+        "contamination_pct": contamination,
+        "category": category,
+        "danger": danger,
+        "abattoir": abattoir,
+        "wet_organic": wet_organic,
+        "lignocellulosic": lignocellulosic,
+        "plastic": plastic,
+        "textile": textile,
+        "chlorine_risk": chlorine_risk,
+        "reusable_textile": _textile_reusable(w),
+    }
+
+
+def _apply_scientific_route_bias(w: WasteInput, wt: WasteType, m: dict[str, float], candidate: dict[str, Any]) -> tuple[float, list[str], list[str], bool, str | None]:
+    profile = _scientific_profile(w, wt, m)
+    filiere = str(candidate.get("filiere") or "")
+    tech = float(candidate.get("technical_score", 0.0) or 0.0)
+    conditions = list(candidate.get("conditions") or [])
+    notes: list[str] = []
+    feasible = bool(candidate.get("feasible", True))
+    blocked_reason = candidate.get("blocked_reason")
+
+    humidity = float(profile["humidity_pct"])
+    pci = float(profile["pci_mj_kg"])
+    lignine = float(profile["lignine_pct"])
+    dbo = float(profile["dbo_mg_l"])
+    dco = float(profile["dco_mg_l"])
+    ratio = profile["dco_dbo_ratio"]
+    contamination = float(profile["contamination_pct"])
+    abattoir = bool(profile["abattoir"])
+    wet_organic = bool(profile["wet_organic"])
+    lignocellulosic = bool(profile["lignocellulosic"])
+    plastic = bool(profile["plastic"])
+    textile = bool(profile["textile"])
+    chlorine_risk = bool(profile["chlorine_risk"])
+    reusable_textile = bool(profile["reusable_textile"])
+    danger = str(profile["danger"])
+
+    if filiere == "methanisation_biogaz":
+        if wet_organic:
+            if humidity >= 70 and (dbo >= 1000 or dco >= 2500):
+                tech += 22.0
+                notes.append("Flux humide et fortement biodegradable: methanisation priorisee pour convertir la DBO/DCO en biogaz.")
+            elif humidity >= 60 and (dbo >= 800 or dco >= 1800):
+                tech += 16.0
+                notes.append("Humidite elevee et charge organique suffisante: digestion anaerobie robuste.")
+            elif humidity >= 45:
+                tech += 8.0
+        if ratio is not None and ratio <= 4.5 and (dbo >= 500 or dco >= 1000):
+            tech += 6.0
+            notes.append("Ratio DCO/DBO compatible avec un digesteur stabilisable.")
+        if abattoir:
+            tech += 8.0
+            notes.append("Flux d'abattoir traite comme flux organique humide a valoriser prioritairement par biogaz.")
+            conditions.extend(["tri initial", "hygienisation des intrants", "drainage si humidite excessive"])
+        if humidity < 45:
+            tech -= 18.0
+            notes.append("Humidite trop faible pour une digestion anaerobie robuste.")
+        if contamination > 35:
+            tech -= 12.0
+            conditions.append("pretraitement sanitaire/tri des indesirables")
+        if danger in {"eleve", "critique"}:
+            tech -= 10.0
+
+    elif filiere == "compostage":
+        if wet_organic and 40 <= humidity <= 70 and contamination <= 35:
+            tech += 16.0
+            notes.append("Matiere organique stabilisable par compostage avec humidite exploitable.")
+        elif lignocellulosic and 35 <= humidity <= 65 and contamination <= 25:
+            tech += 12.0
+            notes.append("Fraction lignocellulosique compatible avec une maturation aerobie.")
+        if abattoir and humidity >= 55:
+            tech += 6.0
+            conditions.append("hygienisation prealable avant maturation aerobie")
+        if humidity < 30:
+            tech -= 12.0
+        if humidity > 75:
+            tech -= 8.0
+            conditions.append("gestion des lixiviats")
+        if contamination > 35:
+            tech -= 15.0
+        if danger == "critique":
+            tech -= 20.0
+
+    elif filiere == "recyclage_matiere":
+        if plastic and contamination <= 20 and humidity <= 40 and not chlorine_risk:
+            tech += 20.0
+            notes.append("Flux plastique propre et sec: recyclage mecanique prioritaire.")
+            conditions.extend(["tri fin", "lavage si necessaire"])
+        elif textile and contamination <= 20 and humidity <= 35:
+            tech += 16.0
+            notes.append("Flux textile compatible avec une preparation matiere ou un effilochage.")
+            conditions.append("tri par composition et couleur")
+        elif wt == WasteType.TEXTILE and reusable_textile:
+            tech += 12.0
+        elif w.categorie == WasteCategory.METAL:
+            tech += 18.0 if bool(w.contient_metaux or w.presence_metaux_lourds) else 8.0
+        if contamination > 35:
+            tech -= 18.0
+        if humidity > 70:
+            tech -= 10.0
+        if chlorine_risk:
+            tech -= 15.0
+            conditions.append("chlore a verifier avant recyclage")
+        if wet_organic or abattoir:
+            tech -= 20.0
+
+    elif filiere == "reemploi":
+        if textile and reusable_textile and contamination <= 15 and humidity <= 35 and danger in {"faible", "moyen"}:
+            tech += 22.0
+            notes.append("Textile reutilisable propre: reemploi en tete de sequence.")
+        elif plastic and contamination <= 15 and humidity <= 35 and danger in {"faible", "moyen"}:
+            tech += 12.0
+            notes.append("Flux plastique propre et homogene: reemploi possible si la qualite est conservee.")
+        else:
+            tech -= 10.0
+        if wet_organic or abattoir:
+            tech -= 25.0
+        if danger in {"eleve", "critique"}:
+            tech -= 20.0
+
+    elif filiere == "neutralisation_chimique":
+        if chlorine_risk or danger in {"eleve", "critique"} or w.categorie == WasteCategory.CHEMICAL:
+            tech += 18.0
+            notes.append("Stabilisation chimique utile pour un flux reactif, chlore ou dangereux.")
+        else:
+            tech -= 22.0
+
+    elif filiere == "co_incineration_cimenterie":
+        if pci >= 15 and humidity <= 35 and not chlorine_risk:
+            tech += 18.0
+            notes.append("PCI eleve et humidite faible compatibles avec co-incineration en cimenterie.")
+            conditions.append("autorisation cimenterie")
+        elif pci >= 12 and humidity <= 40 and not chlorine_risk:
+            tech += 10.0
+        else:
+            tech -= 12.0
+        if chlorine_risk:
+            tech -= 25.0
+        if humidity > 50:
+            tech -= 10.0
+
+    if notes:
+        candidate_reason = str(candidate.get("technical_reason") or "Scoring modulaire applique.")
+        candidate["technical_reason"] = candidate_reason + " " + " ".join(dict.fromkeys(notes))
+    candidate["conditions"] = list(dict.fromkeys(conditions))
+    return _b(tech), candidate["conditions"], notes, feasible, blocked_reason
+
+
 def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tuple[list[dict[str, Any]], list[str]]:
     profile = _generic_profile(w, m)
     c: list[dict[str, Any]] = []
@@ -1711,7 +1888,8 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
             status = "Non pertinent"
         elif str(status).lower() == "non disponible":
             status = "Non disponible"
-        c.append({
+
+        candidate = {
             "filiere": filiere["id"],
             "nom": filiere["nom"],
             "type": filiere["type"],
@@ -1728,7 +1906,17 @@ def _build_candidates(w: WasteInput, wt: WasteType, m: dict[str, float]) -> tupl
             "external_block": external_block,
             "contraintes": dict(filiere.get("contraintes") or {}),
             "economics": dict(filiere.get("economics") or {}),
-        })
+        }
+
+        adjusted_score, adjusted_conditions, notes, feasible2, blocked_reason2 = _apply_scientific_route_bias(w, wt, m, candidate)
+        candidate["technical_score"] = adjusted_score
+        candidate["conditions"] = adjusted_conditions
+        candidate["feasible"] = feasible and feasible2
+        candidate["blocked_reason"] = blocked_reason2 if blocked_reason2 is not None else blocked_reason
+        if notes:
+            candidate["explication_automatique"] = candidate["technical_reason"]
+            warnings.extend(notes)
+        c.append(candidate)
 
     return c, warnings
 
@@ -1758,7 +1946,7 @@ def _evaluate(
         treat = cost_pt * qt
         roi = (value - treat) / treat if treat > 1e-6 else 0.0
         eco = _b(50.0 + roi * 55.0)
-        env = _b(50.0 + co2_pt / 12.0 - (8.0 if profile["humidite_pct"] > 70.0 and c["hierarchy"] == "energie" else 0.0))
+        env = _b(50.0 + co2_pt / 12.0 - (8.0 if profile['humidite_pct'] > 70.0 and c["hierarchy"] == "energie" else 0.0))
         social = _b(social_base + (5.0 if _n(country) == "benin" else 0.0))
         tech = c["technical_score"] if c.get("feasible", True) else max(5.0, c["technical_score"] - 40.0)
         tech = _b(tech)
@@ -1836,6 +2024,14 @@ def _route_explanation(route: dict[str, Any], chosen: dict[str, Any]) -> str:
             base = (
                 "Retenue seulement si les analyses sanitaires et agronomiques sont conformes. Cette option n'est acceptable que pour un residu organique stabilise, peu contamine et traceable jusqu'au champ d'epandage."
             )
+        elif filiere == "recyclage_matiere":
+            base = (
+                "Retenue parce que le flux est suffisamment propre, homogene et techniquement triable pour une recuperation matiere. Le recyclage mecanique n'est robuste que si la contamination, l'humidite et les corps etrangers restent sous controle."
+            )
+        elif filiere == "reemploi":
+            base = (
+                "Retenue parce que le lot conserve une qualite d'usage suffisante pour une reutilisation directe. Le reemploi ne reste pertinent que pour un flux propre, homogene et peu dangereux, avec controle visuel et sanitaire."
+            )
         elif filiere == "elimination_securisee":
             base = (
                 "Retenue comme voie de securite lorsque les autres options restent trop incertaines sur le plan sanitaire, technique ou reglementaire. L'orientation en installation agreee garantit la maitrise et la tracabilite du lot."
@@ -1874,7 +2070,7 @@ def _route_explanation(route: dict[str, Any], chosen: dict[str, Any]) -> str:
             base = (
                 "Alternative plausible car le flux peut se stabiliser biologiquement, mais la tenue economique, les nuisances d'exploitation ou la concurrence d'une voie plus robuste limitent son rang."
             )
-        elif filiere == "recyclage_mecanique_plastique":
+        elif filiere in {"recyclage_matiere", "recyclage_mecanique_plastique"}:
             base = (
                 "Alternative plausible pour un flux propre et homogene, mais elle reste moins adaptee si la contamination, l'humidite ou l'heterogeneite augmentent."
             )

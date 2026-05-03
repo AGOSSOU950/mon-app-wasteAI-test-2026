@@ -43,13 +43,13 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
 
     def test_abattoir_wet_organic_stream_keeps_three_routes_and_explains_costs(self) -> None:
         waste = WasteInput(
-            nom="DÃƒÆ’Ã‚Â©chets d'abattoir",
+            nom="DÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©chets d'abattoir",
             categorie=WasteCategory.OTHER,
             type_dechet=WasteType.OTHER,
             type_industrie=IndustryType.AGROALIMENTAIRE,
             quantite_kg=1200,
             niveau_danger=DangerLevel.MEDIUM,
-            description="RÃƒÆ’Ã‚Â©sidus d'abattoir trÃƒÆ’Ã‚Â¨s humides avec DBO ÃƒÆ’Ã‚Â©levÃƒÆ’Ã‚Â©e, DCO ÃƒÆ’Ã‚Â©levÃƒÆ’Ã‚Â©e et forte charge organique",
+            description="RÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©sidus d'abattoir trÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¨s humides avec DBO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©levÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e, DCO ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©levÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e et forte charge organique",
             contient_metaux=False,
             pays_cedeao="Benin",
             dbo_mg_l=1800,
@@ -93,6 +93,69 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
         self.assertTrue(any(item.get("solution") == "valorisation energetique" for item in (result.scores_par_voie or [])))
         self.assertTrue(any(item.get("solution") == "recyclage matiere" for item in (result.scores_par_voie or [])))
 
+
+    def test_dry_lignocellulosic_biomass_routes_to_biochar(self) -> None:
+        waste = WasteInput(
+            nom="sciure de bois seche",
+            categorie=WasteCategory.OTHER,
+            type_dechet=WasteType.OTHER,
+            type_industrie=IndustryType.OTHER,
+            quantite_kg=700,
+            niveau_danger=DangerLevel.LOW,
+            description="Biomasse lignocellulosique seche avec forte lignine, PCI eleve et humidite faible",
+            contient_metaux=False,
+            pays_cedeao="Benin",
+            pci_mj_kg=18.5,
+            taux_lignine_pct=28.0,
+            taux_humidite_pct=18.0,
+        )
+        result = analyser_dechet(waste)
+        self.assertEqual(result.decision_principale, "biochar")
+        self.assertIn("biochar", str(result.explication_detaillee or "").lower())
+        self.assertTrue(any(item.get("solution") == "biochar" for item in (result.scores_par_voie or [])))
+
+
+    def test_textile_reusable_routes_to_reemploi(self) -> None:
+        waste = WasteInput(
+            nom="vetements propres reutilisables",
+            categorie=WasteCategory.OTHER,
+            type_dechet=WasteType.TEXTILE,
+            type_industrie=IndustryType.TEXTILE,
+            quantite_kg=200,
+            niveau_danger=DangerLevel.LOW,
+            description="textile propre en bon etat, homogene et reutilisable",
+            contient_metaux=False,
+            pays_cedeao="Benin",
+            composition_textile="coton",
+            etat_textile="bon",
+            taux_humidite_pct=18.0,
+            taux_contamination_pct=5.0,
+        )
+        result = analyser_dechet(waste)
+        self.assertEqual(result.decision_principale, "reemploi")
+        self.assertTrue(any(item.get("solution") == "reemploi" for item in (result.classement_filieres or [])))
+        self.assertIn("reemploi", str(result.explication_detaillee or "").lower())
+
+    def test_clean_plastic_routes_to_recyclage_matiere(self) -> None:
+        waste = WasteInput(
+            nom="bouteilles PET propres",
+            categorie=WasteCategory.PLASTIC,
+            type_dechet=WasteType.PLASTIQUE,
+            type_industrie=IndustryType.OTHER,
+            quantite_kg=300,
+            niveau_danger=DangerLevel.LOW,
+            description="plastique propre, sec, peu contamine et sans chlore",
+            contient_metaux=False,
+            pays_cedeao="Benin",
+            type_plastique="PET",
+            taux_contamination_pct=8.0,
+            taux_humidite_pct=12.0,
+            presence_chlore=False,
+        )
+        result = analyser_dechet(waste)
+        self.assertEqual(result.decision_principale, "recyclage_matiere")
+        self.assertTrue(any(item.get("solution") == "recyclage_matiere" for item in (result.classement_filieres or [])))
+        self.assertIn("recyclage", str(result.explication_detaillee or "").lower())
 
 if __name__ == "__main__":
     unittest.main()
