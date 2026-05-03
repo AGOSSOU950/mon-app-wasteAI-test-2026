@@ -94,6 +94,14 @@ function formatPercent(value) {
   return `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n)} %`
 }
 
+function firstFiniteNumber(...values) {
+  for (const value of values) {
+    const n = Number(value)
+    if (Number.isFinite(n)) return n
+  }
+  return 0
+}
+
 function formatMaybeNumber(value, unit = '') {
   if (value === null || value === undefined || value === '') return 'N/R'
   const n = Number(value)
