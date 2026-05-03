@@ -1,36 +1,24 @@
 import { CHANNELS, rankChannels } from "../services/localChannelsEngine.js"
 
 function formatDate(value = new Date()) {
-  return new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'long',
-    timeStyle: 'short',
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "long",
+    timeStyle: "short",
   }).format(value)
 }
 
-function money(value) {
+function formatOptionalNumber(value, unit = "") {
+  if (value === null || value === undefined || value === "") return ""
   const n = Number(value)
-  if (!Number.isFinite(n) || n === 0) return '0'
-  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n)
-}
-
-function plainQuantity(value) {
-  const n = Number(value)
-  if (!Number.isFinite(n)) return ''
-  return String(Math.round(n))
-}
-
-function formatOptionalNumber(value, unit = '') {
-  if (value === null || value === undefined || value === '') return ''
-  const n = Number(value)
-  if (!Number.isFinite(n)) return ''
-  const formatted = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(n)
+  if (!Number.isFinite(n)) return ""
+  const formatted = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(n)
   return unit ? `${formatted} ${unit}` : formatted
 }
 
 function normalizeText(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .trim()
 }
@@ -38,7 +26,7 @@ function normalizeText(value) {
 function uniq(items) {
   const out = []
   for (const item of items) {
-    const text = String(item || '').trim()
+    const text = String(item || "").trim()
     if (text && !out.includes(text)) out.push(text)
   }
   return out
@@ -46,15 +34,15 @@ function uniq(items) {
 
 function firstText(...values) {
   for (const value of values) {
-    const text = String(value || '').trim()
+    const text = String(value || "").trim()
     if (text) return text
   }
-  return ''
+  return ""
 }
 
 function firstOptionalNumber(...values) {
   for (const value of values) {
-    if (value === null || value === undefined || value === '') continue
+    if (value === null || value === undefined || value === "") continue
     const n = Number(value)
     if (Number.isFinite(n)) return n
   }
@@ -62,36 +50,27 @@ function firstOptionalNumber(...values) {
 }
 
 function boolLabel(value) {
-  if (value === true) return 'Oui'
-  if (value === false) return 'Non'
-  return 'N/R'
+  if (value === true) return "Oui"
+  if (value === false) return "Non"
+  return "N/R"
 }
 
 function coerceBoolean(...values) {
   for (const value of values) {
     if (value === true || value === false) return value
-    if (value === null || value === undefined || value === '') continue
+    if (value === null || value === undefined || value === "") continue
     const normalized = String(value).trim().toLowerCase()
-    if (['true', '1', 'oui', 'yes'].includes(normalized)) return true
-    if (['false', '0', 'non', 'no'].includes(normalized)) return false
+    if (["true", "1", "oui", "yes"].includes(normalized)) return true
+    if (["false", "0", "non", "no"].includes(normalized)) return false
   }
   return null
 }
 
-function escapeHtml(value) {
-  return String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;')
-}
-
 function formatPercent(value) {
-  if (value === null || value === undefined || value === '') return 'N/R'
+  if (value === null || value === undefined || value === "") return "N/R"
   const n = Number(value)
-  if (!Number.isFinite(n)) return 'N/R'
-  return `${new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n)} %`
+  if (!Number.isFinite(n)) return "N/R"
+  return `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(n)} %`
 }
 
 function firstFiniteNumber(...values) {
@@ -102,11 +81,11 @@ function firstFiniteNumber(...values) {
   return 0
 }
 
-function formatMaybeNumber(value, unit = '') {
-  if (value === null || value === undefined || value === '') return 'N/R'
+function formatMaybeNumber(value, unit = "") {
+  if (value === null || value === undefined || value === "") return "N/R"
   const n = Number(value)
-  if (!Number.isFinite(n)) return 'N/R'
-  const text = new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 1 }).format(n)
+  if (!Number.isFinite(n)) return "N/R"
+  const text = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(n)
   return unit ? `${text} ${unit}` : text
 }
 
@@ -114,16 +93,21 @@ function listText(items) {
   return uniq(items).filter(Boolean)
 }
 
-function splitLines(doc, text, width) {
-  return doc.splitTextToSize(String(text || ''), width)
+function clampText(text, max = 2) {
+  return String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, max)
+    .join(" ")
 }
 
 function buildWasteProfile(result = {}, form = {}) {
   const source = result || {}
   const input = form || {}
   return {
-    name: firstText(input.nom, source.nom_exact, source.nom, source.name, 'Déchet non précisé'),
-    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, 'Non précisé'),
+    name: firstText(input.nom, source.nom_exact, source.nom, source.name, "Déchet non précisé"),
+    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, "Non précisé"),
     quantityKg: firstOptionalNumber(input.quantite_kg, source.quantite_kg, source.quantity_kg, source.quantity),
     humidity: firstOptionalNumber(input.taux_humidite_pct, source.taux_humidite_pct, source.humidity),
     pci: firstOptionalNumber(input.pci_mj_kg, source.pci_mj_kg, source.PCI),
@@ -152,34 +136,34 @@ function extractSolutions(result = {}) {
 
 function normalizeRoute(value) {
   const raw = normalizeText(value)
-  if (!raw) return ''
-  if (raw.includes('methan') || raw.includes('biogaz')) return 'methanisation'
-  if (raw.includes('compost')) return 'compostage'
-  if (raw.includes('energet') || raw.includes('inciner') || raw.includes('ciment')) return 'valorisation energetique'
-  if (raw.includes('recycl') || raw.includes('mati')) return 'recyclage matiere'
-  if (raw.includes('elim') || raw.includes('depot')) return 'elimination securisee'
+  if (!raw) return ""
+  if (raw.includes("methan") || raw.includes("biogaz")) return "methanisation"
+  if (raw.includes("compost")) return "compostage"
+  if (raw.includes("energet") || raw.includes("inciner") || raw.includes("ciment")) return "valorisation energetique"
+  if (raw.includes("recycl") || raw.includes("mati")) return "recyclage matiere"
+  if (raw.includes("elim") || raw.includes("depot")) return "elimination securisee"
   return raw
 }
 
 function inferFamily(profile) {
-  const merged = normalizeText([profile.name, profile.type].join(' '))
-  if (merged.includes('abattoir') || merged.includes('organ') || merged.includes('biod') || merged.includes('aliment') || merged.includes('boue') || merged.includes('fumier') || merged.includes('lisier')) return 'organic'
-  if (merged.includes('plast')) return 'plastic'
-  if (merged.includes('textile') || merged.includes('fibre')) return 'textile'
-  if (merged.includes('metal') || merged.includes('ferraille') || merged.includes('alu')) return 'metal'
-  if (merged.includes('papier') || merged.includes('carton')) return 'paper'
-  return 'industrial'
+  const merged = normalizeText([profile.name, profile.type].join(" "))
+  if (merged.includes("abattoir") || merged.includes("organ") || merged.includes("biod") || merged.includes("aliment") || merged.includes("boue") || merged.includes("fumier") || merged.includes("lisier")) return "organic"
+  if (merged.includes("plast")) return "plastic"
+  if (merged.includes("textile") || merged.includes("fibre")) return "textile"
+  if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
+  if (merged.includes("papier") || merged.includes("carton")) return "paper"
+  return "industrial"
 }
 
 function actorTypeMatches(actor, route) {
   const normalizedRoute = normalizeRoute(route)
-  const raw = normalizeText([actor.type, ...(actor.technologies || []), ...(actor.specialties || [])].join(' '))
+  const raw = normalizeText([actor.type, ...(actor.technologies || []), ...(actor.specialties || [])].join(" "))
   if (!normalizedRoute) return false
-  if (normalizedRoute === 'methanisation') return raw.includes('methan') || raw.includes('biogaz') || raw.includes('compost')
-  if (normalizedRoute === 'compostage') return raw.includes('compost') || raw.includes('biogaz') || raw.includes('methan')
-  if (normalizedRoute === 'valorisation energetique') return raw.includes('biochar') || raw.includes('energet') || raw.includes('therm') || raw.includes('biogaz')
-  if (normalizedRoute === 'recyclage matiere') return raw.includes('recycl') || raw.includes('pave') || raw.includes('plast') || raw.includes('metal')
-  if (normalizedRoute === 'elimination securisee') return raw.includes('elim') || raw.includes('neutralis') || raw.includes('traitement')
+  if (normalizedRoute === "methanisation") return raw.includes("methan") || raw.includes("biogaz") || raw.includes("compost")
+  if (normalizedRoute === "compostage") return raw.includes("compost") || raw.includes("biogaz") || raw.includes("methan")
+  if (normalizedRoute === "valorisation energetique") return raw.includes("biochar") || raw.includes("energet") || raw.includes("therm") || raw.includes("biogaz")
+  if (normalizedRoute === "recyclage matiere") return raw.includes("recycl") || raw.includes("pave") || raw.includes("plast") || raw.includes("metal")
+  if (normalizedRoute === "elimination securisee") return raw.includes("elim") || raw.includes("neutralis") || raw.includes("traitement")
   return raw.includes(normalizedRoute)
 }
 
@@ -200,8 +184,8 @@ function actorAllowedByWaste(actor, waste) {
 function scoreActor(actor, profile, solutions) {
   const family = inferFamily(profile)
   const normalizedSolutions = solutions.map(normalizeRoute)
-  const primary = normalizedSolutions[0] || ''
-  const secondary = normalizedSolutions[1] || ''
+  const primary = normalizedSolutions[0] || ""
+  const secondary = normalizedSolutions[1] || ""
   const typeMatch = actorTypeMatches(actor, primary)
   const altMatch = secondary ? actorTypeMatches(actor, secondary) : false
   const familyMatch = familyMatches(actor, family)
@@ -213,23 +197,23 @@ function scoreActor(actor, profile, solutions) {
   if (typeMatch) score += 50
   if (altMatch) score += 20
   if (Number(actor.priority || 0) >= 8) score += 10
-  if (profile.humidity >= 60 && normalizeRoute(primary) === 'methanisation') score += 10
-  if (profile.pci >= 10 && normalizeRoute(primary) === 'valorisation energetique') score += 10
-  if (profile.hasMetals && normalizeText(actor.type).includes('metal')) score += 10
+  if (profile.humidity >= 60 && normalizeRoute(primary) === "methanisation") score += 10
+  if (profile.pci >= 10 && normalizeRoute(primary) === "valorisation energetique") score += 10
+  if (profile.hasMetals && normalizeText(actor.type).includes("metal")) score += 10
   if (profile.hasChlorine && !actor.constraints?.requiresLowChlorine) score += 5
 
   const reasons = []
-  if (typeMatch) reasons.push(`Compatible avec ${primary || 'la voie principale'}`)
-  if (altMatch) reasons.push(`Alternative coherente avec ${secondary}`)
-  if (familyMatch) reasons.push(`Famille ${family} acceptee`)
-  if (Number(actor.priority || 0) >= 8) reasons.push('Priorite locale elevee')
-  if (profile.contamination > 60) reasons.push('Prettraitement requis avant envoi')
-  if (profile.humidity > 70) reasons.push('Humidite elevee a surveiller')
+  if (typeMatch) reasons.push(`Compatible avec ${primary || "la voie principale"}`)
+  if (altMatch) reasons.push(`Alternative cohérente avec ${secondary}`)
+  if (familyMatch) reasons.push(`Famille ${family} acceptée`)
+  if (Number(actor.priority || 0) >= 8) reasons.push("Priorité locale élevée")
+  if (profile.contamination > 60) reasons.push("Prétraitement requis avant envoi")
+  if (profile.humidity > 70) reasons.push("Humidité élevée à surveiller")
 
   return {
     name: actor.name,
     score: Math.min(100, score),
-    justification: reasons.length ? reasons.join(', ') : 'Compatible sous reserve des contraintes du flux',
+    justification: reasons.length ? reasons.join(", ") : "Compatible sous réserve des contraintes du flux",
   }
 }
 
@@ -237,7 +221,7 @@ function rankActors(profile, solutions) {
   const context = {
     name: profile.name,
     quantity: profile.quantityKg,
-    recommendation: solutions[0] || '',
+    recommendation: solutions[0] || "",
     wasteType: profile.type,
     type: profile.type,
   }
@@ -253,75 +237,42 @@ function rankActors(profile, solutions) {
   return ordered.slice(0, 3).map((item) => ({
     name: item.name,
     score: Number(item.match_score || 0),
-    justification: (item.match_reason || []).slice(0, 3).join(', ') || 'Compatible avec le flux et les contraintes locales',
+    justification: (item.match_reason || []).slice(0, 3).join(", ") || "Compatible avec le flux et les contraintes locales",
   }))
 }
 
 function formatRouteLabel(route) {
   const normalized = normalizeRoute(route)
-  if (normalized === 'methanisation') return 'Methanisation'
-  if (normalized === 'compostage') return 'Compostage'
-  if (normalized === 'valorisation energetique') return 'Valorisation energetique'
-  if (normalized === 'recyclage matiere') return 'Recyclage matiere'
-  if (normalized === 'elimination securisee') return 'Elimination securisee'
+  if (normalized === "methanisation") return "Méthanisation"
+  if (normalized === "compostage") return "Compostage"
+  if (normalized === "valorisation energetique") return "Valorisation énergétique"
+  if (normalized === "recyclage matiere") return "Recyclage matière"
+  if (normalized === "elimination securisee") return "Élimination sécurisée"
   return route
 }
 
-function drawSectionTitle(doc, text, x, y, width) {
-  doc.setFillColor(18, 83, 61)
-  doc.roundedRect(x, y - 4, width, 8, 2, 2, 'F')
-  doc.setTextColor(255, 255, 255)
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(10)
-  doc.text(text, x + 3, y + 1.5)
-  doc.setTextColor(17, 24, 39)
+function confidenceStatus(confidence) {
+  const c = Number(confidence || 0)
+  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette." }
+  if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger." }
+  if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider." }
+  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer." }
 }
 
-function drawKeyValueList(doc, items, x, y, width, lineHeight = 5.2) {
-  let cursorY = y
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  items.forEach(([label, value]) => {
-    doc.setFont('helvetica', 'bold')
-    doc.text(`${label}:`, x, cursorY)
-    doc.setFont('helvetica', 'normal')
-    const lines = splitLines(doc, String(value ?? 'N/R'), width - 35)
-    doc.text(lines, x + 34, cursorY)
-    cursorY += Math.max(lineHeight, lines.length * 4.2)
-  })
-  return cursorY
-}
-
-function drawBullets(doc, bullets, x, y, width, maxItems = 3) {
-  let cursorY = y
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(9)
-  bullets.slice(0, maxItems).forEach((bullet) => {
-    const lines = splitLines(doc, bullet, width - 4)
-    doc.text(`- ${lines[0] || ''}`, x, cursorY)
-    if (lines.length > 1) {
-      doc.text(lines.slice(1), x + 4, cursorY + 4)
-      cursorY += 4 * lines.length
-    } else {
-      cursorY += 4.8
-    }
-  })
-  return cursorY
-}
-
-export async function exportWasteResultPdf({ sourceId = 'results', result, form, filename = 'wasteai-resultats.pdf' } = {}) {
-  const source = document.getElementById(sourceId)
-  if (!source && !result && !form) {
-    throw new Error('Aucun resultat a exporter.')
+export async function exportWasteResultPdf({ sourceId = "results", result, form, filename = "wasteai-resultats.pdf" } = {}) {
+  if (!document.getElementById(sourceId) && !result && !form) {
+    throw new Error("Aucun résultat à exporter.")
   }
 
-  const { jsPDF } = await import('jspdf')
-  const doc = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait', compress: true })
+  const { jsPDF } = await import("jspdf")
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true })
+
   const profile = buildWasteProfile(result || {}, form || {})
   const solutions = extractSolutions(result || {})
   const actors = rankActors(profile, solutions)
-  const whyPriority = String(result?.explication_détaillée || result?.explication || result?.justification_technique || result?.resume_choix || '').trim()
-  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || 'voie non spécifiée').trim()
+  const confidenceInfo = confidenceStatus(result?.confiance_identification)
+  const whyPriority = String(result?.explication_detaillee || result?.explication || result?.justification_technique || result?.resume_choix || "").trim()
+  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || "voie non spécifiée").trim()
   const routeList = Array.isArray(result?.scores_par_voie) ? result.scores_par_voie : []
   const warnings = listText([
     result?.avertissements,
@@ -329,7 +280,7 @@ export async function exportWasteResultPdf({ sourceId = 'results', result, form,
     ...(Array.isArray(result?.donnees_manquantes_critiques) ? result.donnees_manquantes_critiques : []),
   ])
   const assumptions = listText(Array.isArray(result?.hypotheses_utilisees) ? result.hypotheses_utilisees : [])
-  const conditions = listText((Array.isArray(result?.conditions_requises) ? result.conditions_requises : String(result?.conditions_requises || '').split(/;\s*/)).filter(Boolean))
+  const conditions = listText((Array.isArray(result?.conditions_requises) ? result.conditions_requises : String(result?.conditions_requises || "").split(/;\s*/)).filter(Boolean))
 
   const saleValue = firstFiniteNumber(
     result?.valeur_estimee_fcfa_tonne,
@@ -348,203 +299,239 @@ export async function exportWasteResultPdf({ sourceId = 'results', result, form,
 
   const pageWidth = doc.internal.pageSize.getWidth()
   const pageHeight = doc.internal.pageSize.getHeight()
-  const marginX = 12
-  const marginTop = 10
-  const marginBottom = 10
+  const margin = 14
   const gap = 4
-  const contentWidth = pageWidth - marginX * 2
-  const colGap = 4
-  const halfWidth = (contentWidth - colGap) / 2
+  const contentWidth = pageWidth - margin * 2
+  const leftColWidth = 90
+  const rightColWidth = contentWidth - leftColWidth - gap
+  const columnWidth = (contentWidth - gap) / 2
 
-  function setFont(size, style = 'normal') {
-    doc.setFont('helvetica', style)
+  const colors = {
+    bg: [247, 250, 248],
+    surface: [255, 255, 255],
+    surfaceSoft: [240, 246, 243],
+    text: [17, 24, 39],
+    muted: [95, 109, 104],
+    border: [214, 221, 217],
+    brand: [18, 83, 61],
+    brandSoft: [233, 244, 239],
+  }
+
+  const setText = (color, font = "normal", size = 10) => {
+    doc.setTextColor(...color)
+    doc.setFont("helvetica", font)
     doc.setFontSize(size)
   }
 
-  function drawBox(x, y, w, h, options = {}) {
-    const fill = options.fill || [255, 255, 255]
-    const stroke = options.stroke || [210, 214, 220]
-    doc.setFillColor(fill[0], fill[1], fill[2])
-    doc.setDrawColor(stroke[0], stroke[1], stroke[2])
-    doc.roundedRect(x, y, w, h, 2, 2, 'FD')
+  const fillPage = () => {
+    doc.setFillColor(...colors.bg)
+    doc.rect(0, 0, pageWidth, pageHeight, "F")
   }
 
-  function clampLines(text, width, maxLines = 4) {
-    const lines = splitLines(doc, String(text || '').trim(), width)
-    if (lines.length <= maxLines) return lines
-    const clipped = lines.slice(0, maxLines)
-    clipped[maxLines - 1] = `${String(clipped[maxLines - 1] || '').replace(/[\s.]+$/, '')}...`
-    return clipped
+  const panel = (x, y, w, h, fill = colors.surface, stroke = colors.border, radius = 4) => {
+    doc.setFillColor(...fill)
+    doc.setDrawColor(...stroke)
+    doc.roundedRect(x, y, w, h, radius, radius, "FD")
   }
 
-  function drawWrappedText(text, x, y, width, options = {}) {
-    const fontSize = options.fontSize || 9
-    const lineHeight = options.lineHeight || fontSize * 0.42 + 3
-    const maxLines = options.maxLines || 99
-    const style = options.style || 'normal'
-    const color = options.color || [17, 24, 39]
-    const lines = clampLines(text, width, maxLines)
-    doc.setTextColor(color[0], color[1], color[2])
-    setFont(fontSize, style)
-    doc.text(lines, x, y)
-    return y + lines.length * lineHeight
+  const sectionTitle = (text, x, y, width) => {
+    doc.setFillColor(...colors.brand)
+    doc.roundedRect(x, y - 4, width, 8, 2, 2, "F")
+    setText([255, 255, 255], "bold", 10)
+    doc.text(text, x + 3, y + 1.5)
+    setText(colors.text)
   }
 
-  function drawLabelValue(x, y, label, value, width, options = {}) {
-    const labelWidth = options.labelWidth || Math.min(34, width * 0.42)
-    const valueWidth = Math.max(10, width - labelWidth - 2)
-    const lineHeight = options.lineHeight || 4.2
-    const labelSize = options.labelSize || 8.2
-    const valueSize = options.valueSize || 8.8
-    setFont(labelSize, 'bold')
-    doc.setTextColor(110, 118, 129)
-    doc.text(String(label), x, y)
-    setFont(valueSize, 'normal')
-    doc.setTextColor(17, 24, 39)
-    const lines = clampLines(value, valueWidth, options.maxLines || 2)
-    doc.text(lines, x + labelWidth, y)
-    return y + Math.max(lineHeight, lines.length * lineHeight)
+  const wrap = (text, width) => doc.splitTextToSize(String(text || ""), width)
+
+  const paragraph = (text, x, y, width, options = {}) => {
+    const { font = "normal", size = 9, color = colors.text, maxLines = null } = options
+    setText(color, font, size)
+    const lines = wrap(text, width)
+    const output = maxLines ? lines.slice(0, maxLines) : lines
+    doc.text(output, x, y, { lineHeightFactor: 1.1 })
+    return output.length * 4.1
   }
 
-  function drawMetric(x, y, w, title, value) {
-    drawBox(x, y, w, 18, { fill: [250, 250, 250] })
-    setFont(7.6, 'bold')
-    doc.setTextColor(110, 118, 129)
-    doc.text(title, x + 3, y + 5)
-    setFont(10.8, 'bold')
-    doc.setTextColor(17, 24, 39)
-    doc.text(String(value || 'N/R'), x + 3, y + 12.3)
+  const chip = (label, x, y, maxWidth) => {
+    const textWidth = doc.getTextWidth(label)
+    const width = Math.min(maxWidth, textWidth + 6)
+    doc.setFillColor(...colors.brandSoft)
+    doc.setDrawColor(...colors.border)
+    doc.roundedRect(x, y - 3.2, width, 6.4, 3, 3, "FD")
+    setText(colors.brand, "bold", 8)
+    doc.text(label, x + 3, y)
+    return width
   }
 
-  function drawSectionTitle(x, y, w, title) {
-    setFont(8.2, 'bold')
-    doc.setTextColor(45, 55, 72)
-    doc.text(String(title), x, y)
-    doc.setDrawColor(220, 224, 229)
-    doc.line(x, y + 1.8, x + w, y + 1.8)
+  const metricCard = (x, y, w, h, label, value, hint) => {
+    panel(x, y, w, h, colors.surface, colors.border, 3)
+    setText(colors.muted, "bold", 7)
+    doc.text(label, x + 3, y + 5)
+    setText(colors.text, "bold", 11)
+    doc.text(String(value || "N/R"), x + 3, y + 11)
+    if (hint) {
+      setText(colors.muted, "normal", 7)
+      doc.text(wrap(hint, w - 6).slice(0, 2), x + 3, y + 16.2, { lineHeightFactor: 1.05 })
+    }
   }
 
-  const title = profile.name || 'Déchet non précisé'
-  const routeLabel = formatRouteLabel(selectedRoute)
-  const generatedAt = formatDate()
-  const typeLabel = profile.type || 'Type non précisé'
-  const quantityLabel = formatOptionalNumber(profile.quantityKg, 'kg') || 'Quantité non précisée'
-  const dcoDbo = `${formatMaybeNumber(profile.dco, 'mg/L')} / ${formatMaybeNumber(profile.dbo, 'mg/L')}`
-  const routeRows = (routeList.length ? routeList : solutions.slice(0, 3).map((item) => ({ solution: item, score: 0, status: 'Alternative', explication: '' }))).slice(0, 3)
-  const actorRows = (actors.length ? actors : [{ name: 'Opérateur à confirmer', score: 0, justification: 'Flux à caractériser plus finement.' }]).slice(0, 3)
+  const keyValueGrid = (x, y, width, items) => {
+    let cursorY = y
+    items.forEach(([label, value]) => {
+      setText(colors.muted, "bold", 8)
+      doc.text(`${label}:`, x, cursorY)
+      setText(colors.text, "normal", 8)
+      const lines = wrap(String(value || "N/R"), width - 28)
+      doc.text(lines, x + 26, cursorY, { lineHeightFactor: 1.05 })
+      cursorY += Math.max(4.7, lines.length * 4.1)
+    })
+    return cursorY
+  }
 
-  doc.setFillColor(255, 255, 255)
-  doc.rect(0, 0, pageWidth, pageHeight, 'F')
+  const bulletList = (x, y, width, items, maxItems = 3) => {
+    let cursorY = y
+    items.slice(0, maxItems).forEach((item) => {
+      const lines = wrap(String(item || ""), width - 4)
+      setText(colors.text, "normal", 8)
+      doc.text(`- ${lines[0] || ""}`, x, cursorY)
+      if (lines.length > 1) {
+        doc.text(lines.slice(1), x + 4, cursorY + 4, { lineHeightFactor: 1.05 })
+        cursorY += 4 * lines.length
+      } else {
+        cursorY += 4.5
+      }
+    })
+    return cursorY
+  }
 
-  let y = marginTop
+  fillPage()
+  setText(colors.brand, "bold", 12)
+  doc.text("WasteAI - Rapport analytique", margin, 13)
+  setText(colors.muted, "normal", 8)
+  doc.text(`Généré le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
 
-  drawBox(marginX, y, contentWidth, 22, { fill: [248, 248, 248] })
-  setFont(8, 'bold')
-  doc.setTextColor(110, 118, 129)
-  doc.text('WasteAI - Fiche de synthèse', marginX + 3, y + 5)
-  setFont(16, 'bold')
-  doc.setTextColor(17, 24, 39)
-  doc.text(title, marginX + 3, y + 12.5)
-  setFont(8.8, 'normal')
-  doc.setTextColor(55, 65, 81)
-  doc.text(`Voie recommandée: ${routeLabel}`, marginX + 3, y + 18.2)
-  setFont(8.4, 'normal')
-  const metaX = marginX + contentWidth - 64
-  doc.text('Rapport généré', metaX, y + 5)
-  doc.setFont('helvetica', 'bold')
-  doc.text(generatedAt, metaX, y + 9.4)
-  doc.setFont('helvetica', 'normal')
-  doc.text(typeLabel, metaX, y + 13.8)
-  doc.text(quantityLabel, metaX, y + 18.2)
+  const heroY = 18
+  const heroH = 44
+  panel(margin, heroY, contentWidth, heroH, colors.surface, colors.border, 5)
+  doc.setFillColor(245, 248, 247)
+  doc.roundedRect(margin + 1, heroY + 1, contentWidth * 0.67, heroH - 2, 4, 4, "F")
 
-  y += 26
+  setText(colors.muted, "bold", 8)
+  doc.text("WasteAI - Fiche de synthèse", margin + 4, heroY + 8)
+  setText(colors.text, "bold", 15)
+  doc.text(wrap(profile.name || "Déchet non précisé", 92).slice(0, 2), margin + 4, heroY + 16, { lineHeightFactor: 1.05 })
+  paragraph(clampText(whyPriority || "Analyse technique du flux et de ses voies de valorisation.", 3), margin + 4, heroY + 24, 88, { color: colors.muted, size: 8.5, maxLines: 3 })
 
-  const metricWidth = (contentWidth - 3 * gap) / 4
-  drawMetric(marginX, y, metricWidth, 'Valeur', formatMaybeNumber(saleValue, 'FCFA/t'))
-  drawMetric(marginX + metricWidth + gap, y, metricWidth, 'Coût', formatMaybeNumber(treatmentCost, 'FCFA/t'))
-  drawMetric(marginX + (metricWidth + gap) * 2, y, metricWidth, 'Gain net', formatMaybeNumber(industrialGainTotal, 'FCFA'))
-  drawMetric(marginX + (metricWidth + gap) * 3, y, metricWidth, 'CO2 évité', formatMaybeNumber(co2, 'kgCO2e'))
+  let chipX = margin + 4
+  const chipY = heroY + 35
+  chipX += chip(`Voie recommandée: ${formatRouteLabel(selectedRoute)}`, chipX, chipY, 88) + 2
+  chipX += chip(profile.type || "Type non précisé", chipX, chipY, 40) + 2
+  chip(`Quantité ${formatOptionalNumber(profile.quantityKg, "kg") || "non précisée"}`, chipX, chipY, 44)
 
-  y += 22
+  const scoreX = margin + contentWidth * 0.69
+  panel(scoreX, heroY + 4, contentWidth * 0.27, heroH - 8, colors.surfaceSoft, colors.border, 4)
+  setText(colors.muted, "bold", 7)
+  doc.text("Lecture rapide", scoreX + 3, heroY + 10)
+  setText(colors.text, "bold", 12)
+  doc.text(confidenceInfo.label, scoreX + 3, heroY + 17)
+  setText(colors.muted, "normal", 8)
+  doc.text(wrap(confidenceInfo.message, contentWidth * 0.24).slice(0, 2), scoreX + 3, heroY + 24, { lineHeightFactor: 1.05 })
+  doc.text(formatDate(), scoreX + 3, heroY + 39)
 
-  const profileHeight = 67
-  drawBox(marginX, y, halfWidth, profileHeight)
-  drawBox(marginX + halfWidth + colGap, y, halfWidth, profileHeight)
-  drawSectionTitle(marginX + 3, y + 6, halfWidth - 6, 'Profil du flux')
-  drawSectionTitle(marginX + halfWidth + colGap + 3, y + 6, halfWidth - 6, 'Lecture technique')
+  const summaryY = heroY + heroH + 5
+  panel(margin, summaryY, contentWidth, 34, colors.surface, colors.border, 5)
+  sectionTitle("Synthèse économique", margin + 4, summaryY + 8, 42)
+  const metricY = summaryY + 12
+  const metricW = (contentWidth - 9) / 4
+  metricCard(margin + 4, metricY, metricW, 18, "Valeur", formatMaybeNumber(saleValue, "FCFA/t"), "Valeur estimée par tonne")
+  metricCard(margin + 4 + metricW + 3, metricY, metricW, 18, "Coût", formatMaybeNumber(treatmentCost, "FCFA/t"), "Coût de traitement par tonne")
+  metricCard(margin + 4 + (metricW + 3) * 2, metricY, metricW, 18, "Gain net", formatMaybeNumber(industrialGainTotal, "FCFA"), "Gain total projeté")
+  metricCard(margin + 4 + (metricW + 3) * 3, metricY, metricW, 18, "CO2 évité", formatMaybeNumber(co2, "kgCO2e"), "Impact environnemental net")
+  setText(colors.muted, "normal", 7)
+  doc.text(`Impact environnemental: ${formatMaybeNumber(co2, "kgCO2e")} évités.`, margin + 4, summaryY + 31)
 
-  let leftY = y + 11
-  leftY = drawLabelValue(marginX + 3, leftY, 'Déchet', profile.name || 'N/R', halfWidth - 6, { maxLines: 2 })
-  leftY = drawLabelValue(marginX + 3, leftY, 'Type', profile.type || 'N/R', halfWidth - 6, { maxLines: 2 })
-  leftY = drawLabelValue(marginX + 3, leftY, 'Quantité', formatOptionalNumber(profile.quantityKg, 'kg') || 'N/R', halfWidth - 6)
-  leftY = drawLabelValue(marginX + 3, leftY, 'Humidité', formatPercent(profile.humidity), halfWidth - 6)
-  leftY = drawLabelValue(marginX + 3, leftY, 'PCI', formatMaybeNumber(profile.pci, 'MJ/kg'), halfWidth - 6)
-  leftY = drawLabelValue(marginX + 3, leftY, 'DCO / DBO', dcoDbo, halfWidth - 6, { maxLines: 1 })
-  leftY = drawLabelValue(marginX + 3, leftY, 'Contamination', formatPercent(profile.contamination), halfWidth - 6)
-  leftY = drawLabelValue(marginX + 3, leftY, 'Métaux', boolLabel(profile.hasMetals), halfWidth - 6)
-  drawLabelValue(marginX + 3, leftY, 'Chlore', boolLabel(profile.hasChlorine), halfWidth - 6)
+  const leftY = summaryY + 39
+  panel(margin, leftY, leftColWidth, 74, colors.surface, colors.border, 5)
+  panel(margin + leftColWidth + gap, leftY, rightColWidth, 74, colors.surface, colors.border, 5)
+  sectionTitle("Profil du flux", margin + 4, leftY + 8, 34)
+  sectionTitle("Lecture technique", margin + leftColWidth + gap + 4, leftY + 8, 36)
 
-  let rightY = y + 11
-  rightY = drawWrappedText(whyPriority || 'Aucune justification détaillée disponible.', marginX + halfWidth + colGap + 3, rightY, halfWidth - 6, { fontSize: 8.6, lineHeight: 3.9, maxLines: 7 })
-  rightY += 1.5
-  rightY = drawLabelValue(marginX + halfWidth + colGap + 3, rightY, 'Voie retenue', routeLabel, halfWidth - 6, { maxLines: 2 })
-  rightY = drawLabelValue(marginX + halfWidth + colGap + 3, rightY, 'Conditions', conditions.length ? conditions.join(' ; ') : 'Aucune condition explicite', halfWidth - 6, { maxLines: 3 })
+  keyValueGrid(margin + 4, leftY + 15, leftColWidth - 8, [
+    ["Déchet", profile.name || "N/R"],
+    ["Type", profile.type || "N/R"],
+    ["Humidité", formatPercent(profile.humidity)],
+    ["PCI", formatMaybeNumber(profile.pci, "MJ/kg")],
+    ["DCO / DBO", `${formatMaybeNumber(profile.dco, "mg/L")} / ${formatMaybeNumber(profile.dbo, "mg/L")}`],
+    ["Contam.", formatPercent(profile.contamination)],
+    ["Métaux", boolLabel(profile.hasMetals)],
+    ["Chlore", boolLabel(profile.hasChlorine)],
+  ])
 
-  y += profileHeight + 4
+  paragraph(clampText(whyPriority || "Aucune justification détaillée disponible.", 4), margin + leftColWidth + gap + 4, leftY + 15, rightColWidth - 8, { color: colors.text, size: 8, maxLines: 6 })
+  keyValueGrid(margin + leftColWidth + gap + 4, leftY + 41, rightColWidth - 8, [
+    ["Voie retenue", formatRouteLabel(selectedRoute)],
+    ["Conditions", conditions.length ? conditions.join(" ; ") : "Aucune condition explicite"],
+  ])
 
-  drawBox(marginX, y, contentWidth, 58)
-  drawSectionTitle(marginX + 3, y + 6, contentWidth - 6, 'Voies de valorisation examinées')
-  routeRows.forEach((item, idx) => {
-    const titleText = formatRouteLabel(item?.solution || item?.filiere || item?.nom || 'voie')
+  doc.addPage()
+  fillPage()
+  setText(colors.brand, "bold", 12)
+  doc.text("WasteAI - Détails de la décision", margin, 13)
+  setText(colors.muted, "normal", 8)
+  doc.text(`Généré le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
+
+  const topBlockY = 20
+  panel(margin, topBlockY, columnWidth, 108, colors.surface, colors.border, 5)
+  panel(margin + columnWidth + gap, topBlockY, columnWidth, 108, colors.surface, colors.border, 5)
+  sectionTitle("Voies examinées", margin + 4, topBlockY + 8, 38)
+  sectionTitle("Opérateurs compatibles", margin + columnWidth + gap + 4, topBlockY + 8, 48)
+
+  let routeCursor = topBlockY + 16
+  routeList.slice(0, 3).forEach((item, idx) => {
+    const title = formatRouteLabel(item?.solution || item?.filiere || item?.nom || "voie")
     const score = Number(item?.score ?? item?.global_score ?? item?.technical_score ?? 0)
-    const status = String(item?.statut || item?.status || (idx === 0 ? 'Recommandée' : 'Alternative')).trim()
-    const explanation = String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || '').trim()
-    const conditionsText = Array.isArray(item?.conditions) ? item.conditions.join(' ; ') : String(item?.conditions || '')
-    const rowY = y + 11 + idx * 14.6
-    drawBox(marginX + 3, rowY, contentWidth - 6, 13.2, { fill: [252, 252, 252] })
-    setFont(9.2, 'bold')
-    doc.setTextColor(17, 24, 39)
-    doc.text(titleText, marginX + 5, rowY + 4.6)
-    setFont(8, 'normal')
-    doc.setTextColor(75, 85, 99)
-    doc.text(`${status} - ${Number.isFinite(score) ? `${score.toFixed(0)}/100` : 'N/R'}`, marginX + 5, rowY + 8.4)
-    const rightText = [conditionsText, explanation || 'Aucune justification détaillée disponible.'].filter(Boolean).join(' | ')
-    const lines = clampLines(rightText, contentWidth - 68, 2)
-    setFont(8, 'normal')
-    doc.text(lines, marginX + 55, rowY + 4.6)
+    const status = String(item?.statut || item?.status || (idx === 0 ? "Recommandée" : "Alternative")).trim()
+    const explanation = clampText(String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || "").trim() || "Aucune justification détaillée disponible.", 2)
+    const conditionsText = Array.isArray(item?.conditions) ? item.conditions.join(" ; ") : String(item?.conditions || "")
+
+    panel(margin + 4, routeCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
+    setText(colors.text, "bold", 9)
+    doc.text(title, margin + 7, routeCursor + 3)
+    setText(colors.muted, "normal", 7)
+    doc.text(`${Number.isFinite(score) ? `${score.toFixed(0)}/100` : "N/R"} · ${status}`, margin + 7, routeCursor + 8)
+    if (conditionsText) {
+      doc.text(wrap(conditionsText, columnWidth - 20).slice(0, 1), margin + 7, routeCursor + 13, { lineHeightFactor: 1.05 })
+    }
+    setText(colors.text, "normal", 8)
+    doc.text(wrap(explanation, columnWidth - 14).slice(0, 2), margin + 7, routeCursor + 19, { lineHeightFactor: 1.05 })
+    routeCursor += 31
   })
 
-  y += 62
-
-  drawBox(marginX, y, halfWidth, 48)
-  drawBox(marginX + halfWidth + colGap, y, halfWidth, 48)
-  drawSectionTitle(marginX + 3, y + 6, halfWidth - 6, 'Opérateurs compatibles')
-  drawSectionTitle(marginX + halfWidth + colGap + 3, y + 6, halfWidth - 6, 'Repères complémentaires')
-
-  actorRows.forEach((actor, idx) => {
-    const lineY = y + 11 + idx * 10.8
-    setFont(8.6, 'bold')
-    doc.setTextColor(17, 24, 39)
-    doc.text(String(actor.name || 'Opérateur'), marginX + 3, lineY)
-    setFont(7.8, 'normal')
-    doc.setTextColor(75, 85, 99)
-    doc.text(`(${Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : 'N/R'})`, marginX + 43, lineY)
-    const lines = clampLines(actor.justification || '', halfWidth - 14, 1)
-    doc.text(lines, marginX + 3, lineY + 4)
+  let actorCursor = topBlockY + 16
+  actorRows.slice(0, 3).forEach((actor) => {
+    panel(margin + columnWidth + gap + 4, actorCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
+    setText(colors.text, "bold", 9)
+    doc.text(actor.name || "Opérateur", margin + columnWidth + gap + 7, actorCursor + 3)
+    setText(colors.muted, "normal", 7)
+    doc.text(Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : "N/R", margin + columnWidth + gap + 7, actorCursor + 8)
+    setText(colors.text, "normal", 8)
+    doc.text(wrap(clampText(actor.justification || "", 2), columnWidth - 14).slice(0, 2), margin + columnWidth + gap + 7, actorCursor + 14, { lineHeightFactor: 1.05 })
+    actorCursor += 31
   })
 
-  const noteX = marginX + halfWidth + colGap + 3
-  let noteY = y + 11
-  noteY = drawLabelValue(noteX, noteY, 'Gain/t', formatMaybeNumber(industrialGainTon, 'FCFA/t'), halfWidth - 6)
-  noteY = drawLabelValue(noteX, noteY, 'ROI', Number.isFinite(roi) ? roi.toFixed(2) : 'N/R', halfWidth - 6)
-  noteY = drawLabelValue(noteX, noteY, 'Hypothèses', assumptions.length ? assumptions.join(' ; ') : 'Aucune hypothèse majeure', halfWidth - 6, { maxLines: 2 })
-  drawLabelValue(noteX, noteY, 'Avertissements', warnings.length ? warnings.join(' ; ') : 'Aucun avertissement majeur', halfWidth - 6, { maxLines: 2 })
+  const bottomY = 132
+  panel(margin, bottomY, contentWidth, 72, colors.surface, colors.border, 5)
+  sectionTitle("Hypothèses et avertissements", margin + 4, bottomY + 8, 54)
+  setText(colors.text, "normal", 8)
+  bulletList(margin + 4, bottomY + 16, contentWidth / 2 - 6, assumptions.length ? assumptions : ["Aucune hypothèse majeure"], 4)
+  bulletList(margin + contentWidth / 2 + 2, bottomY + 16, contentWidth / 2 - 6, warnings.length ? warnings : ["Aucun avertissement majeur"], 4)
+  setText(colors.muted, "normal", 7)
+  doc.text(`Gain/t: ${formatMaybeNumber(industrialGainTon, "FCFA/t")}`, margin + 4, bottomY + 63)
+  doc.text(`ROI: ${Number.isFinite(roi) ? roi.toFixed(2) : "N/R"}`, margin + contentWidth / 2 + 2, bottomY + 63)
+  doc.text(`Page 2 / ${doc.getNumberOfPages()}`, pageWidth - margin, pageHeight - 10, { align: "right" })
 
-  drawBox(marginX, pageHeight - marginBottom - 8, contentWidth, 8, { fill: [245, 245, 245] })
-  setFont(7.8, 'normal')
-  doc.setTextColor(107, 114, 128)
-  doc.text('Document technique sobre, mise en page A4 fixe.', marginX + 3, pageHeight - marginBottom - 3)
-  doc.text('WasteAI', marginX + contentWidth - 14, pageHeight - marginBottom - 3)
-
+  doc.setPage(1)
+  doc.text(`Page 1 / ${doc.getNumberOfPages()}`, pageWidth - margin, pageHeight - 10, { align: "right" })
   doc.save(filename)
 }

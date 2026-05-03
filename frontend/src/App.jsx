@@ -304,7 +304,7 @@ function analysisContextFromResult(resultCard, form) {
 
 export default function App() {
   const [view, setView] = useState("presentation")
-  const [theme, setTheme] = useState("light")
+  const [theme, setTheme] = useState("dark")
   const [apiOnline, setApiOnline] = useState(true)
 
   const [form, setForm] = useState(INITIAL_FORM)
@@ -765,7 +765,7 @@ export default function App() {
       <nav className="mobile-nav" aria-label="Navigation mobile">
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃ©seau local</button>
         ) : null}
 
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
