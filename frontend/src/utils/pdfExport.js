@@ -533,5 +533,18 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
 
   doc.setPage(1)
   doc.text(`Page 1 / ${doc.getNumberOfPages()}`, pageWidth - margin, pageHeight - 10, { align: "right" })
-  doc.save(filename)
+
+  const blob = doc.output("blob")
+  const url = URL.createObjectURL(blob)
+  try {
+    const link = document.createElement("a")
+    link.href = url
+    link.download = filename
+    link.rel = "noopener"
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+  } finally {
+    URL.revokeObjectURL(url)
+  }
 }
