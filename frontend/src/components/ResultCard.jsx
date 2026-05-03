@@ -1,4 +1,4 @@
-﻿import React, { useEffect, useMemo, useState } from "react"
+import React, { useEffect, useMemo, useState } from "react"
 import { exportWasteResultPdf } from "../utils/pdfExport"
 
 function badgeClass(filiere) {
@@ -28,10 +28,10 @@ function splitParagraphs(text) {
 
 function confidenceStatus(confidence) {
   const c = Number(confidence || 0)
-  if (c < 40) return { label: "Identification faible", message: "Image difficile a analyser. Essayez une photo plus nette.", warn: true }
+  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette.", warn: true }
   if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger.", warn: false }
   if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider.", warn: false }
-  return { label: "Identification certaine", message: "Identification tres probable. Merci de confirmer.", warn: false }
+  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer.", warn: false }
 }
 
 export default function ResultCard({
@@ -66,7 +66,7 @@ export default function ResultCard({
   const confidence = Number(safeResult.confiance_identification || 0)
   const confidenceInfo = confidenceStatus(confidence)
   const shortDescription = String(safeResult.description_estimee || safeResult.resume_choix || safeResult.justification_technique || "").trim()
-  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "voie non specifiee")
+  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "voie non spécifiée")
   const alternatives = Array.isArray(safeResult.alternatives) ? safeResult.alternatives : []
   const voiesExaminees = Array.isArray(safeResult.scores_par_voie) && safeResult.scores_par_voie.length > 0 ? safeResult.scores_par_voie.slice(0, 4) : alternatives.slice(0, 4)
   const whyPriority = String(safeResult.explication_detaillee || safeResult.explication || safeResult.justification_technique || safeResult.resume_choix || "").trim()
@@ -107,7 +107,7 @@ export default function ResultCard({
     source?.details_scores_bruts?.gain_industriel_fcfa_tonne,
   )
   const roi = firstFiniteNumber(safeResult?.details_scores_bruts?.roi, source?.details_scores_bruts?.roi)
-  const hasEconomicData = [saleValue, treatmentCost, industrialGainTotal, industrialGainTon].some((value) => Number.isFinite(value) && value !== 0) || Number.isFinite(roi) && roi !== 0
+  const hasEconomicData = [saleValue, treatmentCost, industrialGainTotal, industrialGainTon].some((value) => Number.isFinite(value) && value !== 0) || (Number.isFinite(roi) && roi !== 0)
 
   const topMetrics = useMemo(() => ([
     { label: "Valeur", value: `${money(saleValue)} FCFA/t` },
@@ -125,7 +125,7 @@ export default function ResultCard({
       await new Promise((resolve) => setTimeout(resolve, 50))
       await exportWasteResultPdf({ sourceId: "results", result: safeResult, form, filename: "wasteai-resultats.pdf" })
     } catch (error) {
-      setPdfError(error?.message || "Echec de generation du PDF.")
+      setPdfError(error?.message || "Échec de génération du PDF.")
     } finally {
       setPdfLoading(false)
     }
@@ -135,31 +135,43 @@ export default function ResultCard({
 
   return (
     <section className="card result-card" id="results">
-      <div className="result-top">
-        <span className={badgeClass(filiere)}>{String(filiere || "AUTRE").toUpperCase()}</span>
+      <div className="result-hero">
+        <div className="result-hero-copy">
+          <div className="result-top">
+            <span className={badgeClass(filiere)}>{String(filiere || "AUTRE").toUpperCase()}</span>
+            <span className="result-chip">{confidenceInfo.label}</span>
+          </div>
+          <h3>{safeResult.nom_exact || safeResult.nom || "Déchet non précisé"}</h3>
+          <p className="result-subtitle">{shortDescription || "Analyse structurée des voies de valorisation et des contraintes du flux."}</p>
+          <div className="result-chips">
+            <span className="result-chip result-chip-strong">{chosenRoute}</span>
+            <span className="result-chip">{Number.isFinite(confidence) ? `${Math.round(confidence)} % de confiance` : "Confiance non disponible"}</span>
+          </div>
+        </div>
+        <div className="result-hero-side">
+          <div className="result-score-block">
+            <p>Lecture rapide</p>
+            <strong>{confidenceInfo.label}</strong>
+            <small>{confidenceInfo.message}</small>
+          </div>
+        </div>
       </div>
 
-      <h3 style={{ marginBottom: 4 }}>{safeResult.nom_exact || safeResult.nom || "Déchet non précisé"}</h3>
-      <p style={{ marginTop: 0, color: "var(--muted)" }}>Confiance: {confidenceInfo.label}</p>
-      {shortDescription ? <p>{shortDescription}</p> : null}
-
-      <div className="result-pane" style={{ margin: "10px 0 14px" }}>
-        <p style={{ marginTop: 0, marginBottom: 8 }}><strong>Synthèse économique</strong></p>
-        <div className="result-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))" }}>
+      <div className="result-pane result-summary">
+        <p className="result-section-title">Synthèse économique</p>
+        <div className="result-grid result-metrics" style={{ marginTop: 0 }}>
           {hasEconomicData ? (
             topMetrics.map((metric) => (
               <div key={metric.label}>
-                <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>{metric.label}</p>
-                <strong>{metric.value}</strong>
+                <p className="metric-label">{metric.label}</p>
+                <strong className="metric-value">{metric.value}</strong>
               </div>
             ))
           ) : (
-            <p style={{ marginBottom: 0, color: "var(--muted)" }}>Estimation économique non disponible pour ce flux.</p>
+            <p className="result-status">Estimation économique non disponible pour ce flux.</p>
           )}
         </div>
-        <p style={{ margin: "10px 0 0", color: "var(--muted)" }}>
-          Impact environnemental: {money(co2)} kgCO2e évités.
-        </p>
+        <p className="result-footnote">Impact environnemental: {money(co2)} kgCO2e évités.</p>
       </div>
 
       <div className="actions-row">
@@ -172,7 +184,7 @@ export default function ResultCard({
       </div>
 
       {showDetails ? (
-        <div className="result-grid">
+        <div className="result-grid result-details">
           <article className="result-pane">
             <h4>Justification détaillée</h4>
             {splitParagraphs(whyPriority).slice(0, 3).map((paragraph, idx) => (
@@ -188,9 +200,9 @@ export default function ResultCard({
                 const statut = String(item?.statut || item?.status || (item?.compatible === false ? "Non conforme" : idx === 0 ? "Recommandée" : "Alternative")).trim()
                 const explanation = String(item?.explication || item?.pourquoi_pas_prioritaire || "").trim()
                 return (
-                  <li key={`route-${idx}`} style={{ marginBottom: 10 }}>
+                  <li key={`route-${idx}`} className="route-item">
                     <div><strong>{String(item?.solution || item?.nom || item?.filiere || "voie")}</strong> - {statut}</div>
-                    {explanation ? <div style={{ marginTop: 4, color: "var(--muted)" }}>{explanation}</div> : null}
+                    {explanation ? <div className="route-explanation">{explanation}</div> : null}
                   </li>
                 )
               })}
@@ -210,7 +222,7 @@ export default function ResultCard({
       ) : null}
 
       {showCorrection ? (
-        <div className="result-pane" style={{ marginTop: 10 }}>
+        <div className="result-pane result-correction">
           <p><strong>Corriger l'identification</strong></p>
           <div className="actions-row">
             <button className="btn" type="button" onClick={() => setCorrectionMode("correct")}>Identification correcte</button>
@@ -236,7 +248,7 @@ export default function ResultCard({
       ) : null}
 
       {pdfError ? <p className="warn">{pdfError}</p> : null}
-      {correctionStatus ? <p>{correctionStatus}</p> : null}
+      {correctionStatus ? <p className="result-status">{correctionStatus}</p> : null}
     </section>
   )
 }

@@ -83,8 +83,8 @@ const MarketplaceCatalogSection = memo(function MarketplaceCatalogSection() {
           <input style={inp} placeholder="Localisation" value={sellerForm.localisation} onChange={e => setSellerForm({ ...sellerForm, localisation: e.target.value })} />
         </div>
         <button style={btn} onClick={createSeller}>Creer vendeur</button>
-        <hr style={{ border: "none", borderTop: "1px solid #d6e4dc", margin: "12px 0" }} />
-        <h4 style={{ margin: "0 0 6px", color: "#2f4f41" }}>Creer un acheteur</h4>
+        <hr style={{ border: "none", borderTop: "1px solid var(--line)", margin: "12px 0" }} />
+        <h4 style={{ margin: "0 0 6px", color: "var(--text)" }}>Creer un acheteur</h4>
         <div style={grid2}>
           <input style={inp} placeholder="Nom" value={buyerForm.nom} onChange={e => setBuyerForm({ ...buyerForm, nom: e.target.value })} />
           <input style={inp} placeholder="Entreprise" value={buyerForm.entreprise} onChange={e => setBuyerForm({ ...buyerForm, entreprise: e.target.value })} />
@@ -115,10 +115,10 @@ const MarketplaceCatalogSection = memo(function MarketplaceCatalogSection() {
           <summary style={subSummary}>Champs avances: photo, statut, description</summary>
           <div style={grid2}>
             <div>
-              <label style={{ color: "#335448", fontSize: 13 }}>Photo (fichier):</label>
+              <label style={{ color: "var(--muted)", fontSize: 13 }}>Photo (fichier):</label>
               <input style={inp} type="file" accept="image/jpeg,image/png,image/webp" onChange={e => { const f = e.target.files?.[0]; if (f) uploadPhoto(f); e.target.value = "" }} />
-              {uploadingPhoto && <p style={{ marginTop: -6, color: "#486558" }}>Upload en cours...</p>}
-              {!!listingForm.photo_url && <img src={toAbsolutePhoto(listingForm.photo_url)} alt="preview" style={{ width: 140, height: 100, objectFit: "cover", borderRadius: 8, border: "1px solid #d6e4dc", marginBottom: 8 }} />}
+              {uploadingPhoto && <p style={{ marginTop: -6, color: "var(--muted)" }}>Upload en cours...</p>}
+              {!!listingForm.photo_url && <img src={toAbsolutePhoto(listingForm.photo_url)} alt="preview" style={{ width: 140, height: 100, objectFit: "cover", borderRadius: 8, border: "1px solid var(--line)", marginBottom: 8 }} />}
             </div>
             <div>
               <label>Statut</label>
@@ -152,7 +152,7 @@ const MarketplaceCatalogSection = memo(function MarketplaceCatalogSection() {
 
         <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(290px, 1fr))", gap: 10 }}>
           {listings.map(item => <OfferCard key={item.id} item={item} onOpenDetail={fetchDetail} />)}
-          {!loading && listings.length === 0 && <p style={{ color: "#60756a" }}>Aucune offre.</p>}
+          {!loading && listings.length === 0 && <p style={{ color: "var(--muted)" }}>Aucune offre.</p>}
         </div>
 
         <Pager
@@ -234,8 +234,8 @@ const MarketplaceCatalogSection = memo(function MarketplaceCatalogSection() {
 
         {!!activeSellerId && <button style={btnSecondary} onClick={applySellerFilters}>{sellerPager.loading ? "Chargement..." : "Appliquer filtres vendeur"}</button>}
 
-        {!activeSellerId && <p style={{ color: "#60756a", marginTop: 0 }}>Selectionne un vendeur pour voir et gerer ses offres.</p>}
-        {!!activeSellerId && !sellerPager.loading && sellerListings.length === 0 && <p style={{ color: "#60756a", marginTop: 0 }}>Aucune offre trouvee pour ce vendeur.</p>}
+        {!activeSellerId && <p style={{ color: "var(--muted)", marginTop: 0 }}>Selectionne un vendeur pour voir et gerer ses offres.</p>}
+        {!!activeSellerId && !sellerPager.loading && sellerListings.length === 0 && <p style={{ color: "var(--muted)", marginTop: 0 }}>Aucune offre trouvee pour ce vendeur.</p>}
 
         <div style={{ display: "grid", gap: 10 }}>
           {sellerListings.map(item => (

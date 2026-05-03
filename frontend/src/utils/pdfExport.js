@@ -1,4 +1,4 @@
-﻿import { CHANNELS, rankChannels } from "../services/localChannelsEngine.js"
+import { CHANNELS, rankChannels } from "../services/localChannelsEngine.js"
 
 function formatDate(value = new Date()) {
   return new Intl.DateTimeFormat('fr-FR', {
@@ -122,8 +122,8 @@ function buildWasteProfile(result = {}, form = {}) {
   const source = result || {}
   const input = form || {}
   return {
-    name: firstText(input.nom, source.nom_exact, source.nom, source.name, 'Dechet non precise'),
-    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, 'Non precise'),
+    name: firstText(input.nom, source.nom_exact, source.nom, source.name, 'Déchet non précisé'),
+    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, 'Non précisé'),
     quantityKg: firstOptionalNumber(input.quantite_kg, source.quantite_kg, source.quantity_kg, source.quantity),
     humidity: firstOptionalNumber(input.taux_humidite_pct, source.taux_humidite_pct, source.humidity),
     pci: firstOptionalNumber(input.pci_mj_kg, source.pci_mj_kg, source.PCI),
@@ -321,7 +321,7 @@ export async function exportWasteResultPdf({ sourceId = 'results', result, form,
   const solutions = extractSolutions(result || {})
   const actors = rankActors(profile, solutions)
   const whyPriority = String(result?.explication_détaillée || result?.explication || result?.justification_technique || result?.resume_choix || '').trim()
-  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || 'voie non specifiee').trim()
+  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || 'voie non spécifiée').trim()
   const routeList = Array.isArray(result?.scores_par_voie) ? result.scores_par_voie : []
   const warnings = listText([
     result?.avertissements,
@@ -346,184 +346,205 @@ export async function exportWasteResultPdf({ sourceId = 'results', result, form,
   const roi = firstFiniteNumber(result?.score_global, result?.details_scores_bruts?.roi)
   const co2 = firstFiniteNumber(result?.co2_evite_estime_kg, result?.impact_co2_kg, result?.impact_environnemental?.bilan_net_recommande_kgco2e)
 
-  const html = `
-    <div class="pdf-root">
-      <style>
-        :root { color-scheme: light; }
-        * { box-sizing: border-box; }
-        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #fff; }
-        .pdf-root { width: 100%; padding: 0; }
-        .sheet { width: 100%; padding: 0; }
-        .hero {
-          display: flex; justify-content: space-between; gap: 12px; align-items: flex-start;
-          border: 1px solid #cfcfcf; border-radius: 10px; padding: 12px 14px; margin-bottom: 10px;
-        }
-        .eyebrow { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: #4b5563; margin-bottom: 4px; }
-        h1 { margin: 0; font-size: 18px; line-height: 1.15; }
-        .subtitle { margin-top: 5px; font-size: 10.5px; color: #374151; }
-        .meta { min-width: 170px; text-align: right; font-size: 9.5px; color: #374151; }
-        .meta strong { display: block; color: #111827; font-size: 11px; margin-bottom: 4px; }
-        .kpi-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
-        .kpi { border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 10px; min-height: 48px; }
-        .kpi .label { font-size: 9px; color: #6b7280; text-transform: uppercase; letter-spacing: .05em; }
-        .kpi .value { margin-top: 4px; font-size: 14px; font-weight: 700; }
-        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-        .panel { border: 1px solid #d1d5db; border-radius: 8px; padding: 10px 11px; background: #fff; break-inside: avoid; page-break-inside: avoid; }
-        .panel h2 { margin: 0 0 8px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; color: #111827; }
-        .dl-grid { display: grid; grid-template-columns: 1fr; gap: 6px; font-size: 10px; }
-        .dl-row { display: grid; grid-template-columns: 42% 58%; gap: 8px; align-items: start; }
-        .dl-row .label { color: #6b7280; }
-        .dl-row .value { color: #111827; font-weight: 600; word-break: break-word; }
-        .flow { display: grid; gap: 8px; margin-bottom: 8px; }
-        .route-card { border: 1px solid #d1d5db; border-radius: 8px; padding: 9px 10px; break-inside: avoid; page-break-inside: avoid; }
-        .route-top { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; margin-bottom: 4px; }
-        .route-title { font-size: 11px; font-weight: 700; }
-        .route-score { font-size: 10px; color: #374151; }
-        .route-meta { font-size: 9.5px; color: #6b7280; margin-bottom: 4px; }
-        .route-text { font-size: 10px; line-height: 1.45; color: #111827; }
-        .note { font-size: 9.5px; line-height: 1.45; color: #374151; }
-        .section-title { margin: 0 0 8px; font-size: 11.5px; text-transform: uppercase; letter-spacing: .06em; }
-        ul.clean { margin: 0; padding-left: 16px; }
-        ul.clean li { margin-bottom: 4px; font-size: 10px; line-height: 1.45; }
-        .stack { display: grid; gap: 8px; }
-        .operators { display: grid; gap: 6px; }
-        .operator { border-top: 1px solid #e5e7eb; padding-top: 6px; font-size: 10px; }
-        .operator:first-child { border-top: 0; padding-top: 0; }
-        .footer { margin-top: 8px; font-size: 9px; color: #6b7280; display: flex; justify-content: space-between; gap: 8px; }
-        .muted { color: #6b7280; }
-      </style>
-      <div class="sheet">
-        <div class="hero">
-          <div>
-            <div class="eyebrow">WasteAI - Fiche de synthèse</div>
-            <h1>${escapeHtml(profile.name || 'Déchet non précisé')}</h1>
-            <div class="subtitle">Voie recommandée: ${escapeHtml(formatRouteLabel(selectedRoute))}</div>
-          </div>
-          <div class="meta">
-            <strong>Rapport généré</strong>
-            <div>${escapeHtml(formatDate())}</div>
-            <div>${escapeHtml(profile.type || 'Type non précisé')}</div>
-            <div>${escapeHtml(formatOptionalNumber(profile.quantityKg, 'kg') || 'Quantité non précisée')}</div>
-          </div>
-        </div>
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const marginX = 12
+  const marginTop = 10
+  const marginBottom = 10
+  const gap = 4
+  const contentWidth = pageWidth - marginX * 2
+  const colGap = 4
+  const halfWidth = (contentWidth - colGap) / 2
 
-        <div class="kpi-grid">
-          <div class="kpi"><div class="label">Valeur</div><div class="value">${escapeHtml(formatMaybeNumber(saleValue, 'FCFA/t'))}</div></div>
-          <div class="kpi"><div class="label">Coût</div><div class="value">${escapeHtml(formatMaybeNumber(treatmentCost, 'FCFA/t'))}</div></div>
-          <div class="kpi"><div class="label">Gain net</div><div class="value">${escapeHtml(formatMaybeNumber(industrialGainTotal, 'FCFA'))}</div></div>
-          <div class="kpi"><div class="label">CO2 évité</div><div class="value">${escapeHtml(formatMaybeNumber(co2, 'kgCO2e'))}</div></div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <h2>Profil du flux</h2>
-            <div class="dl-grid">
-              <div class="dl-row"><div class="label">Déchet</div><div class="value">${escapeHtml(profile.name || 'N/R')}</div></div>
-              <div class="dl-row"><div class="label">Type</div><div class="value">${escapeHtml(profile.type || 'N/R')}</div></div>
-              <div class="dl-row"><div class="label">Quantité</div><div class="value">${escapeHtml(formatOptionalNumber(profile.quantityKg, 'kg') || 'N/R')}</div></div>
-              <div class="dl-row"><div class="label">Humidité</div><div class="value">${escapeHtml(formatPercent(profile.humidity))}</div></div>
-              <div class="dl-row"><div class="label">PCI</div><div class="value">${escapeHtml(formatMaybeNumber(profile.pci, 'MJ/kg'))}</div></div>
-              <div class="dl-row"><div class="label">DCO / DBO</div><div class="value">${escapeHtml(`${formatMaybeNumber(profile.dco, 'mg/L')} / ${formatMaybeNumber(profile.dbo, 'mg/L')}`)}</div></div>
-              <div class="dl-row"><div class="label">Contamination</div><div class="value">${escapeHtml(formatPercent(profile.contamination))}</div></div>
-              <div class="dl-row"><div class="label">Métaux</div><div class="value">${escapeHtml(boolLabel(profile.hasMetals))}</div></div>
-              <div class="dl-row"><div class="label">Chlore</div><div class="value">${escapeHtml(boolLabel(profile.hasChlorine))}</div></div>
-            </div>
-          </div>
-          <div class="panel">
-            <h2>Lecture technique</h2>
-            <div class="note">${escapeHtml(whyPriority || 'Aucune justification détaillée disponible.')}</div>
-            <div style="height: 8px"></div>
-            <div class="note"><strong>Voie retenue:</strong> ${escapeHtml(formatRouteLabel(selectedRoute))}</div>
-            <div style="height: 8px"></div>
-            <div class="note"><strong>Conditions requises:</strong> ${escapeHtml(Array.isArray(conditions) ? conditions.join('; ') : String(conditions || 'Aucune'))}</div>
-          </div>
-        </div>
-
-        <div class="panel" style="margin-bottom: 8px;">
-          <h2 class="section-title">Voies de valorisation examinées</h2>
-          <div class="flow">
-            ${(routeList.length ? routeList : solutions.slice(0, 4).map((item) => ({ solution: item, score: 0, conditions: [], justification: '' }))).slice(0, 4).map((item, idx) => {
-              const title = formatRouteLabel(item?.solution || item?.filiere || item?.nom || 'voie')
-              const score = Number(item?.score ?? item?.global_score ?? item?.technical_score ?? 0)
-              const status = String(item?.statut || item?.status || (idx === 0 ? 'Recommandée' : 'Alternative')).trim()
-              const explanation = String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || '').trim()
-              const conditionsText = Array.isArray(item?.conditions) ? item.conditions.join('; ') : String(item?.conditions || '')
-              return `
-                <div class="route-card">
-                  <div class="route-top">
-                    <div class="route-title">${escapeHtml(title)}</div>
-                    <div class="route-score">${escapeHtml(Number.isFinite(score) ? `${score.toFixed(0)}/100` : 'N/R')}</div>
-                  </div>
-                  <div class="route-meta">${escapeHtml(status)}${conditionsText ? ` - ${escapeHtml(conditionsText)}` : ''}</div>
-                  <div class="route-text">${escapeHtml(explanation || 'Aucune justification détaillée disponible.')}</div>
-                </div>
-              `
-            }).join('')}
-          </div>
-        </div>
-
-        <div class="two-col">
-          <div class="panel">
-            <h2>Opérateurs compatibles</h2>
-            <div class="operators">
-              ${(actors.length ? actors : [{ name: 'Aucun op?rateur compatible identifi?', score: 0, justification: 'Le flux n?cessite une caract?risation compl?mentaire.' }]).slice(0, 3).map((actor) => `
-                <div class="operator">
-                  <div><strong>${escapeHtml(actor.name || 'Opérateur')}</strong> <span class="muted">(${escapeHtml(Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : 'N/R')})</span></div>
-                  <div class="muted">${escapeHtml(actor.justification || '')}</div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
-          <div class="panel">
-            <h2>Repères complémentaires</h2>
-            <div class="stack">
-              <div class="note"><strong>Gain par tonne:</strong> ${escapeHtml(formatMaybeNumber(industrialGainTon, 'FCFA/t'))}</div>
-              <div class="note"><strong>ROI:</strong> ${escapeHtml(Number.isFinite(roi) ? roi.toFixed(2) : 'N/R')}</div>
-              <div class="note"><strong>Hypoth?ses:</strong> ${escapeHtml(assumptions.length ? assumptions.join(' ; ') : 'Aucune hypoth?se majeure') }</div>
-              <div class="note"><strong>Avertissements:</strong> ${escapeHtml(warnings.length ? warnings.join(' ; ') : 'Aucun avertissement majeur') }</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="footer">
-          <div>Document technique sobre, pagination automatique A4.</div>
-          <div>WasteAI</div>
-        </div>
-      </div>
-    </div>
-  `
-
-  const container = document.createElement('div')
-  container.style.position = 'fixed'
-  container.style.left = '-10000px'
-  container.style.top = '0'
-  container.style.width = '190mm'
-  container.style.background = '#fff'
-  container.innerHTML = html
-  document.body.appendChild(container)
-
-  try {
-    await new Promise((resolve, reject) => {
-      doc.html(container, {
-        x: 10,
-        y: 10,
-        width: 190,
-        windowWidth: 1200,
-        margin: [10, 10, 12, 10],
-        autoPaging: 'text',
-        html2canvas: {
-          scale: 1.2,
-          useCORS: true,
-          backgroundColor: '#ffffff',
-        },
-        callback: () => resolve(),
-        onclone: () => {},
-      })
-    })
-    doc.save(filename)
-  } catch (error) {
-    throw error
-  } finally {
-    container.remove()
+  function setFont(size, style = 'normal') {
+    doc.setFont('helvetica', style)
+    doc.setFontSize(size)
   }
+
+  function drawBox(x, y, w, h, options = {}) {
+    const fill = options.fill || [255, 255, 255]
+    const stroke = options.stroke || [210, 214, 220]
+    doc.setFillColor(fill[0], fill[1], fill[2])
+    doc.setDrawColor(stroke[0], stroke[1], stroke[2])
+    doc.roundedRect(x, y, w, h, 2, 2, 'FD')
+  }
+
+  function clampLines(text, width, maxLines = 4) {
+    const lines = splitLines(doc, String(text || '').trim(), width)
+    if (lines.length <= maxLines) return lines
+    const clipped = lines.slice(0, maxLines)
+    clipped[maxLines - 1] = `${String(clipped[maxLines - 1] || '').replace(/[\s.]+$/, '')}...`
+    return clipped
+  }
+
+  function drawWrappedText(text, x, y, width, options = {}) {
+    const fontSize = options.fontSize || 9
+    const lineHeight = options.lineHeight || fontSize * 0.42 + 3
+    const maxLines = options.maxLines || 99
+    const style = options.style || 'normal'
+    const color = options.color || [17, 24, 39]
+    const lines = clampLines(text, width, maxLines)
+    doc.setTextColor(color[0], color[1], color[2])
+    setFont(fontSize, style)
+    doc.text(lines, x, y)
+    return y + lines.length * lineHeight
+  }
+
+  function drawLabelValue(x, y, label, value, width, options = {}) {
+    const labelWidth = options.labelWidth || Math.min(34, width * 0.42)
+    const valueWidth = Math.max(10, width - labelWidth - 2)
+    const lineHeight = options.lineHeight || 4.2
+    const labelSize = options.labelSize || 8.2
+    const valueSize = options.valueSize || 8.8
+    setFont(labelSize, 'bold')
+    doc.setTextColor(110, 118, 129)
+    doc.text(String(label), x, y)
+    setFont(valueSize, 'normal')
+    doc.setTextColor(17, 24, 39)
+    const lines = clampLines(value, valueWidth, options.maxLines || 2)
+    doc.text(lines, x + labelWidth, y)
+    return y + Math.max(lineHeight, lines.length * lineHeight)
+  }
+
+  function drawMetric(x, y, w, title, value) {
+    drawBox(x, y, w, 18, { fill: [250, 250, 250] })
+    setFont(7.6, 'bold')
+    doc.setTextColor(110, 118, 129)
+    doc.text(title, x + 3, y + 5)
+    setFont(10.8, 'bold')
+    doc.setTextColor(17, 24, 39)
+    doc.text(String(value || 'N/R'), x + 3, y + 12.3)
+  }
+
+  function drawSectionTitle(x, y, w, title) {
+    setFont(8.2, 'bold')
+    doc.setTextColor(45, 55, 72)
+    doc.text(String(title), x, y)
+    doc.setDrawColor(220, 224, 229)
+    doc.line(x, y + 1.8, x + w, y + 1.8)
+  }
+
+  const title = profile.name || 'Déchet non précisé'
+  const routeLabel = formatRouteLabel(selectedRoute)
+  const generatedAt = formatDate()
+  const typeLabel = profile.type || 'Type non précisé'
+  const quantityLabel = formatOptionalNumber(profile.quantityKg, 'kg') || 'Quantité non précisée'
+  const dcoDbo = `${formatMaybeNumber(profile.dco, 'mg/L')} / ${formatMaybeNumber(profile.dbo, 'mg/L')}`
+  const routeRows = (routeList.length ? routeList : solutions.slice(0, 3).map((item) => ({ solution: item, score: 0, status: 'Alternative', explication: '' }))).slice(0, 3)
+  const actorRows = (actors.length ? actors : [{ name: 'Opérateur à confirmer', score: 0, justification: 'Flux à caractériser plus finement.' }]).slice(0, 3)
+
+  doc.setFillColor(255, 255, 255)
+  doc.rect(0, 0, pageWidth, pageHeight, 'F')
+
+  let y = marginTop
+
+  drawBox(marginX, y, contentWidth, 22, { fill: [248, 248, 248] })
+  setFont(8, 'bold')
+  doc.setTextColor(110, 118, 129)
+  doc.text('WasteAI - Fiche de synthèse', marginX + 3, y + 5)
+  setFont(16, 'bold')
+  doc.setTextColor(17, 24, 39)
+  doc.text(title, marginX + 3, y + 12.5)
+  setFont(8.8, 'normal')
+  doc.setTextColor(55, 65, 81)
+  doc.text(`Voie recommandée: ${routeLabel}`, marginX + 3, y + 18.2)
+  setFont(8.4, 'normal')
+  const metaX = marginX + contentWidth - 64
+  doc.text('Rapport généré', metaX, y + 5)
+  doc.setFont('helvetica', 'bold')
+  doc.text(generatedAt, metaX, y + 9.4)
+  doc.setFont('helvetica', 'normal')
+  doc.text(typeLabel, metaX, y + 13.8)
+  doc.text(quantityLabel, metaX, y + 18.2)
+
+  y += 26
+
+  const metricWidth = (contentWidth - 3 * gap) / 4
+  drawMetric(marginX, y, metricWidth, 'Valeur', formatMaybeNumber(saleValue, 'FCFA/t'))
+  drawMetric(marginX + metricWidth + gap, y, metricWidth, 'Coût', formatMaybeNumber(treatmentCost, 'FCFA/t'))
+  drawMetric(marginX + (metricWidth + gap) * 2, y, metricWidth, 'Gain net', formatMaybeNumber(industrialGainTotal, 'FCFA'))
+  drawMetric(marginX + (metricWidth + gap) * 3, y, metricWidth, 'CO2 évité', formatMaybeNumber(co2, 'kgCO2e'))
+
+  y += 22
+
+  const profileHeight = 67
+  drawBox(marginX, y, halfWidth, profileHeight)
+  drawBox(marginX + halfWidth + colGap, y, halfWidth, profileHeight)
+  drawSectionTitle(marginX + 3, y + 6, halfWidth - 6, 'Profil du flux')
+  drawSectionTitle(marginX + halfWidth + colGap + 3, y + 6, halfWidth - 6, 'Lecture technique')
+
+  let leftY = y + 11
+  leftY = drawLabelValue(marginX + 3, leftY, 'Déchet', profile.name || 'N/R', halfWidth - 6, { maxLines: 2 })
+  leftY = drawLabelValue(marginX + 3, leftY, 'Type', profile.type || 'N/R', halfWidth - 6, { maxLines: 2 })
+  leftY = drawLabelValue(marginX + 3, leftY, 'Quantité', formatOptionalNumber(profile.quantityKg, 'kg') || 'N/R', halfWidth - 6)
+  leftY = drawLabelValue(marginX + 3, leftY, 'Humidité', formatPercent(profile.humidity), halfWidth - 6)
+  leftY = drawLabelValue(marginX + 3, leftY, 'PCI', formatMaybeNumber(profile.pci, 'MJ/kg'), halfWidth - 6)
+  leftY = drawLabelValue(marginX + 3, leftY, 'DCO / DBO', dcoDbo, halfWidth - 6, { maxLines: 1 })
+  leftY = drawLabelValue(marginX + 3, leftY, 'Contamination', formatPercent(profile.contamination), halfWidth - 6)
+  leftY = drawLabelValue(marginX + 3, leftY, 'Métaux', boolLabel(profile.hasMetals), halfWidth - 6)
+  drawLabelValue(marginX + 3, leftY, 'Chlore', boolLabel(profile.hasChlorine), halfWidth - 6)
+
+  let rightY = y + 11
+  rightY = drawWrappedText(whyPriority || 'Aucune justification détaillée disponible.', marginX + halfWidth + colGap + 3, rightY, halfWidth - 6, { fontSize: 8.6, lineHeight: 3.9, maxLines: 7 })
+  rightY += 1.5
+  rightY = drawLabelValue(marginX + halfWidth + colGap + 3, rightY, 'Voie retenue', routeLabel, halfWidth - 6, { maxLines: 2 })
+  rightY = drawLabelValue(marginX + halfWidth + colGap + 3, rightY, 'Conditions', conditions.length ? conditions.join(' ; ') : 'Aucune condition explicite', halfWidth - 6, { maxLines: 3 })
+
+  y += profileHeight + 4
+
+  drawBox(marginX, y, contentWidth, 58)
+  drawSectionTitle(marginX + 3, y + 6, contentWidth - 6, 'Voies de valorisation examinées')
+  routeRows.forEach((item, idx) => {
+    const titleText = formatRouteLabel(item?.solution || item?.filiere || item?.nom || 'voie')
+    const score = Number(item?.score ?? item?.global_score ?? item?.technical_score ?? 0)
+    const status = String(item?.statut || item?.status || (idx === 0 ? 'Recommandée' : 'Alternative')).trim()
+    const explanation = String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || '').trim()
+    const conditionsText = Array.isArray(item?.conditions) ? item.conditions.join(' ; ') : String(item?.conditions || '')
+    const rowY = y + 11 + idx * 14.6
+    drawBox(marginX + 3, rowY, contentWidth - 6, 13.2, { fill: [252, 252, 252] })
+    setFont(9.2, 'bold')
+    doc.setTextColor(17, 24, 39)
+    doc.text(titleText, marginX + 5, rowY + 4.6)
+    setFont(8, 'normal')
+    doc.setTextColor(75, 85, 99)
+    doc.text(`${status} - ${Number.isFinite(score) ? `${score.toFixed(0)}/100` : 'N/R'}`, marginX + 5, rowY + 8.4)
+    const rightText = [conditionsText, explanation || 'Aucune justification détaillée disponible.'].filter(Boolean).join(' | ')
+    const lines = clampLines(rightText, contentWidth - 68, 2)
+    setFont(8, 'normal')
+    doc.text(lines, marginX + 55, rowY + 4.6)
+  })
+
+  y += 62
+
+  drawBox(marginX, y, halfWidth, 48)
+  drawBox(marginX + halfWidth + colGap, y, halfWidth, 48)
+  drawSectionTitle(marginX + 3, y + 6, halfWidth - 6, 'Opérateurs compatibles')
+  drawSectionTitle(marginX + halfWidth + colGap + 3, y + 6, halfWidth - 6, 'Repères complémentaires')
+
+  actorRows.forEach((actor, idx) => {
+    const lineY = y + 11 + idx * 10.8
+    setFont(8.6, 'bold')
+    doc.setTextColor(17, 24, 39)
+    doc.text(String(actor.name || 'Opérateur'), marginX + 3, lineY)
+    setFont(7.8, 'normal')
+    doc.setTextColor(75, 85, 99)
+    doc.text(`(${Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : 'N/R'})`, marginX + 43, lineY)
+    const lines = clampLines(actor.justification || '', halfWidth - 14, 1)
+    doc.text(lines, marginX + 3, lineY + 4)
+  })
+
+  const noteX = marginX + halfWidth + colGap + 3
+  let noteY = y + 11
+  noteY = drawLabelValue(noteX, noteY, 'Gain/t', formatMaybeNumber(industrialGainTon, 'FCFA/t'), halfWidth - 6)
+  noteY = drawLabelValue(noteX, noteY, 'ROI', Number.isFinite(roi) ? roi.toFixed(2) : 'N/R', halfWidth - 6)
+  noteY = drawLabelValue(noteX, noteY, 'Hypothèses', assumptions.length ? assumptions.join(' ; ') : 'Aucune hypothèse majeure', halfWidth - 6, { maxLines: 2 })
+  drawLabelValue(noteX, noteY, 'Avertissements', warnings.length ? warnings.join(' ; ') : 'Aucun avertissement majeur', halfWidth - 6, { maxLines: 2 })
+
+  drawBox(marginX, pageHeight - marginBottom - 8, contentWidth, 8, { fill: [245, 245, 245] })
+  setFont(7.8, 'normal')
+  doc.setTextColor(107, 114, 128)
+  doc.text('Document technique sobre, mise en page A4 fixe.', marginX + 3, pageHeight - marginBottom - 3)
+  doc.text('WasteAI', marginX + contentWidth - 14, pageHeight - marginBottom - 3)
+
+  doc.save(filename)
 }

@@ -14,9 +14,9 @@ import {
 import { API_BASE, useMarketplace } from "./hooks/useMarketplace"
 
 const STATUS_STYLES = {
-  actif: { color: "#155724", background: "#d4edda", border: "1px solid #b7dfc0" },
-  expire: { color: "#7a4b00", background: "#ffe8c2", border: "1px solid #f5d291" },
-  archive: { color: "#4f5f66", background: "#e5ebef", border: "1px solid #d0d9de" }
+  actif: { color: "var(--brand-dark)", background: "color-mix(in srgb, var(--brand-dark) 8%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand-dark) 16%, var(--line))" },
+  expire: { color: "color-mix(in srgb, #9a5f00 92%, var(--text))", background: "color-mix(in srgb, #d9a441 12%, var(--surface))", border: "1px solid color-mix(in srgb, #d9a441 26%, var(--line))" },
+  archive: { color: "var(--muted)", background: "var(--surface-soft)", border: "1px solid var(--line)" }
 }
 
 const CATEGORY_VISUALS = {
@@ -329,7 +329,7 @@ export default function MarketplacePanel() {
         <img src={wasteMarketImage} alt="Marche B2B des dechets" style={marketHeroImg} />
       </section>
 
-      {!!marketplace.message && <p style={{ color: "#315848", marginTop: 6 }}>{marketplace.message}</p>}
+      {!!marketplace.message && <p style={{ color: "var(--muted)", marginTop: 6 }}>{marketplace.message}</p>}
 
       <MarketplaceCatalogProvider value={catalogValue}>
         <MarketplaceCatalogSection />
@@ -346,30 +346,30 @@ export default function MarketplacePanel() {
   )
 }
 
-const marketHero = { background: "linear-gradient(135deg, #eef7f2 0%, #dbeee2 100%)", border: "1px solid #c7ddd0", borderRadius: 16, padding: 14, marginBottom: 14, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, alignItems: "center" }
-const marketHeroImg = { width: "100%", height: 170, objectFit: "cover", borderRadius: 12, border: "1px solid #c8ddd0", background: "#d7e8df" }
-const section = { background: "#f3f8f5", border: "1px solid #c7ddd0", borderRadius: 12, padding: 14, marginBottom: 14 }
-const h3 = { marginTop: 0, color: "#2d6a4f" }
-const hint = { marginTop: 0, marginBottom: 8, color: "#5a7166", fontSize: 13 }
-const subAccordion = { marginTop: 8, marginBottom: 10, background: "#fff", border: "1px solid #d5e3da", borderRadius: 10, padding: 10 }
-const subSummary = { cursor: "pointer", color: "#244b3a", fontWeight: 700, fontSize: 13 }
+const marketHero = { background: "linear-gradient(135deg, color-mix(in srgb, var(--brand-dark) 6%, var(--surface)), color-mix(in srgb, var(--brand) 8%, var(--surface-soft)))", border: "1px solid var(--line)", borderRadius: 16, padding: 14, marginBottom: 14, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, alignItems: "center" }
+const marketHeroImg = { width: "100%", height: 170, objectFit: "cover", borderRadius: 12, border: "1px solid var(--line)", background: "var(--surface-soft)" }
+const section = { background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 12, padding: 14, marginBottom: 14, color: "var(--text)" }
+const h3 = { marginTop: 0, color: "var(--brand-dark)" }
+const hint = { marginTop: 0, marginBottom: 8, color: "var(--muted)", fontSize: 13 }
+const subAccordion = { marginTop: 8, marginBottom: 10, background: "var(--surface-soft)", border: "1px solid var(--line)", borderRadius: 10, padding: 10 }
+const subSummary = { cursor: "pointer", color: "var(--text)", fontWeight: 700, fontSize: 13 }
 const grid2 = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 8 }
 const grid3 = { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 8 }
-const inp = { display: "block", width: "100%", padding: "9px 12px", margin: "6px 0 10px", borderRadius: 8, border: "1px solid #cfe0d5", fontSize: 14, boxSizing: "border-box", background: "#fff" }
-const btn = { background: "#1f7a55", color: "white", border: "none", padding: "10px 14px", borderRadius: 10, cursor: "pointer" }
-const btnSecondary = { background: "#e6eee9", color: "#1f513d", border: "1px solid #b7cdbf", padding: "8px 12px", borderRadius: 8, cursor: "pointer" }
-const btnDanger = { background: "#fceceb", color: "#8b1f1f", border: "1px solid #efc6c2", padding: "8px 12px", borderRadius: 8, cursor: "pointer" }
-const card = { background: "#fff", border: "1px solid #d6e4dc", borderRadius: 10, padding: 10 }
-const ownedCard = { background: "#fff", border: "1px solid #d6e4dc", borderRadius: 10, padding: 12 }
-const thumbWrap = { width: 96, height: 96, borderRadius: 8, overflow: "hidden", background: "#eef5f0", border: "1px solid #d6e4dc" }
-const thumbWrapLarge = { width: 160, height: 140, borderRadius: 8, overflow: "hidden", background: "#eef5f0", border: "1px solid #d6e4dc" }
+const inp = { display: "block", width: "100%", padding: "9px 12px", margin: "6px 0 10px", borderRadius: 8, border: "1px solid var(--line)", fontSize: 14, boxSizing: "border-box", background: "var(--surface)", color: "var(--text)" }
+const btn = { background: "linear-gradient(135deg, var(--brand-dark), var(--brand))", color: "#fff", border: "1px solid transparent", padding: "10px 14px", borderRadius: 10, cursor: "pointer" }
+const btnSecondary = { background: "var(--surface-soft)", color: "var(--text)", border: "1px solid var(--line)", padding: "8px 12px", borderRadius: 8, cursor: "pointer" }
+const btnDanger = { background: "color-mix(in srgb, #d94848 12%, var(--surface))", color: "#d94848", border: "1px solid color-mix(in srgb, #d94848 28%, var(--line))", padding: "8px 12px", borderRadius: 8, cursor: "pointer" }
+const card = { background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 10, color: "var(--text)" }
+const ownedCard = { background: "var(--surface)", border: "1px solid var(--line)", borderRadius: 10, padding: 12, color: "var(--text)" }
+const thumbWrap = { width: 96, height: 96, borderRadius: 8, overflow: "hidden", background: "var(--surface-soft)", border: "1px solid var(--line)" }
+const thumbWrapLarge = { width: 160, height: 140, borderRadius: 8, overflow: "hidden", background: "var(--surface-soft)", border: "1px solid var(--line)" }
 const thumb = { width: "100%", height: "100%", objectFit: "cover" }
 const thumbLarge = { width: "100%", height: "100%", objectFit: "cover" }
-const title = { margin: "0 0 6px", color: "#244b3a", fontWeight: 700 }
-const meta = { margin: "0 0 4px", color: "#4f6359", fontSize: 13 }
-const price = { margin: "0 0 4px", color: "#1f513d", fontWeight: 700 }
+const title = { margin: "0 0 6px", color: "var(--text)", fontWeight: 700 }
+const meta = { margin: "0 0 4px", color: "var(--muted)", fontSize: 13 }
+const price = { margin: "0 0 4px", color: "var(--brand-dark)", fontWeight: 700 }
 const badgeBase = { margin: "4px 0 8px", fontSize: 12, display: "inline-block", padding: "2px 8px", borderRadius: 999 }
-const convBtn = { width: "100%", border: "1px solid #d6e4dc", borderRadius: 8, background: "#fff", padding: 8, marginBottom: 8, cursor: "pointer" }
-const convBtnActive = { ...convBtn, border: "1px solid #93b9a4", background: "#eff7f2" }
-const msgMine = { background: "#e6f4ec", border: "1px solid #cde5d7", borderRadius: 8, padding: 8, marginLeft: "12%" }
-const msgOther = { background: "#f7f9f8", border: "1px solid #dbe6e1", borderRadius: 8, padding: 8, marginRight: "12%" }
+const convBtn = { width: "100%", border: "1px solid var(--line)", borderRadius: 8, background: "var(--surface)", padding: 8, marginBottom: 8, cursor: "pointer", color: "var(--text)" }
+const convBtnActive = { ...convBtn, border: "1px solid color-mix(in srgb, var(--brand-dark) 18%, var(--line))", background: "color-mix(in srgb, var(--brand-dark) 6%, var(--surface))" }
+const msgMine = { background: "color-mix(in srgb, var(--brand) 12%, var(--surface))", border: "1px solid color-mix(in srgb, var(--brand) 20%, var(--line))", borderRadius: 8, padding: 8, marginLeft: "12%" }
+const msgOther = { background: "var(--surface-soft)", border: "1px solid var(--line)", borderRadius: 8, padding: 8, marginRight: "12%" }

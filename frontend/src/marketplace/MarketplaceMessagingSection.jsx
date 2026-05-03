@@ -37,13 +37,13 @@ const MarketplaceMessagingSection = memo(function MarketplaceMessagingSection() 
         <details open style={subAccordion}>
           <summary style={subSummary}>Conversations</summary>
           <div style={ownedCard}>
-            {!messagingUserId && <p style={{ color: "#60756a" }}>Choisis un profil pour voir ses conversations.</p>}
-            {messagingUserId && conversations.length === 0 && !loadingConversations && <p style={{ color: "#60756a" }}>Aucune conversation.</p>}
+            {!messagingUserId && <p style={{ color: "var(--muted)" }}>Choisis un profil pour voir ses conversations.</p>}
+            {messagingUserId && conversations.length === 0 && !loadingConversations && <p style={{ color: "var(--muted)" }}>Aucune conversation.</p>}
             {conversations.map(conv => (
               <button key={conv.conversation_id} style={selectedConversationId === conv.conversation_id ? convBtnActive : convBtn} onClick={() => fetchConversationThread(conv.conversation_id, messagingUserId)}>
                 <p style={{ margin: "0 0 4px", textAlign: "left", fontWeight: 700 }}>{conv.listing_titre}</p>
-                <p style={{ margin: "0 0 4px", textAlign: "left", fontSize: 12, color: "#4f6359" }}>{conv.other_user_nom} - {conv.other_user_entreprise}</p>
-                <p style={{ margin: 0, textAlign: "left", fontSize: 12, color: "#61756b" }}>{conv.last_message}</p>
+                <p style={{ margin: "0 0 4px", textAlign: "left", fontSize: 12, color: "var(--muted)" }}>{conv.other_user_nom} - {conv.other_user_entreprise}</p>
+                <p style={{ margin: 0, textAlign: "left", fontSize: 12, color: "var(--muted)" }}>{conv.last_message}</p>
               </button>
             ))}
           </div>
@@ -52,16 +52,16 @@ const MarketplaceMessagingSection = memo(function MarketplaceMessagingSection() 
         <details open style={subAccordion}>
           <summary style={subSummary}>Fil de discussion</summary>
           <div style={ownedCard}>
-            {!conversationThread && <p style={{ color: "#60756a" }}>Selectionne une conversation.</p>}
-            {loadingThread && <p style={{ color: "#60756a" }}>Chargement du fil...</p>}
+            {!conversationThread && <p style={{ color: "var(--muted)" }}>Selectionne une conversation.</p>}
+            {loadingThread && <p style={{ color: "var(--muted)" }}>Chargement du fil...</p>}
             {conversationThread && !loadingThread && (
               <>
-                <p style={{ marginTop: 0, color: "#315848" }}>Annonce: {conversationThread.listing_titre}</p>
+                <p style={{ marginTop: 0, color: "var(--text)" }}>Annonce: {conversationThread.listing_titre}</p>
                 <div style={{ display: "grid", gap: 8, maxHeight: 240, overflowY: "auto", marginBottom: 10 }}>
                   {conversationThread.messages.map(msg => (
                     <div key={msg.id} style={msg.sender_id === messagingUserId ? msgMine : msgOther}>
                       <p style={{ margin: "0 0 4px", fontSize: 13 }}>{msg.contenu}</p>
-                      <p style={{ margin: 0, fontSize: 11, color: "#5f6f67" }}>{new Date(msg.created_at).toLocaleString()}</p>
+                      <p style={{ margin: 0, fontSize: 11, color: "var(--muted)" }}>{new Date(msg.created_at).toLocaleString()}</p>
                     </div>
                   ))}
                 </div>

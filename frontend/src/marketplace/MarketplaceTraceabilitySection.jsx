@@ -47,7 +47,7 @@ const MarketplaceTraceabilitySection = memo(function MarketplaceTraceabilitySect
         {traceLots.map(lot => (
           <button key={lot.id} style={convBtn} onClick={() => selectTraceLot(lot.id)}>
             <p style={{ margin: 0, textAlign: "left", fontWeight: 700 }}>{lot.code_lot}</p>
-            <p style={{ margin: "4px 0 0", textAlign: "left", fontSize: 12, color: "#5f6f67" }}>Statut: {lot.statut_courant}</p>
+            <p style={{ margin: "4px 0 0", textAlign: "left", fontSize: 12, color: "var(--muted)" }}>Statut: {lot.statut_courant}</p>
           </button>
         ))}
         {traceLots.length === 0 && <p style={hint}>Aucun lot pour cette annonce.</p>}
@@ -75,14 +75,14 @@ const MarketplaceTraceabilitySection = memo(function MarketplaceTraceabilitySect
       </div>
       <button style={btnSecondary} onClick={addFinalDisposal}>Valider elimination finale</button>
       {!!traceTimeline && (
-        <div style={{ marginTop: 10, border: "1px solid #d6e4dc", borderRadius: 8, padding: 10, background: "#fff" }}>
-          <p style={{ margin: "0 0 6px", fontWeight: 700, color: "#244b3a" }}>Timeline lot {traceTimeline.lot?.code_lot}</p>
+        <div style={{ marginTop: 10, border: "1px solid var(--line)", borderRadius: 8, padding: 10, background: "var(--surface)", color: "var(--text)" }}>
+          <p style={{ margin: "0 0 6px", fontWeight: 700, color: "var(--text)" }}>Timeline lot {traceTimeline.lot?.code_lot}</p>
           {(traceTimeline.events || []).map(evt => (
-            <p key={evt.id} style={{ margin: "0 0 4px", color: "#4f6359", fontSize: 13 }}>
+            <p key={evt.id} style={{ margin: "0 0 4px", color: "var(--muted)", fontSize: 13 }}>
               {String(evt.event_at || "").slice(0, 19).replace("T", " ")} | {evt.event_type} | {evt.location}
             </p>
           ))}
-          {traceTimeline.final_disposal && <p style={{ margin: 0, fontWeight: 700, color: "#315848" }}>Elimination finale: {traceTimeline.final_disposal.disposal_method}</p>}
+          {traceTimeline.final_disposal && <p style={{ margin: 0, fontWeight: 700, color: "var(--brand-dark)" }}>Elimination finale: {traceTimeline.final_disposal.disposal_method}</p>}
         </div>
       )}
     </div>
