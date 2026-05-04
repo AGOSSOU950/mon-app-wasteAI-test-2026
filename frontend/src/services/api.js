@@ -366,6 +366,34 @@ function toDecisionDisplayLabel(rawDecision) {
   return raw
 }
 
+function isDryLignocellulosicPayload(payload) {
+  const lignin = Number(payload?.taux_lignine_pct || 0)
+  const humidity = Number(payload?.taux_humidite_pct || 0)
+  const pci = Number(payload?.pci_mj_kg || 0)
+  const merged = normalizeText([
+    payload?.nom,
+    payload?.description,
+    payload?.type_dechet,
+    payload?.categorie,
+    payload?.filiere,
+  ].filter(Boolean).join(' '))
+
+  const explicitHints = BIOMASS_LIGNOCELLULOSIC_HINTS.some((hint) => merged.includes(hint))
+  return Boolean(
+    explicitHints ||
+    (lignin >= 20 && humidity <= 35 && pci >= 12) ||
+    (lignin >= 18 && humidity <= 25 && /coco|coque|palme|bagasse|bois|sciure|paille/.test(merged))
+  )
+}
+
+function shouldOverrideBiologicalRoute(payload, authoritativeDecision, engine) {
+  const decisionRaw = normalizeText(authoritativeDecision)
+  if (!decisionRaw) return false
+  if (!isDryLignocellulosicPayload(payload)) return false
+  if (!(decisionRaw.includes('methan') || decisionRaw.includes('compost'))) return false
+  return Boolean(engine?.primary?.filiere && normalizeText(engine.primary.filiere) !== decisionRaw)
+}
+
 function guessCategory(payload) {
   const category = normalizeText(payload?.categorie)
   const type = normalizeText(payload?.type_dechet)
@@ -819,7 +847,9 @@ function normalizeApiResult(payload, apiData) {
     ""
   ).trim()
   const fallbackDecision = primary?.filiere || toDecisionDisplayLabel(suggestedDecisionRaw)
-  const finalDecision = authoritativeDecision || fallbackDecision
+  const finalDecision = shouldOverrideBiologicalRoute(payload, authoritativeDecision, engine)
+    ? fallbackDecision
+    : (authoritativeDecision || fallbackDecision)
 
   const impactFromApi = apiData?.impact_environnemental?.bilan_net_recommande_kgco2e
   const estimatedImpact = buildEstimatedImpact(payload, engine.decisionKey, engine.primary ? [engine.primary, ...(engine.second ? [engine.second] : [])] : [])
