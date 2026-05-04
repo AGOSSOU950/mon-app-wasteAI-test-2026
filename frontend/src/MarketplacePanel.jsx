@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react"
+﻿import { memo, useMemo } from "react"
 import wasteMarketImage from "./assets/waste-market.svg"
 import wastePlasticImage from "./assets/waste-plastic.svg"
 import wasteTextileImage from "./assets/waste-textile.svg"

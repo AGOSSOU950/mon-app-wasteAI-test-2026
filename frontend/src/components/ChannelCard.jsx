@@ -1,4 +1,4 @@
-import React from "react"
+﻿import React from "react"
 
 const money = (value) => new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(value || 0))
 
@@ -26,14 +26,14 @@ export default function ChannelCard({ channel, isBest = false, onContact, onSele
         <p><span className="font-medium text-[#aab4af]">Type :</span> {channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
         <p><span className="font-medium text-[#aab4af]">Localisation :</span> {channel.location}</p>
         <p><span className="font-medium text-[#aab4af]">Distance :</span> {Number(channel.distance_km || 0)} km</p>
-        <p><span className="font-medium text-[#aab4af]">CoÃ»t / tonne :</span> {money(channel.estimated_cost_per_ton)} FCFA</p>
-        <p><span className="font-medium text-[#aab4af]">Gain estimÃ© :</span> {money(channel.potential_gain_per_ton)} FCFA</p>
+        <p><span className="font-medium text-[#aab4af]">Coût / tonne :</span> {money(channel.estimated_cost_per_ton)} FCFA</p>
+        <p><span className="font-medium text-[#aab4af]">Gain estimé :</span> {money(channel.potential_gain_per_ton)} FCFA</p>
         <p><span className="font-medium text-[#aab4af]">Contact :</span> {channel.contact}</p>
       </div>
 
       {families.length > 0 ? (
         <div className="mt-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#aab4af]">FiliÃ¨res acceptÃ©es</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#aab4af]">Filières acceptées</p>
           <div className="mt-2 flex flex-wrap gap-2">
             {families.map((family) => (
               <span key={family} className="rounded-full bg-[#182127] px-3 py-1 text-xs font-medium text-[#d9e2dd]">
@@ -47,7 +47,7 @@ export default function ChannelCard({ channel, isBest = false, onContact, onSele
       {routeHints.length > 0 ? (
         <div className="mt-4">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#aab4af]">Voies compatibles</p>
-          <p className="mt-2 text-sm text-[#aab4af]">{routeHints.join(" Â· ")}</p>
+          <p className="mt-2 text-sm text-[#aab4af]">{routeHints.join(" · ")}</p>
         </div>
       ) : null}
 
@@ -64,7 +64,7 @@ export default function ChannelCard({ channel, isBest = false, onContact, onSele
           onClick={() => onSelect?.(channel)}
           className="rounded-full border border-[#2a3a35] px-4 py-2 text-sm font-semibold text-[#d9e2dd] transition hover:border-slate-500 hover:text-[#f8fffb]"
         >
-          Voir le dÃ©tail
+          Voir le détail
         </button>
       </div>
     </article>

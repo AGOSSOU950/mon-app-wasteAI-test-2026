@@ -1,4 +1,4 @@
-import axios from "axios"
+﻿import axios from "axios"
 import regulatoryProfiles from "../data/regulatory_profiles.json"
 
 const API_URL = import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev"

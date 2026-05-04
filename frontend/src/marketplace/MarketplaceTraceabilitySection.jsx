@@ -1,4 +1,4 @@
-import { memo } from "react"
+﻿import { memo } from "react"
 import { useMarketplaceTraceabilityView } from "./MarketplaceContext"
 
 const MarketplaceTraceabilitySection = memo(function MarketplaceTraceabilitySection() {

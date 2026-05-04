@@ -1,4 +1,4 @@
-const CHANNELS = [
+﻿const CHANNELS = [
   {
     id: 1,
     name: "Fabrimetal",

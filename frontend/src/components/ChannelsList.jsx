@@ -1,4 +1,4 @@
-import React, { useMemo } from "react"
+﻿import React, { useMemo } from "react"
 import ChannelCard from "./ChannelCard"
 import { filterChannels, rankChannels } from "../services/localChannelsEngine"
 
@@ -16,18 +16,18 @@ export default function ChannelsList({ result, channels = [], filters = {}, onCo
     <section className="space-y-6">
       <div className="rounded-[2rem] border border-[#22303a] bg-gradient-to-br from-[#0a0e12] to-[#10161b] p-6 text-[#f8fffb] shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9ef0ce]">Canaux locaux</p>
-        <h2 className="mt-2 text-3xl font-semibold">Destination recommandÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e</h2>
+        <h2 className="mt-2 text-3xl font-semibold">Destination recommandée</h2>
         <p className="mt-3 max-w-2xl text-sm text-[#aab4af]">
-          Le moteur filtre les suggestions par famille de dÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©chets et par voie de valorisation. Les faux positifs sont ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©cartÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©s.
+          Le moteur filtre les suggestions par famille de déchets et par voie de valorisation. Les faux positifs sont écartés.
         </p>
         {best ? (
           <div className="mt-5 rounded-3xl border border-[#2f6f5f]/30 bg-[#11211c] p-4">
             <p className="text-xs uppercase tracking-[0.2em] text-[#9ef0ce]">{best.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
             <p className="mt-1 text-xl font-semibold text-[#f8fffb]">{best.name}</p>
             <p className="mt-1 text-sm text-[#d9f6ea]">
-              {best.type} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {Number(best.distance_km || 0)} km ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· gain net {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(best.net_gain_per_ton || 0))} FCFA / tonne
+              {best.type} · {Number(best.distance_km || 0)} km · gain net {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(best.net_gain_per_ton || 0))} FCFA / tonne
             </p>
-            {noDirectBuyer ? <p className="mt-3 text-sm text-[#ffd8a8]">Aucun acheteur direct pertinent pour ce flux. La voie de traitement devient la solution de rÃƒÆ’Ã‚Â©fÃƒÆ’Ã‚Â©rence.</p> : null}
+            {noDirectBuyer ? <p className="mt-3 text-sm text-[#ffd8a8]">Aucun acheteur direct pertinent pour ce flux. La voie de traitement devient la solution de référence.</p> : null}
           </div>
         ) : (
           <div className="mt-5 rounded-3xl border border-[#7b4a19]/30 bg-[#2a2110] p-4 text-[#ffd8a8]">
@@ -47,28 +47,28 @@ export default function ChannelsList({ result, channels = [], filters = {}, onCo
             value={filters.maxDistance ?? 100}
             onChange={(e) => onFilterChange?.({ ...filters, maxDistance: Number(e.target.value) })}
           />
-          <span className="text-xs text-[#aab4af]">{"Jusqu\u2019à "}{filters.maxDistance ?? 100} km</span>
+          <span className="text-xs text-[#aab4af]">{"Jusqu\u2019� "}{filters.maxDistance ?? 100} km</span>
         </label>
         <label className="grid gap-2 text-sm font-medium text-[#d9e2dd] md:col-span-2">
-          Filtre matiÃƒÆ’Ã‚Â¨re
+          Filtre matière
           <input
             type="text"
             list="local-waste-types"
             value={filters.wasteType || ""}
             onChange={(e) => onFilterChange?.({ ...filters, wasteType: e.target.value })}
-            placeholder="organique, biodÃƒÆ’Ã‚Â©chets, boues, biochar, plastique..."
+            placeholder="organique, biodéchets, boues, biochar, plastique..."
             className="rounded-2xl border border-[#2a3a35] bg-[#11161b] px-4 py-3 text-[#f8fffb]"
           />
           <datalist id="local-waste-types">
             <option value="plastique" />
-            <option value="mÃƒÆ’Ã‚Â©tal" />
+            <option value="métal" />
             <option value="textile" />
             <option value="boues" />
             <option value="organique" />
-            <option value="biodÃƒÆ’Ã‚Â©chets" />
+            <option value="biodéchets" />
             <option value="biochar" />
             <option value="biogaz" />
-            <option value="dÃƒÆ’Ã‚Â©chets industriels" />
+            <option value="déchets industriels" />
           </datalist>
         </label>
       </div>
@@ -87,7 +87,7 @@ export default function ChannelsList({ result, channels = [], filters = {}, onCo
         </div>
       ) : (
         <div className="rounded-3xl border border-[#22303a] bg-[#0f1418] p-5 text-sm text-[#aab4af] shadow-sm">
-          Aucun canal cohÃƒÆ’Ã‚Â©rent pour cette filiÃƒÆ’Ã‚Â¨re. Gardez la voie de traitement sÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©curisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e.
+          Aucun canal cohérent pour cette filière. Gardez la voie de traitement sécurisée.
         </div>
       )}
 
@@ -98,7 +98,7 @@ export default function ChannelsList({ result, channels = [], filters = {}, onCo
             {alternatives.map((channel) => (
               <div key={`alt-${channel.id}`} className="rounded-2xl border border-[#22303a] bg-[#0f1418] p-4 text-sm text-[#d9e2dd]">
                 <p className="font-semibold text-[#f8fffb]">{channel.name}</p>
-                <p className="mt-1 text-[#aab4af]">{channel.type} ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· {Number(channel.distance_km || 0)} km</p>
+                <p className="mt-1 text-[#aab4af]">{channel.type} · {Number(channel.distance_km || 0)} km</p>
                 <p className="mt-2 text-[#aab4af]">Gain net: {new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(channel.net_gain_per_ton || 0))} FCFA / tonne</p>
               </div>
             ))}

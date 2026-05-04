@@ -1,4 +1,4 @@
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
+﻿const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
 const FEEDBACK_DELTAS = {
   choisi: 0.1,

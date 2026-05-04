@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+﻿import React, { useEffect, useMemo, useState } from "react"
 import { matchLocalActors } from "../services/api"
 import ChannelsList from "./ChannelsList"
 import { CHANNELS, normalizeWasteType } from "../services/localChannelsEngine"
@@ -7,7 +7,7 @@ import { LOCAL_ACTORS } from "../data/localActors"
 function inferContext(result) {
   if (!result) return {}
   return {
-    name: result.name || result.nom_exact || result.nom || "DÃ©chet",
+    name: result.name || result.nom_exact || result.nom || "Déchet",
     quantity: Number(result.quantity || result.quantite_kg || 0),
     recommendation: result.recommendation || result.decision_principale || result.decision || result?.valorisation_1?.methode || "",
     wasteType: result.waste_type || result.filiere || result.type || result.categorie || "",
@@ -100,7 +100,7 @@ export default function LocalWasteChannelsSection({ result, form }) {
 
   function handleContact(channel) {
     const text = encodeURIComponent(
-      `Bonjour ${channel.name}, WasteAI recommande votre canal pour ${context.name} (${normalizedWasteType || context.wasteType || "dÃ©chet"}). QuantitÃ©: ${context.quantity || 0} tonnes. Merci de me recontacter.`,
+      `Bonjour ${channel.name}, WasteAI recommande votre canal pour ${context.name} (${normalizedWasteType || context.wasteType || "déchet"}). Quantité: ${context.quantity || 0} tonnes. Merci de me recontacter.`,
     )
     if (String(channel.contact || "").includes("@")) {
       window.open(`mailto:${channel.contact}?subject=${encodeURIComponent("WasteAI - mise en relation")}&body=${text}`, "_blank", "noopener,noreferrer")
@@ -113,18 +113,18 @@ export default function LocalWasteChannelsSection({ result, form }) {
   return (
     <section className="space-y-5">
       <div className="rounded-[2rem] border border border-[#22303a] bg-[#0f1418] p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">OpÃ©rateurs locaux</p>
-        <h2 className="mt-2 text-3xl font-semibold text-[#f8fffb]">RÃ©seau de valorisation</h2>
+        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Opérateurs locaux</p>
+        <h2 className="mt-2 text-3xl font-semibold text-[#f8fffb]">Réseau de valorisation</h2>
         <p className="mt-3 max-w-3xl text-sm text-[#aab4af]">
-          Biogaz BÃ©nin, ReBin, Valdera, Songhai, SGDS et Gbogbeto couvrent les voies organiques, plastiques et Ã©nergÃ©tiques les plus utiles.
+          Biogaz Bénin, ReBin, Valdera, Songhai, SGDS et Gbogbeto couvrent les voies organiques, plastiques et énergétiques les plus utiles.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
           <div className="rounded-2xl bg-[#12181d] p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#aab4af]">FiliÃ¨re</p>
-            <p className="mt-2 text-lg font-semibold text-[#f8fffb]">{normalizedWasteType || "Non prÃ©cisÃ©e"}</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#aab4af]">Filière</p>
+            <p className="mt-2 text-lg font-semibold text-[#f8fffb]">{normalizedWasteType || "Non précisée"}</p>
           </div>
           <div className="rounded-2xl bg-[#12181d] p-4">
-            <p className="text-xs uppercase tracking-[0.18em] text-[#aab4af]">QuantitÃ©</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-[#aab4af]">Quantité</p>
             <p className="mt-2 text-lg font-semibold text-[#f8fffb]">{Number(context.quantity || 0)} t</p>
           </div>
           <div className="rounded-2xl bg-[#12181d] p-4">
@@ -136,12 +136,12 @@ export default function LocalWasteChannelsSection({ result, form }) {
 
       <div className="rounded-[2rem] border border border-[#22303a] bg-[#0f1418] p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Acteurs locaux pertinents</p>
-        <h3 className="mt-2 text-2xl font-semibold text-[#f8fffb]">RÃ©sultat du matching</h3>
-        <p className="mt-2 text-sm text-[#aab4af]">BasÃ© sur les contraintes du flux, les solutions recommandÃ©es et la prioritÃ© locale.</p>
+        <h3 className="mt-2 text-2xl font-semibold text-[#f8fffb]">Résultat du matching</h3>
+        <p className="mt-2 text-sm text-[#aab4af]">Basé sur les contraintes du flux, les solutions recommandées et la priorité locale.</p>
         {actorLoading ? <p className="mt-4 text-sm text-[#aab4af]">Matching en cours...</p> : null}
         {actorError ? <p className="mt-4 text-sm text-amber-700">{actorError}</p> : null}
         {!actorLoading && !actorError && actorMatches.length === 0 ? (
-          <p className="mt-4 text-sm text-[#aab4af]">Aucun acteur local pertinent identifiÃ© pour ce flux.</p>
+          <p className="mt-4 text-sm text-[#aab4af]">Aucun acteur local pertinent identifié pour ce flux.</p>
         ) : null}
         <div className="mt-4 grid gap-3">
           {actorMatches.map((item, index) => (

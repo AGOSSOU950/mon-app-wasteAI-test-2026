@@ -1,4 +1,4 @@
-import { memo } from "react"
+﻿import { memo } from "react"
 import { useMarketplaceCatalogView } from "./MarketplaceContext"
 
 const MarketplaceCatalogSection = memo(function MarketplaceCatalogSection() {
