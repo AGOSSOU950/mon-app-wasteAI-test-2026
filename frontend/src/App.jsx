@@ -1,4 +1,4 @@
-﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
@@ -517,9 +517,9 @@ export default function App() {
         dataMessage = "Caracteristiques completees automatiquement via la base scientifique."
       }
 
-      const sourceMessage = "Analyse API terminée"
+      const sourceMessage = "Analyse API termin\u00e9e"
       setBanner(dataMessage ? `${sourceMessage}. ${dataMessage}` : sourceMessage)
-      setToast("Analyse terminée")
+      setToast("Analyse termin\u00e9e")
     } catch (error) {
       const localResult = analyzeLocally(workingForm)
       const localPayload = buildAnalyzePayload(workingForm)
@@ -527,7 +527,7 @@ export default function App() {
       setAnalysisResult(safeLocalResult)
       persistAnalyticsSnapshot(safeLocalResult, localPayload)
       void refreshAnalytics()
-      setBanner("Analyse locale estimée (IA temporairement indisponible).")
+      setBanner("Analyse locale estim\u00e9e (IA temporairement indisponible).")
       setApiOnline(false)
 
       if (error?.code === "ECONNABORTED") {
@@ -542,7 +542,7 @@ export default function App() {
         setError(`Erreur: ${error?.message || "inconnue"}`)
       }
 
-      setToast("Analyse locale de secours activée")
+      setToast("Analyse locale de secours activ\u00e9e")
     } finally {
       clearInterval(timer)
       setProgress(100)
@@ -586,7 +586,7 @@ export default function App() {
       setToast(`Pre-remplissage applique (${merged.appliedCount} champ(s))`)
     } catch (error) {
       void error
-      setToast("Préremplissage indisponible")
+      setToast("Pr\u00e9-remplissage indisponible")
     }
   }
 
@@ -693,7 +693,7 @@ export default function App() {
       <nav className="mobile-nav" aria-label="Navigation mobile">
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>R�seau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
         ) : null}
 
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>

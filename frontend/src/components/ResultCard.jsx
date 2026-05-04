@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+﻿import { useEffect, useMemo, useState } from "react"
 import { exportWasteResultPdf } from "../utils/pdfExport"
 
 function badgeClass(filiere) {
@@ -28,10 +28,26 @@ function splitParagraphs(text) {
 
 function confidenceStatus(confidence) {
   const c = Number(confidence || 0)
-  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette.", warn: true }
-  if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger.", warn: false }
-  if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider.", warn: false }
-  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer.", warn: false }
+  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette.", tone: "low" }
+  if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger.", tone: "mid" }
+  if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider.", tone: "good" }
+  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer.", tone: "strong" }
+}
+
+function normalizeBuyer(item) {
+  if (!item) return null
+  if (typeof item === "string") {
+    const name = item.trim()
+    return name ? { name, contact: "" } : null
+  }
+  const name = String(item.name || item.nom || item.label || item.acheteur || "").trim()
+  if (!name) return null
+  return {
+    name,
+    contact: String(item.contact || item.telephone || item.phone || "").trim(),
+    city: String(item.ville || item.city || item.region || "").trim(),
+    note: String(item.note || item.description || item.justification || "").trim(),
+  }
 }
 
 export default function ResultCard({
@@ -55,10 +71,11 @@ export default function ResultCard({
   const confidence = Number(safeResult.confiance_identification || 0)
   const confidenceInfo = confidenceStatus(confidence)
   const shortDescription = String(safeResult.description_estimee || safeResult.resume_choix || safeResult.justification_technique || "").trim()
-  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "voie non spécifiée")
+  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "Voie non précisée")
   const alternatives = Array.isArray(safeResult.alternatives) ? safeResult.alternatives : []
   const voiesExaminees = Array.isArray(safeResult.scores_par_voie) && safeResult.scores_par_voie.length > 0 ? safeResult.scores_par_voie.slice(0, 4) : alternatives.slice(0, 4)
   const whyPriority = String(safeResult.explication_detaillee || safeResult.explication || safeResult.justification_technique || safeResult.resume_choix || "").trim()
+  const buyers = Array.isArray(safeResult.acheteurs_benin) ? safeResult.acheteurs_benin.map(normalizeBuyer).filter(Boolean) : []
   const co2 = firstFiniteNumber(
     safeResult.co2_evite_estime_kg,
     source?.co2_evite_estime_kg,
@@ -127,7 +144,7 @@ export default function ResultCard({
         <div className="result-hero-copy">
           <div className="result-top">
             <span className={badgeClass(filiere)}>{String(filiere || "AUTRE").toUpperCase()}</span>
-            <span className="result-chip">{confidenceInfo.label}</span>
+            <span className={`result-chip result-chip-${confidenceInfo.tone}`}>{confidenceInfo.label}</span>
           </div>
           <h3>{safeResult.nom_exact || safeResult.nom || "Déchet non précisé"}</h3>
           <p className="result-subtitle">{shortDescription || "Analyse structurée des voies de valorisation et des contraintes du flux."}</p>
@@ -136,6 +153,7 @@ export default function ResultCard({
             <span className="result-chip">{Number.isFinite(confidence) ? `${Math.round(confidence)} % de confiance` : "Confiance non disponible"}</span>
           </div>
         </div>
+
         <div className="result-hero-side">
           <div className="result-score-block">
             <p>Lecture rapide</p>
@@ -162,13 +180,36 @@ export default function ResultCard({
         <p className="result-footnote">Impact environnemental: {money(co2)} kgCO2e évités.</p>
       </div>
 
-      <div className="actions-row">
+      <div className="actions-row result-actions">
         <button className="btn btn-primary" type="button" onClick={onCorrect}>Valider</button>
-        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>{showDetails ? "Masquer détails" : "Voir détails"}</button>
+        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>{showDetails ? "Masquer les détails" : "Voir les détails"}</button>
         {!compactMode ? <button className="btn" type="button" onClick={onOpenOperators}>Voir opérateurs</button> : null}
         {!compactMode ? <button className="btn" type="button" onClick={onSave}>Sauver</button> : null}
         <button className="btn btn-primary" type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>{pdfLoading ? "Génération PDF..." : "Télécharger PDF"}</button>
       </div>
+
+      {buyers.length > 0 ? (
+        <div className="result-pane result-buyers">
+          <div className="result-buyers-head">
+            <h4>Acteurs à contacter</h4>
+            <p>Contacts disponibles pour accélérer la mise en relation.</p>
+          </div>
+          <div className="result-buyers-grid">
+            {buyers.slice(0, 3).map((buyer, idx) => (
+              <article key={`${buyer.name}-${idx}`} className="result-buyer-card">
+                <strong>{buyer.name}</strong>
+                {buyer.city ? <span>{buyer.city}</span> : null}
+                {buyer.note ? <p>{buyer.note}</p> : null}
+                {onWhatsApp ? (
+                  <button className="btn btn-secondary result-buyer-cta" type="button" onClick={() => onWhatsApp(buyer.name)}>
+                    Contacter
+                  </button>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {showDetails ? (
         <div className="result-grid result-details">
@@ -177,7 +218,7 @@ export default function ResultCard({
             {splitParagraphs(whyPriority).slice(0, 3).map((paragraph, idx) => (
               <p key={`why-${idx}`}>{paragraph}</p>
             ))}
-            <p><strong>Voie retenue:</strong> {chosenRoute}</p>
+            <p><strong>Voie retenue :</strong> {chosenRoute}</p>
           </article>
 
           <article className="result-pane">
@@ -198,12 +239,12 @@ export default function ResultCard({
 
           <article className="result-pane">
             <h4>Repères clés</h4>
-            <p><strong>Valeur estimée:</strong> {money(saleValue)} FCFA/tonne</p>
-            <p><strong>Coût:</strong> {money(treatmentCost)} FCFA/tonne</p>
-            <p><strong>Gain brut:</strong> {money(industrialGainTotal)} FCFA</p>
-            <p><strong>CO2 évité:</strong> {money(co2)} kg</p>
-            <p><strong>ROI:</strong> {Number.isFinite(roi) ? roi.toFixed(2) : "n/d"}</p>
-            {Number.isFinite(industrialGainTon) && industrialGainTon !== 0 ? <p><strong>Gain/t:</strong> {money(industrialGainTon)} FCFA/t</p> : null}
+            <p><strong>Valeur estimée :</strong> {money(saleValue)} FCFA/tonne</p>
+            <p><strong>Coût :</strong> {money(treatmentCost)} FCFA/tonne</p>
+            <p><strong>Gain brut :</strong> {money(industrialGainTotal)} FCFA</p>
+            <p><strong>CO2 évité :</strong> {money(co2)} kg</p>
+            <p><strong>ROI :</strong> {Number.isFinite(roi) ? roi.toFixed(2) : "n/d"}</p>
+            {Number.isFinite(industrialGainTon) && industrialGainTon !== 0 ? <p><strong>Gain/t :</strong> {money(industrialGainTon)} FCFA/t</p> : null}
           </article>
         </div>
       ) : null}

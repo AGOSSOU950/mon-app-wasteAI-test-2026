@@ -19,16 +19,16 @@ function FilierePreview({ filiere }) {
     <article className="admin-filiere-card">
       <div className="admin-filiere-head">
         <div>
-          <h4>{filiere?.nom || filiere?.id || "Filiere"}</h4>
+          <h4>{filiere?.nom || filiere?.id || "Filière"}</h4>
           <p>{filiere?.id || "id inconnu"} - {filiere?.type || "type inconnu"}</p>
         </div>
         <span className="admin-chip">{filiere?.score_base ?? 0} pts base</span>
       </div>
       <p className="admin-muted">
-        Cout: {Number(economics?.treatment_cost_fcfa_tonne || 0).toLocaleString("fr-FR")} FCFA/t | Valeur: {Number(economics?.market_value_fcfa_tonne || 0).toLocaleString("fr-FR")} FCFA/t
+        Coût: {Number(economics?.treatment_cost_fcfa_tonne || 0).toLocaleString("fr-FR")} FCFA/t | Valeur: {Number(economics?.market_value_fcfa_tonne || 0).toLocaleString("fr-FR")} FCFA/t
       </p>
       <p className="admin-muted">
-        CO2 evite: {Number(economics?.co2_avoided_kg_tonne || 0).toLocaleString("fr-FR")} kg/t
+        CO2 évité: {Number(economics?.co2_avoided_kg_tonne || 0).toLocaleString("fr-FR")} kg/t
       </p>
       {filiere?.contraintes && Object.keys(filiere.contraintes).length > 0 ? (
         <p className="admin-muted">Contraintes: {Object.entries(filiere.contraintes).map(([key, value]) => `${key}=${String(value)}`).join(", ")}</p>
@@ -94,7 +94,7 @@ export default function AdminRegistryPanel() {
       setRegistryText(safeStringify(current))
       setTemplateText(safeStringify(template))
       setAudit(auditPayload)
-      setStatus("Registre recharge")
+      setStatus("Registre rechargé")
     } catch (err) {
       setError(err?.message || "Impossible de recharger le registre.")
     } finally {
@@ -105,7 +105,7 @@ export default function AdminRegistryPanel() {
   function handleRestoreTemplate() {
     if (!templateText) return
     setRegistryText(templateText)
-    setStatus("Template charge dans l'editeur")
+    setStatus("Template chargé dans l’éditeur")
   }
 
   async function handleSave() {
@@ -117,7 +117,7 @@ export default function AdminRegistryPanel() {
 
     const payload = parsedPayload.data
     if (!payload.version || !Array.isArray(payload.filieres) || payload.filieres.length === 0) {
-      setError("Le registre doit contenir une version et une liste non vide de filieres.")
+      setError("Le registre doit contenir une version et une liste non vide de filières.")
       return
     }
 
@@ -132,9 +132,9 @@ export default function AdminRegistryPanel() {
       const auditPayload = await getValorizationRegistryAudit()
       setRegistryText(safeStringify(response?.data || payload))
       setAudit(auditPayload)
-      setStatus("Registre enregistre avec succes")
+      setStatus("Registre enregistré avec succès")
     } catch (err) {
-      setError(err?.response?.data?.detail || err?.message || "Echec de sauvegarde du registre.")
+      setError(err?.response?.data?.detail || err?.message || "Échec de sauvegarde du registre.")
     } finally {
       setSaving(false)
     }
@@ -145,10 +145,10 @@ export default function AdminRegistryPanel() {
       <div className="admin-header">
         <div>
           <h2>Administration du registre de valorisation</h2>
-          <p className="admin-muted">Edition directe du JSON des filieres. Le moteur reste generique: tu ajoutes, modifies ou retires des filieres sans changer le code de calcul.</p>
+          <p className="admin-muted">Édition directe du JSON des filières. Le moteur reste générique: tu ajoutes, modifies ou retires des filières sans changer le code de calcul.</p>
         </div>
         <div className="admin-actions">
-          <button className="btn" type="button" onClick={handleReload} disabled={loading}>{loading ? "Chargement..." : "Recharger"}</button>
+          <button className="btn" type="button" onClick={handleReload} disabled={loading}>{loading ? "Chargement..." : "Recharger le registre"}</button>
           <button className="btn btn-secondary" type="button" onClick={handleRestoreTemplate} disabled={!templateText}>Charger template</button>
           <button className="btn btn-primary" type="button" onClick={handleSave} disabled={saving}>{saving ? "Sauvegarde..." : "Sauver"}</button>
         </div>
@@ -156,23 +156,23 @@ export default function AdminRegistryPanel() {
 
       <div className="admin-toolbar">
         <div className="field">
-          <label>Cle admin</label>
+          <label>Clé admin</label>
           <input value={adminKey} onChange={(event) => setAdminKey(event.target.value)} placeholder="x-admin-key" />
         </div>
         <div className="admin-metadata">
           <p><strong>Version:</strong> {registry?.version || "n/a"}</p>
-          <p><strong>Filiere(s):</strong> {filieres.length}</p>
-          <p><strong>Etat:</strong> {status || (loading ? "Chargement en cours" : "Pret")}</p>
+          <p><strong>Filière(s):</strong> {filieres.length}</p>
+          <p><strong>État:</strong> {status || (loading ? "Chargement en cours" : "Prêt")}</p>
         </div>
       </div>
 
       <div className="admin-audit">
         <h3>Audit du registre</h3>
         <div className="admin-audit-grid">
-          <p><strong>Sante:</strong> {audit?.healthy ? "OK" : "A corriger"}</p>
-          <p><strong>Problemes:</strong> {audit?.issues_count ?? 0}</p>
+          <p><strong>Santé:</strong> {audit?.healthy ? "OK" : "À corriger"}</p>
+          <p><strong>Problèmes:</strong> {audit?.issues_count ?? 0}</p>
           <p><strong>Poids moyen:</strong> {audit?.weight_range?.avg ?? "n/a"}</p>
-          <p><strong>Derniere MAJ:</strong> {audit?.updated_at || "n/a"}</p>
+          <p><strong>Dernière MAJ:</strong> {audit?.updated_at || "n/a"}</p>
         </div>
         {Array.isArray(audit?.issues) && audit.issues.length > 0 ? (
           <ul className="admin-audit-list">
@@ -181,7 +181,7 @@ export default function AdminRegistryPanel() {
             ))}
           </ul>
         ) : (
-          <p className="admin-muted">Aucune anomalie detectee sur le registre.</p>
+          <p className="admin-muted">Aucune anomalie détectée sur le registre.</p>
         )}
       </div>
 
@@ -200,11 +200,11 @@ export default function AdminRegistryPanel() {
         </div>
 
         <div className="admin-preview">
-          <h3>Preview filieres</h3>
+          <h3>Aperçu des filières</h3>
           <div className="admin-preview-list">
             {filieres.length > 0 ? filieres.map((filiere) => (
               <FilierePreview key={filiere?.id || filiere?.nom} filiere={filiere} />
-            )) : <p className="admin-muted">Aucune filiere chargee.</p>}
+            )) : <p className="admin-muted">Aucune filière chargée.</p>}
           </div>
         </div>
       </div>

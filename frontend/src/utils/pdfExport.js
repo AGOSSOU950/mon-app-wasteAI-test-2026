@@ -38,7 +38,7 @@ function parsePdfNumber(value) {
 function formatPdfMoney(value) {
   const n = parsePdfNumber(value)
   if (!Number.isFinite(n)) return "N/R"
-  return `${Math.round(n)}f`
+  return `${Math.round(n)} FCFA`
 }
 
 function formatPdfNumber(value, unit = "") {
@@ -428,7 +428,7 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   const chipY = heroY + 35
   chipX += chip(`Voie recommandée: ${formatRouteLabel(selectedRoute)}`, chipX, chipY, 88) + 2
   chipX += chip(profile.type || "Type non précisé", chipX, chipY, 40) + 2
-  chip(`Quantite ${formatPdfNumber(profile.quantityKg, "kg") || "non precise"}`, chipX, chipY, 44)
+  chip(`Quantité ${formatPdfNumber(profile.quantityKg, "kg") || "non precise"}`, chipX, chipY, 44)
 
   const scoreX = margin + contentWidth * 0.69
   panel(scoreX, heroY + 4, contentWidth * 0.27, heroH - 8, colors.surfaceSoft, colors.border, 4)

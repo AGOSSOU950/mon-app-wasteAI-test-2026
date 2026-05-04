@@ -1,4 +1,4 @@
-﻿import axios from "axios"
+import axios from "axios"
 import regulatoryProfiles from "../data/regulatory_profiles.json"
 
 const API_URL = import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev"
@@ -352,6 +352,12 @@ function guessCategory(payload) {
   const flow = normalizeText(payload?.origine_flux)
   const merged = `${category} ${type} ${name} ${desc} ${flow}`
 
+  const biomassHints = BIOMASS_LIGNOCELLULOSIC_HINTS.some((k) => merged.includes(k))
+  const lignin = Number(payload?.taux_lignine_pct || 0)
+  const humidity = Number(payload?.taux_humidite_pct || 0)
+  const pci = Number(payload?.pci_mj_kg || 0)
+  if (biomassHints || (lignin >= 20 && humidity <= 35 && pci >= 12)) return "biomasse"
+
   const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodéchet", "biodechet", "biodéchets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
   if (organicHints.some((k) => merged.includes(k))) return "organique"
 
@@ -496,10 +502,13 @@ function estimateImpactKg(payload, decisionKey) {
 }
 
 function candidateRoutesForCategory(category, payload) {
+  const flags = inferWasteFlags(payload)
   const lignin = Number(payload?.taux_lignine_pct || 0)
+  const humidity = Number(payload?.taux_humidite_pct || 0)
   const merged = normalizeText(`${payload?.nom || ""} ${payload?.description || ""} ${payload?.type_dechet || ""} ${payload?.categorie || ""}`)
   const paintLike = ["peinture", "paint", "vernis", "coating", "laque", "encre", "resine", "pigment"].some((k) => merged.includes(k))
   const oilLike = ["huile usagee", "huile usee", "vidange", "lubrifiant", "waste oil", "used oil"].some((k) => merged.includes(k))
+  const dryLignocellulosic = flags.dryLignocellulosic || (flags.lignocellulosic && lignin >= 20 && humidity <= 25)
 
   if (category === "plastique") {
     return ["recyclage_mecanique_plastique", "pyrolyse_plastique", "co_incineration_cimenterie", "elimination_securisee"]
@@ -514,9 +523,11 @@ function candidateRoutesForCategory(category, payload) {
     return ["recyclage_papetier", "compostage", "co_incineration_cimenterie", "elimination_securisee"]
   }
   if (category === "biomasse" || category === "organique") {
-    return lignin >= 30
-      ? ["charbon_actif", "methanisation_biogaz", "compostage", "elimination_securisee"]
-      : ["methanisation_biogaz", "compostage", "epandage_agricole", "elimination_securisee"]
+    return dryLignocellulosic
+      ? ["charbon_actif", "co_incineration_cimenterie", "elimination_securisee"]
+      : lignin >= 30
+        ? ["charbon_actif", "methanisation_biogaz", "compostage", "elimination_securisee"]
+        : ["methanisation_biogaz", "compostage", "epandage_agricole", "elimination_securisee"]
   }
   if (category === "chimique") {
     if (paintLike) return ["neutralisation_chimique", "co_incineration_cimenterie", "elimination_securisee"]
@@ -529,7 +540,9 @@ function candidateRoutesForCategory(category, payload) {
   if (category === "e_waste") {
     return ["refonte_metaux", "elimination_securisee", "reemploi_pieces_metalliques"]
   }
-  return ["methanisation_biogaz", "recyclage_papetier", "elimination_securisee", "co_incineration_cimenterie"]
+  return dryLignocellulosic
+    ? ["charbon_actif", "co_incineration_cimenterie", "elimination_securisee"]
+    : ["methanisation_biogaz", "recyclage_papetier", "elimination_securisee", "co_incineration_cimenterie"]
 }
 
 function scoreRoute(payload, routeKey) {
@@ -537,11 +550,14 @@ function scoreRoute(payload, routeKey) {
   const gate = computeRegulatoryGate(payload, cfg.decisionKey)
   const countryKey = getCountryKey(payload)
   const countryPolicy = COUNTRY_POLICY[countryKey] || COUNTRY_POLICY.default
+  const flags = inferWasteFlags(payload)
 
   const contamination = Number(payload?.taux_contamination_pct || 0)
   const quantity = Number(payload?.quantite_kg || 0)
   const danger = normalizeText(payload?.niveau_danger || "faible")
   const lignin = Number(payload?.taux_lignine_pct || 0)
+  const humidity = Number(payload?.taux_humidite_pct || 0)
+  const dryLignocellulosic = flags.dryLignocellulosic
 
   let technique = cfg.base.technique - clamp(contamination / 3, 0, 22)
   let environnement = cfg.base.environnement
@@ -557,7 +573,21 @@ function scoreRoute(payload, routeKey) {
   reglementaire += Number(countryPolicy?.regulatoryDelta?.[cfg.decisionKey] || 0)
   economique *= Number(countryPolicy?.economicFactor?.[cfg.decisionKey] || 1)
 
-  if (routeKey === "charbon_actif") {
+  if (dryLignocellulosic) {
+    if (routeKey === "methanisation_biogaz" || routeKey === "compostage") {
+      technique = 0
+      gate.blocked = true
+      gate.warnings = [...gate.warnings, "Biomasse lignocellulosique seche incompatible avec les voies biologiques."]
+    }
+    if (routeKey === "charbon_actif") {
+      technique += 24
+      economique += 8
+    }
+    if (routeKey === "co_incineration_cimenterie") {
+      technique += 12
+      economique += 4
+    }
+  } else if (routeKey === "charbon_actif") {
     if (lignin >= 35) technique += 12
     else technique -= 12
   }
@@ -565,6 +595,15 @@ function scoreRoute(payload, routeKey) {
   const decisionKey = cfg.decisionKey
   const impactKg = estimateImpactKg(payload, decisionKey)
   environnement += clamp((impactKg / Math.max(1, Number(payload?.quantite_kg || 1))) * 120, 0, 12)
+
+  if (routeKey === "methanisation_biogaz" && !dryLignocellulosic) {
+    if (humidity >= 70 && lignin < 20) technique += 18
+    if (humidity < 45) technique -= 8
+  }
+  if (routeKey === "compostage" && !dryLignocellulosic) {
+    if (humidity >= 45 && humidity <= 70) technique += 12
+    if (humidity < 30) technique -= 6
+  }
 
   technique = clamp(technique, 0, 100)
   environnement = clamp(environnement, 0, 100)
@@ -750,35 +789,44 @@ function normalizeApiResult(payload, apiData) {
 
   const apiScore = typeof apiData?.score === "number" ? clamp(apiData.score, 0, 100) : null
   const score = Number((apiScore ?? primary?.score ?? 50).toFixed(1))
+  const authoritativeDecision = String(
+    apiData?.decision_principale ||
+    apiData?.mode_valorisation_propose ||
+    apiData?.decision ||
+    apiData?.mode_valorisation ||
+    ""
+  ).trim()
+  const fallbackDecision = primary?.filiere || toDecisionDisplayLabel(suggestedDecisionRaw)
+  const finalDecision = authoritativeDecision || fallbackDecision
 
   const impactFromApi = apiData?.impact_environnemental?.bilan_net_recommande_kgco2e
   const estimatedImpact = buildEstimatedImpact(payload, engine.decisionKey, engine.primary ? [engine.primary, ...(engine.second ? [engine.second] : [])] : [])
 
   return {
     ...apiData,
-    decision: primary?.filiere || toDecisionDisplayLabel(suggestedDecisionRaw),
-    decision_principale: primary?.filiere || toDecisionDisplayLabel(suggestedDecisionRaw),
-    mode_valorisation_propose: primary?.filiere || toDecisionDisplayLabel(suggestedDecisionRaw),
+    decision: finalDecision,
+    decision_principale: finalDecision,
+    mode_valorisation_propose: String(apiData?.mode_valorisation_propose || finalDecision),
     score,
     confiance: apiData?.confiance || "moyenne",
     resume_choix: apiData?.resume_choix || engine.resumeChoix,
     explication: apiData?.explication || engine.resumeChoix,
-    valorisation_1: {
-      methode: primary?.filiere || toDecisionDisplayLabel(suggestedDecisionRaw),
+    valorisation_1: apiData?.valorisation_1 || {
+      methode: finalDecision,
       description: primary?.description || "Voie proposee apres scoring multicritere.",
       valeur_fcfa_tonne: Number(primary?.valeur_fcfa_tonne || 0),
     },
-    valorisation_2: {
+    valorisation_2: apiData?.valorisation_2 || {
       methode: second?.filiere || "Aucune alternative conforme",
       description: second?.description || "Aucune 2e voie conforme disponible avec les contraintes actuelles.",
       valeur_fcfa_tonne: Number(second?.valeur_fcfa_tonne || 0),
     },
-    valeur_fcfa: Number(primary?.valeur_fcfa_tonne || apiData?.valeur_fcfa || 0),
-    alternatives: engine.alternatives,
-    options_bloquees: engine.optionsBloquees,
-    details_scores: primary?.details_scores || {},
-    scores_par_voie: engine.scoresParVoie,
-    conformite_reglementaire: finalRegs.conformite_reglementaire,
+    valeur_fcfa: Number(apiData?.valeur_fcfa || primary?.valeur_fcfa_tonne || 0),
+    alternatives: Array.isArray(apiData?.alternatives) && apiData.alternatives.length ? apiData.alternatives : engine.alternatives,
+    options_bloquees: Array.isArray(apiData?.options_bloquees) && apiData.options_bloquees.length ? apiData.options_bloquees : engine.optionsBloquees,
+    details_scores: apiData?.details_scores || primary?.details_scores || {},
+    scores_par_voie: Array.isArray(apiData?.scores_par_voie) && apiData.scores_par_voie.length ? apiData.scores_par_voie : engine.scoresParVoie,
+    conformite_reglementaire: apiData?.conformite_reglementaire || finalRegs.conformite_reglementaire,
     references_reglementaires: Array.from(new Set([...(apiData?.references_reglementaires || []), ...(finalRegs.references_reglementaires || [])])),
     impact_environnemental:
       typeof impactFromApi === "number" ? apiData.impact_environnemental : estimatedImpact,

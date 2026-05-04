@@ -14,10 +14,10 @@ export default function ChannelsList({ result, channels = [], filters = {}, onCo
 
   return (
     <section className="space-y-6">
-      <div className="rounded-[2rem] border border-[#22303a] bg-gradient-to-br from-[#0a0e12] to-[#10161b] p-6 text-[#f8fffb] shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
+      <div className="rounded-[2rem] border border-[#22303a] bg-gradient-to-br from-[#080b0f] via-[#0d1318] to-[#11181d] p-6 text-[#f8fffb] shadow-[0_24px_80px_rgba(2,6,23,0.35)]">
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#9ef0ce]">Canaux locaux</p>
-        <h2 className="mt-2 text-3xl font-semibold">Destination recommandée</h2>
-        <p className="mt-3 max-w-2xl text-sm text-[#aab4af]">
+        <h2 className="mt-2 text-3xl font-semibold tracking-[-0.04em]">Destination recommandée</h2>
+        <p className="mt-3 max-w-2xl text-sm leading-6 text-[#aab4af]">
           Le moteur filtre les suggestions par famille de déchets et par voie de valorisation. Les faux positifs sont écartés.
         </p>
         {best ? (
@@ -47,7 +47,7 @@ export default function ChannelsList({ result, channels = [], filters = {}, onCo
             value={filters.maxDistance ?? 100}
             onChange={(e) => onFilterChange?.({ ...filters, maxDistance: Number(e.target.value) })}
           />
-          <span className="text-xs text-[#aab4af]">{"Jusqu\u2019� "}{filters.maxDistance ?? 100} km</span>
+          <span className="text-xs text-[#aab4af]">Jusqu’à {filters.maxDistance ?? 100} km</span>
         </label>
         <label className="grid gap-2 text-sm font-medium text-[#d9e2dd] md:col-span-2">
           Filtre matière

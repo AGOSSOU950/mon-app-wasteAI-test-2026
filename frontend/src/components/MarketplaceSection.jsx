@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+﻿import React, { useState } from "react"
 
 export default function LocalChannelsSection({ children }) {
   const [filters, setFilters] = useState({
@@ -24,7 +24,7 @@ export default function LocalChannelsSection({ children }) {
         <label className="sr-only" htmlFor="market-filiere">Filtrer par filière</label>
         <select id="market-filiere" value={filters.filiere} onChange={(e) => setFilters({ ...filters, filiere: e.target.value })}><option value="">Filière</option><option value="textile">Textile</option><option value="plastique">Plastique</option><option value="papier">Papier</option><option value="organique">Organique</option></select>
 
-        <label className="sr-only" htmlFor="market-region">Région Benin</label>
+        <label className="sr-only" htmlFor="market-region">Région Bénin</label>
         <input id="market-region" placeholder="Région" value={filters.region} onChange={(e) => setFilters({ ...filters, region: e.target.value })} />
 
         <label className="sr-only" htmlFor="market-min-price">Prix minimum</label>

@@ -3,11 +3,14 @@ import LocalWasteChannelsSection from "./LocalWasteChannelsSection"
 
 export default function RecommendedChannelsSection({ result, form }) {
   return (
-    <section className="space-y-4">
-      <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-950 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-emerald-700">Canaux recommandés</p>
-        <p className="mt-2 text-sm text-emerald-900/85">Contact direct des opérateurs locaux les plus cohérents pour ce flux.</p>
-        <p className="mt-2 text-xs text-emerald-900/70">Biogaz, compost, biochar et recyclage matière sont mis en avant selon la filière.</p>
+    <section className="recommended-channels">
+      <div className="recommended-channels-intro card">
+        <p className="eyebrow">Canaux recommandés</p>
+        <h3>Opérateurs cohérents avec la voie retenue</h3>
+        <p>
+          Les contacts affichés ci-dessous sont filtrés pour rester compatibles avec la nature du flux, ses contraintes
+          techniques et la recommandation principale.
+        </p>
       </div>
       <LocalWasteChannelsSection result={result} form={form} />
     </section>
