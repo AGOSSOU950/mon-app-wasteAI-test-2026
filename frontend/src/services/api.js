@@ -1,11 +1,12 @@
 import axios from "axios"
 import regulatoryProfiles from "../data/regulatory_profiles.json"
 
-const API_URL = import.meta.env.VITE_API_URL || "https://wasteai-api.wasteai-gildas.workers.dev"
+const HAS_EXPLICIT_API_URL = Boolean(import.meta.env.VITE_API_URL)
+const API_URL = HAS_EXPLICIT_API_URL ? import.meta.env.VITE_API_URL : ""
 const API_BASE = API_URL.replace(/\/$/, "")
 const REMOTE_API_BASE = "https://wasteai-api.wasteai-gildas.workers.dev"
 const REMOTE_API_URL = REMOTE_API_BASE.replace(/\/$/, "")
-const SHOULD_TRY_REMOTE_FALLBACK = API_BASE !== REMOTE_API_URL && /(^https?:\/\/(127\.0\.0\.1|localhost))|(^https?:\/\/\[::1\])/.test(API_BASE)
+const SHOULD_TRY_REMOTE_FALLBACK = !HAS_EXPLICIT_API_URL || ((API_BASE !== REMOTE_API_URL) && /(^https?:\/\/(127\.0\.0\.1|localhost))|(^https?:\/\/[::1])/.test(API_BASE))
 
 
 
@@ -941,6 +942,18 @@ export function buildAnalyzePayload(input) {
 }
 
 export async function analyzeWaste(payload) {
+  const useLocalDryLignoOverride = isDryLignocellulosicPayload(payload)
+
+  if (useLocalDryLignoOverride) {
+    const localResult = analyzeLocally(payload)
+    return {
+      source: "local_override",
+      data: normalizeApiResult(payload, localResult),
+      apiBase: API_BASE,
+      warning: "Override local applique pour biomasse lignocellulosique seche.",
+    }
+  }
+
   const response = await requestWithFallback({
     method: "post",
     url: "/api/waste/analyze",
