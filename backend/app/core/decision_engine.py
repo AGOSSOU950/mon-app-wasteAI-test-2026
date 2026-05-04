@@ -774,6 +774,12 @@ def _evaluate(
         dco = float(metrics.get("dco_mg_l", 0.0) or 0.0)
         humidity_pct = float(metrics.get("humidite_pct", max(0.0, 100.0 - float(metrics.get("siccite_pct", 0.0) or 0.0))) or 0.0)
         dco_dbo = (dco / dbo) if dbo > 0 else 99.0
+        material = analyzeMaterialProperties(w, metrics)
+        material_reliable = bool(material.get("reliable"))
+        material_lignine = float(material.get("lignine_pct") or 0.0)
+        material_humidity = float(material.get("humidity_pct") or 0.0)
+        material_biodeg = str(material.get("biodegradability") or "unknown")
+        material_ligno = bool(material.get("lignocellulosic"))
         if c["filiere"] == "biochar":
             if float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 20 and humidity_pct <= 25.0 and pci >= 15.0:
                 tech += 18.0
@@ -826,6 +832,32 @@ def _evaluate(
                 tech += 12.0
             elif lignine >= 15:
                 tech += 5.0
+
+        if material_reliable:
+            if c["filiere"] == "methanisation_biogaz":
+                if material_ligno and material_lignine > 20:
+                    tech -= 35.0
+                if material_biodeg == "low":
+                    tech -= 20.0
+                elif material_biodeg == "high" and material_humidity > 50:
+                    tech += 10.0
+            if c["filiere"] == "compostage":
+                if material_ligno and material_lignine > 20:
+                    tech -= 25.0
+                if material_biodeg == "high" and 40 <= material_humidity <= 70:
+                    tech += 10.0
+                if material_biodeg == "low":
+                    tech -= 15.0
+            if c["filiere"] == "biochar":
+                if material_lignine > 20:
+                    tech += 15.0
+                if material_humidity <= 25.0:
+                    tech += 10.0
+            if c["hierarchy"] == "energie":
+                if pci > 12:
+                    tech += 10.0
+                if material_humidity < 20.0:
+                    tech += 8.0
 
         if c["hierarchy"] == "reemploi" and w.niveau_danger in {"eleve", "critique"}:
             tech -= 25.0
@@ -1203,9 +1235,326 @@ def _build_explication_paragraphs(
     return "\n\n".join([p1, p2, p3])
 
 
-def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list[dict[str, Any]]:
+
+def analyzeMaterialProperties(waste: WasteInput, metrics: dict[str, Any]) -> dict[str, Any]:
     humidity = _effective_humidity_pct(waste, metrics)
     pci = float(metrics.get("pci_mj_kg", 0.0) or 0.0)
+    lignine = float(metrics.get("taux_lignine_pct", 0.0) or 0.0)
+
+    raw_text = " ".join(
+        str(part)
+        for part in [
+            waste.nom,
+            waste.description,
+            waste.produit_principal,
+            waste.composition_textile,
+            waste.type_plastique,
+            getattr(waste.type_dechet, "value", waste.type_dechet),
+            getattr(waste.categorie, "value", waste.categorie),
+            waste.origine_flux,
+        ]
+        if part
+    )
+    text = _n(raw_text)
+
+    lignocellulosic = bool(
+        waste.type_dechet == WasteType.BIOMASSE_LIGNOCELLULOSIQUE
+        or any(k in text for k in [
+            "bagasse",
+            "sciure",
+            "coque",
+            "palmiste",
+            "noix de palme",
+            "noyau de palme",
+            "fibre de palm",
+            "bois",
+            "lignine",
+            "cellulose",
+            "tige",
+            "raffia",
+            "peau de cafe",
+            "coquille",
+        ])
+    )
+    fibrous = bool(lignocellulosic or any(k in text for k in ["fibre", "fibres", "bagasse", "coque", "noyau", "bois", "tige", "rafia", "raffia"]))
+    easily_biodegradable = bool(
+        _is_abattoir_waste(waste)
+        or _is_organic_waste_text(waste)
+        or any(k in text for k in ["boue", "dechet alimentaire", "alimentaire", "restes", "pulpe", "marc", "legume", "fruit", "dechets verts"])
+    )
+
+    if lignocellulosic and lignine == 0:
+        lignine = 25.0
+    if lignocellulosic and (humidity is None or humidity == 0):
+        humidity = 35.0
+    if lignocellulosic and pci == 0:
+        pci = 15.0
+
+    if lignocellulosic and lignine >= 20 and (humidity is not None and humidity < 40):
+        biodegradability = "low"
+    elif easily_biodegradable or (humidity is not None and humidity >= 50 and not lignocellulosic):
+        biodegradability = "high"
+    elif fibrous or pci >= 10:
+        biodegradability = "medium"
+    else:
+        biodegradability = "unknown"
+
+    reliable = any(v is not None for v in [humidity, pci, lignine]) or lignocellulosic or easily_biodegradable or fibrous
+    cues: list[str] = []
+    if humidity is not None:
+        cues.append(f"humidite {humidity:.1f}%")
+    if pci:
+        cues.append(f"PCI {pci:.1f} MJ/kg")
+    if lignine:
+        cues.append(f"lignine {lignine:.1f}%")
+    if lignocellulosic:
+        cues.append("matrice lignocellulosique detectee")
+    if fibrous and not lignocellulosic:
+        cues.append("structure fibreuse detectee")
+    if biodegradability == "high":
+        cues.append("biodegradabilite elevee")
+    elif biodegradability == "low":
+        cues.append("biodegradabilite faible")
+
+    return {
+        "humidity_pct": humidity,
+        "pci_mj_kg": pci,
+        "lignine_pct": lignine,
+        "lignocellulosic": lignocellulosic,
+        "fibrous": fibrous,
+        "biodegradability": biodegradability,
+        "reliable": reliable,
+        "cues": cues,
+    }
+
+
+def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, Any]]:
+    if not material.get("reliable"):
+        return []
+
+    humidity = float(material.get("humidity_pct") or 0.0)
+    pci = float(material.get("pci_mj_kg") or 0.0)
+    lignine = float(material.get("lignine_pct") or 0.0)
+    biodegradability = str(material.get("biodegradability") or "unknown")
+    lignocellulosic = bool(material.get("lignocellulosic"))
+    fibrous = bool(material.get("fibrous"))
+
+    def build(solution: str, score: float, justification: str, conditions: list[str], delta: float | None = None) -> dict[str, Any]:
+        raw_score = _b(score)
+        return {
+            "solution": solution,
+            "score": round(raw_score, 1),
+            "score_delta": round(delta if delta is not None else raw_score - 25.0, 1),
+            "conditions": list(dict.fromkeys(conditions)),
+            "justification": justification,
+            "material_generated": True,
+        }
+
+    meth_score = 0.0
+    meth_conditions: list[str] = []
+    if humidity > 50:
+        meth_score += 30
+        meth_conditions.append("humidite elevee favorable a la digestion anaerobie")
+    if lignine < 15:
+        meth_score += 20
+    if biodegradability == "high":
+        meth_score += 30
+    if lignine > 20:
+        meth_score -= 50
+        meth_conditions.append("lignine elevee defavorable a la methanisation")
+    if humidity < 20:
+        meth_score -= 30
+        meth_conditions.append("faible humidite defavorable a la methanisation")
+    if lignocellulosic and lignine > 20:
+        meth_score -= 15
+    meth_just = "Recommande car flux humide et facilement biodegradable." if meth_score > 0 else "Non recommande pour methanisation: matrice lignocellulosique ou biodegradabilite insuffisante."
+
+    comp_score = 0.0
+    comp_conditions: list[str] = []
+    if 40 <= humidity <= 70:
+        comp_score += 30
+        comp_conditions.append("humidite intermediaire favorable au compostage")
+    if lignine < 25:
+        comp_score += 20
+    if lignine > 30:
+        comp_score -= 20
+        comp_conditions.append("lignine elevee defavorable au compostage")
+    if fibrous:
+        comp_score += 10
+        comp_conditions.append("structure fibreuse utile comme structurant")
+    if biodegradability == "high":
+        comp_score += 10
+    if lignocellulosic and lignine > 20:
+        comp_score -= 20
+    comp_just = "Recommande car humidite et structure sont compatibles avec une stabilisation aerobie." if comp_score > 0 else "Non recommande pour compostage: fraction trop lignifiee ou trop seche."
+
+    energy_score = 0.0
+    energy_conditions: list[str] = []
+    if pci > 12:
+        energy_score += 40
+        energy_conditions.append("PCI eleve favorable a la valorisation energetique")
+    if humidity < 20:
+        energy_score += 30
+    if lignine > 20:
+        energy_score += 20
+    if humidity > 60:
+        energy_score -= 30
+        energy_conditions.append("humidite elevee defavorable a la combustion/thermique")
+    if biodegradability == "high" and pci < 10:
+        energy_score -= 10
+    energy_just = "Recommande car PCI eleve et flux sec/lignifie valorisable thermiquement." if energy_score > 0 else "Faible aptitude energetique en l'absence de PCI suffisant."
+
+    biochar_score = 0.0
+    biochar_conditions: list[str] = []
+    if lignine > 20:
+        biochar_score += 30
+        biochar_conditions.append("lignine elevee favorable a la pyrolyse lente")
+    if humidity < 15:
+        biochar_score += 20
+    elif humidity < 25:
+        biochar_score += 10
+    if humidity > 30:
+        biochar_score -= 10
+    biochar_just = "Recommande car matrice lignocellulosique adaptee au biochar." if biochar_score > 0 else "Faible aptitude au biochar en l'absence de lignine ou de secheresse suffisante."
+
+    return [
+        build("methanisation", meth_score, meth_just, meth_conditions),
+        build("compostage", comp_score, comp_just, comp_conditions),
+        build("valorisation energetique", energy_score, energy_just, energy_conditions),
+        build("pyrolyse / biochar", biochar_score, biochar_just, biochar_conditions),
+    ]
+
+
+def mergeRecommendations(existing: list[dict[str, Any]], material_scores: list[dict[str, Any]], material: dict[str, Any]) -> list[dict[str, Any]]:
+    if not material.get("reliable"):
+        return sorted(existing, key=lambda item: float(item.get("score", 0.0)), reverse=True) or existing[:1]
+
+    merged: dict[str, dict[str, Any]] = {}
+    order: list[str] = []
+
+    for item in existing:
+        key = str(item.get("solution") or item.get("filiere") or item.get("nom") or "").strip()
+        if not key:
+            continue
+        copy = dict(item)
+        copy.setdefault("base_score", round(float(copy.get("score", 0.0)), 1))
+        copy.setdefault("material_score", 0.0)
+        copy.setdefault("material_delta", 0.0)
+        merged[key] = copy
+        order.append(key)
+
+    for adj in material_scores:
+        key = str(adj.get("solution") or "").strip()
+        if not key:
+            continue
+        score = float(adj.get("score", 0.0))
+        delta = float(adj.get("score_delta", score))
+        if key in merged:
+            current = merged[key]
+            base = float(current.get("score", 0.0))
+            current["base_score"] = round(base, 1)
+            current["material_score"] = round(score, 1)
+            current["material_delta"] = round(delta, 1)
+            current["score"] = round(_b(base + delta), 1)
+            current_conditions = list(dict.fromkeys([*(current.get("conditions") or []), *(adj.get("conditions") or [])]))
+            current["conditions"] = current_conditions
+            current_just = str(current.get("justification") or "").strip()
+            extra_just = str(adj.get("justification") or "").strip()
+            if extra_just and extra_just not in current_just:
+                current["justification"] = f"{current_just} | {extra_just}".strip(" |") if current_just else extra_just
+        elif score >= 35.0:
+            merged[key] = {
+                "solution": key,
+                "score": round(score, 1),
+                "base_score": 0.0,
+                "material_score": round(score, 1),
+                "material_delta": round(delta, 1),
+                "conditions": list(dict.fromkeys(adj.get("conditions") or [])),
+                "justification": str(adj.get("justification") or ""),
+                "material_generated": True,
+            }
+            order.append(key)
+
+    return sorted(merged.values(), key=lambda item: float(item.get("score", 0.0)), reverse=True)
+
+
+def _canonical_material_route(name: str | None) -> str:
+    key = _n(str(name or ""))
+    aliases = {
+        "methanisation": "methanisation_biogaz",
+        "methanisation biogaz": "methanisation_biogaz",
+        "methanisation_biogaz": "methanisation_biogaz",
+        "valorisation energetique": "valorisation_energetique",
+        "valorisation_energetique": "valorisation_energetique",
+        "biochar": "biochar",
+        "pyrolyse / biochar": "biochar",
+        "pyrolyse biochar": "biochar",
+        "recyclage matiere": "recyclage_matiere",
+        "recyclage_matiere": "recyclage_matiere",
+        "compostage": "compostage",
+        "reemploi": "reemploi",
+        "elimination securisee": "elimination_securisee",
+    }
+    return aliases.get(key, key)
+
+
+def _material_score_map(material_scores: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for item in material_scores:
+        key = _canonical_material_route(str(item.get("solution") or item.get("filiere") or item.get("nom") or ""))
+        if not key:
+            continue
+        out[key] = {
+            "score": float(item.get("score", 0.0) or 0.0),
+            "justification": str(item.get("justification") or ""),
+            "conditions": list(item.get("conditions") or []),
+        }
+    return out
+
+
+def _hybrid_route_score(route: dict[str, Any], material_lookup: dict[str, dict[str, Any]], material: dict[str, Any]) -> float:
+    base = float(route.get("global_score", 0.0) or 0.0)
+    if not material.get("reliable"):
+        return base
+
+    key = _canonical_material_route(str(route.get("filiere") or route.get("solution") or ""))
+    lignine = float(material.get("lignine_pct") or 0.0)
+    humidity = float(material.get("humidity_pct") or 0.0)
+    pci = float(material.get("pci_mj_kg") or 0.0)
+
+    if key == "reemploi" and (material.get("lignocellulosic") or lignine > 20.0 or humidity > 45.0):
+        base -= 20.0
+    if key == "recyclage_matiere" and material.get("lignocellulosic"):
+        base -= 18.0
+    if key in {"methanisation_biogaz", "compostage"} and lignine > 20.0:
+        base -= 12.0
+    if key in {"valorisation_energetique", "biochar"} and (pci > 12.0 or humidity < 25.0):
+        base += 8.0
+
+    mat = material_lookup.get(key)
+    if not mat:
+        return base
+
+    material_score = float(mat.get("score", 0.0) or 0.0)
+    weight = 0.35 if material.get("lignocellulosic") else 0.18
+
+    if key in {"methanisation_biogaz", "compostage"} and lignine > 20.0:
+        weight += 0.08
+    if key in {"valorisation_energetique", "biochar"} and (pci > 12.0 or humidity < 25.0):
+        weight += 0.05
+
+    return _b(base + (weight * (material_score - 50.0)))
+
+
+def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list[dict[str, Any]]:
+    material = analyzeMaterialProperties(waste, metrics)
+    humidity = float(material.get("humidity_pct") or 0.0)
+    pci = float(material.get("pci_mj_kg") or 0.0)
+    lignine = float(material.get("lignine_pct") or 0.0)
+    biodegradability = str(material.get("biodegradability") or "unknown")
+    lignocellulosic = bool(material.get("lignocellulosic"))
+    fibrous = bool(material.get("fibrous"))
+
     dco = float(metrics.get("dco_mg_l", 0.0) or 0.0)
     dbo = float(metrics.get("dbo_mg_l", 0.0) or 0.0)
     contamination = float(waste.taux_contamination_pct or 0.0)
@@ -1214,7 +1563,7 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
 
     dco_high = dco >= 100000 or (dco >= 1000 and dbo >= 500)
     dbo_high = dbo >= 1000 or (dco > 0 and dbo > 0 and (dco / max(dbo, 1.0)) >= 2.0)
-    biodegradable = dco_high or dbo_high or _is_organic_waste_text(waste) or _is_abattoir_waste(waste)
+    biodegradable = biodegradability == "high" or dco_high or dbo_high or _is_abattoir_waste(waste)
     low_organic_load = dco < 100000 and dbo < 1000
     low_pci = pci < 10
     metals_heavy = has_metals or bool(waste.presence_metaux_lourds)
@@ -1224,7 +1573,10 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
         score = _b(score)
         return {
             "solution": solution,
+            "filiere": filiere,
             "score": round(score, 1),
+            "base_score": round(score, 1),
+            "score_delta": 0.0,
             "conditions": list(dict.fromkeys(conditions)),
             "justification": justification,
         }
@@ -1243,8 +1595,16 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
         meth_score += 50
     if dbo_high:
         meth_score += 30
-    if humidity is not None and humidity > 60:
+    if humidity > 60:
         meth_score += 20
+    if lignocellulosic and lignine > 20:
+        meth_score -= 45
+    if biodegradability == "high":
+        meth_score += 20
+    elif biodegradability == "low":
+        meth_score -= 35
+    if humidity < 20:
+        meth_score -= 25
     if metals_heavy:
         meth_score -= 20
     if chlorine_risk:
@@ -1258,23 +1618,36 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
     comp_score = 15.0
     if biodegradable:
         comp_score += 40
-    if humidity is not None and 40 <= humidity <= 70:
+    if 40 <= humidity <= 70:
         comp_score += 20
+    if lignine < 25:
+        comp_score += 10
+    if lignine > 30:
+        comp_score -= 25
+    if fibrous:
+        comp_score += 5
     if contamination > 70:
         comp_score -= 30
+    if lignocellulosic and lignine > 20:
+        comp_score -= 20
+    if humidity < 20:
+        comp_score -= 10
     if metals_heavy:
         comp_score -= 15
     if chlorine_risk:
         comp_score -= 10
+
     bio_score = 18.0
     bio_conditions = list(shared_conditions)
     bio_conditions.append("pyrolyse lente")
-    if humidity is not None and humidity > 30:
+    if humidity > 30:
         bio_conditions.append("sechage requis avant carbonisation")
-    if pci > 15 and humidity is not None and humidity <= 25:
+    if lignine >= 20 and humidity <= 25:
         bio_score += 45
-    elif pci > 15 and humidity is not None and humidity <= 30:
+    elif lignine >= 20 and humidity <= 30:
         bio_score += 25
+    elif lignine >= 20:
+        bio_score += 15
     if not biodegradable:
         bio_score -= 10
     if contamination > 70:
@@ -1288,11 +1661,13 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
     if contamination > 60:
         energy_conditions.append("homogeneisation avant valorisation thermique")
     energy_score = 20.0
-    if pci > 10:
+    if pci > 12:
         energy_score += 40
-    if humidity is not None and humidity < 50:
+    if humidity < 20:
+        energy_score += 30
+    if lignine > 20:
         energy_score += 20
-    if humidity is not None and humidity > 60:
+    if humidity > 60:
         energy_score -= 40
     if chlorine_risk:
         energy_score -= 20
@@ -1311,7 +1686,7 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
         mater_score += 50
     if contamination > 70:
         mater_score -= 30
-    if humidity is not None and humidity > 70:
+    if humidity > 70:
         mater_score -= 10
     if chlorine_risk:
         mater_score -= 10
@@ -1326,23 +1701,20 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
         elim_score += 40
     if chlorine_risk:
         elim_score += 30
-    if max(meth_score, comp_score, energy_score, mater_score) < 40:
+    if max(meth_score, comp_score, bio_score, energy_score, mater_score) < 40:
         elim_score += 20
 
-    solutions = [
+    base = [
         make_item("methanisation", meth_score, meth_conditions, "Forte DCO/DBO et humidite favorable orientent vers un traitement biologique avec biogaz.", "methanisation_biogaz"),
         make_item("compostage", comp_score, comp_conditions, "Charge biodegradable et humidite intermediaire compatibles avec une stabilisation aerobie.", "compostage"),
-        make_item("biochar", bio_score, bio_conditions, "Flux sec avec PCI eleve compatible avec pyrolyse lente et stockage du carbone.", "biochar"),
+        make_item("biochar", bio_score, bio_conditions, "Flux sec avec lignine elevee compatible avec pyrolyse lente et stockage du carbone.", "biochar"),
         make_item("valorisation energetique", energy_score, energy_conditions, "PCI et humidite determinent la robustesse de l'option thermique; le chlore impose des controles renforces.", "valorisation_energetique"),
         make_item("recyclage matiere", mater_score, mater_conditions, "Recuperation matiere privilegiee si la fraction utile est valorisable et si le flux reste maitrise.", "recyclage_matiere"),
         make_item("elimination securisee", elim_score, elim_conditions, "Voie de dernier recours lorsque les contraintes sanitaires ou techniques restent trop fortes.", "elimination_securisee"),
     ]
 
-    solutions.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
-    solutions.sort(key=lambda item: float(item.get("score", 0.0)), reverse=True)
-
-    return solutions
-
+    material_scores = _material_recommendation_scores(material)
+    return mergeRecommendations(base, material_scores, material)
 
 def _minimal_voie(item: dict[str, Any]) -> dict[str, Any]:
     return {
@@ -1404,7 +1776,22 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     evald = _apply_regulatory_priority(evald, blocked, regulatory, labels, reg_refs)
     expert_profile = _build_expert_valorization_profile(effective_waste, wt, metrics, evald, regulatory)
 
-    chosen, hierarchy_reasons = _select(effective_waste, evald)
+    material_profile = analyzeMaterialProperties(effective_waste, metrics)
+    generic_scores = _score_generic_solutions(effective_waste, metrics)
+
+    chosen, hierarchy_reasons = _select(effective_waste, evald, generic_scores, material_profile)
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE and material_profile.get("reliable"):
+        material_lignine = float(material_profile.get("lignine_pct") or 0.0)
+        material_humidity = float(material_profile.get("humidity_pct") or 0.0)
+        material_biodeg = str(material_profile.get("biodegradability") or "unknown")
+        if material_profile.get("lignocellulosic") and (material_lignine >= 20.0 or material_biodeg == "low"):
+            preferred = [x for x in evald if x.get("filiere") in {"valorisation_energetique", "biochar", "charbon_actif"} and x.get("feasible", True)]
+            if preferred:
+                chosen = sorted(preferred, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)[0]
+                hierarchy_reasons = [
+                    "Biomasse lignocellulosique a forte lignine: methanisation et compostage de-priorises.",
+                    f"Priorite a {chosen.get('filiere')} selon PCI={float(metrics.get('pci_mj_kg', 0.0) or 0.0):.1f} MJ/kg, humidite={material_humidity:.1f}% et structure fibreuse.",
+                ]
     if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
         humidity_pct = float(metrics.get("humidite_pct", 100.0 - float(metrics.get("siccite_pct", 0.0) or 0.0)) or 0.0)
         lignine = float(metrics.get("taux_lignine_pct", 0.0) or 0.0)
@@ -1436,7 +1823,6 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
                 "co2_avoided_kg": round(co2, 2),
             }
             hierarchy_reasons = ["Biomasse lignocellulosique seche: biochar prioritaire avant les autres voies."]
-    generic_scores = _score_generic_solutions(effective_waste, metrics)
     if _is_paint_or_coating_waste(effective_waste):
         paint_choice = next((x for x in evald if x.get("filiere") == "neutralisation_chimique" and x.get("feasible", True)), None)
         if paint_choice is not None:
@@ -1978,17 +2364,28 @@ def _evaluate(
     return out
 
 
-def _select(waste: WasteInput, evald: list[dict[str, Any]]) -> tuple[dict[str, Any], list[str]]:
+def _select(
+    waste: WasteInput,
+    evald: list[dict[str, Any]],
+    material_scores: list[dict[str, Any]] | None = None,
+    material: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], list[str]]:
     reasons: list[str] = []
+    material_lookup = _material_score_map(material_scores or [])
+    material = material or {"reliable": False}
+
+    def rank(route: dict[str, Any]) -> float:
+        return _hybrid_route_score(route, material_lookup, material)
+
     feasible = sorted(
         [x for x in evald if x.get("feasible", True)],
-        key=lambda z: (float(z.get("global_score", 0.0)), float(z.get("technical_score", 0.0))),
+        key=lambda z: (rank(z), float(z.get("technical_score", 0.0))),
         reverse=True,
     )
     if not feasible:
         chosen = sorted(
             evald,
-            key=lambda z: (float(z.get("global_score", 0.0)), float(z.get("technical_score", 0.0))),
+            key=lambda z: (rank(z), float(z.get("technical_score", 0.0))),
             reverse=True,
         )[0]
         reasons.append("Aucune filiere pleinement compatible: meilleure option restante conservee comme reference.")
@@ -1996,16 +2393,35 @@ def _select(waste: WasteInput, evald: list[dict[str, Any]]) -> tuple[dict[str, A
 
     non_elimination = [x for x in feasible if x.get("filiere") != DECISION_ELIMINATION]
     if non_elimination:
-        chosen = non_elimination[0]
-        if _is_abattoir_waste(waste) or _is_organic_waste_text(waste) or waste.categorie == WasteCategory.ORGANIC:
-            reasons.append("Flux organique/abattoir: une voie biologique est priorisee avant toute elimination.")
-        else:
-            reasons.append("Une voie de valorisation faisable existe: elimination ecartee au profit de la meilleure alternative.")
-        return chosen, reasons
+        by = {g: [x for x in non_elimination if x["hierarchy"] == g] for g in HIERARCHY}
+        best = {g: (sorted(by[g], key=lambda z: (rank(z), float(z.get("technical_score", 0.0))), reverse=True)[0] if by[g] else None) for g in HIERARCHY}
+        baseline = next((best[g] for g in HIERARCHY if best.get(g)), None)
+        top_candidate = sorted(non_elimination, key=lambda z: (rank(z), float(z.get("technical_score", 0.0))), reverse=True)[0]
+
+        if baseline and top_candidate and top_candidate.get("filiere") != baseline.get("filiere"):
+            advantage = rank(top_candidate) - rank(baseline)
+            threshold = 3.0 if material.get("reliable") and material.get("lignocellulosic") else 5.0
+            if advantage >= threshold:
+                reasons.append("Score hybride physico-chimique superieur a la priorite hierarchique.")
+                return top_candidate, reasons
+
+        for g in HIERARCHY:
+            if best.get(g):
+                chosen = best[g]
+                if g == "reemploi":
+                    reasons.append("Hierarchie appliquee: reemploi retenu en priorite (sobriete matiere/energie).")
+                elif g == "matiere":
+                    reasons.append("Hierarchie appliquee: matiere retenue car faisable.")
+                elif g == "energie":
+                    reasons.append("Energie retenue car matiere non faisable ou moins robuste.")
+                else:
+                    reasons.append("Vente retenue en dernier recours seulement.")
+                return chosen, reasons
 
     chosen = feasible[0]
     reasons.append("Aucune voie de valorisation faisable: elimination securisee retenue en dernier recours.")
     return chosen, reasons
+
 def _route_explanation(route: dict[str, Any], chosen: dict[str, Any]) -> str:
     filiere = str(route.get("filiere") or "").lower()
     blocked = str(route.get("blocked_reason") or "").strip()

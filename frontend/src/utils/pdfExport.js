@@ -1,3 +1,4 @@
+import { jsPDF } from "jspdf"
 import { CHANNELS, rankChannels } from "../services/localChannelsEngine.js"
 
 function formatDate(value = new Date()) {
@@ -106,8 +107,8 @@ function buildWasteProfile(result = {}, form = {}) {
   const source = result || {}
   const input = form || {}
   return {
-    name: firstText(input.nom, source.nom_exact, source.nom, source.name, "Déchet non précisé"),
-    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, "Non précisé"),
+    name: firstText(input.nom, source.nom_exact, source.nom, source.name, "DÃ©chet non prÃ©cisÃ©"),
+    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, "Non prÃ©cisÃ©"),
     quantityKg: firstOptionalNumber(input.quantite_kg, source.quantite_kg, source.quantity_kg, source.quantity),
     humidity: firstOptionalNumber(input.taux_humidite_pct, source.taux_humidite_pct, source.humidity),
     pci: firstOptionalNumber(input.pci_mj_kg, source.pci_mj_kg, source.PCI),
@@ -181,42 +182,6 @@ function actorAllowedByWaste(actor, waste) {
   return true
 }
 
-function scoreActor(actor, profile, solutions) {
-  const family = inferFamily(profile)
-  const normalizedSolutions = solutions.map(normalizeRoute)
-  const primary = normalizedSolutions[0] || ""
-  const secondary = normalizedSolutions[1] || ""
-  const typeMatch = actorTypeMatches(actor, primary)
-  const altMatch = secondary ? actorTypeMatches(actor, secondary) : false
-  const familyMatch = familyMatches(actor, family)
-
-  if (!actorAllowedByWaste(actor, profile)) return null
-
-  let score = 0
-  if (familyMatch) score += 35
-  if (typeMatch) score += 50
-  if (altMatch) score += 20
-  if (Number(actor.priority || 0) >= 8) score += 10
-  if (profile.humidity >= 60 && normalizeRoute(primary) === "methanisation") score += 10
-  if (profile.pci >= 10 && normalizeRoute(primary) === "valorisation energetique") score += 10
-  if (profile.hasMetals && normalizeText(actor.type).includes("metal")) score += 10
-  if (profile.hasChlorine && !actor.constraints?.requiresLowChlorine) score += 5
-
-  const reasons = []
-  if (typeMatch) reasons.push(`Compatible avec ${primary || "la voie principale"}`)
-  if (altMatch) reasons.push(`Alternative cohérente avec ${secondary}`)
-  if (familyMatch) reasons.push(`Famille ${family} acceptée`)
-  if (Number(actor.priority || 0) >= 8) reasons.push("Priorité locale élevée")
-  if (profile.contamination > 60) reasons.push("Prétraitement requis avant envoi")
-  if (profile.humidity > 70) reasons.push("Humidité élevée à surveiller")
-
-  return {
-    name: actor.name,
-    score: Math.min(100, score),
-    justification: reasons.length ? reasons.join(", ") : "Compatible sous réserve des contraintes du flux",
-  }
-}
-
 function rankActors(profile, solutions) {
   const context = {
     name: profile.name,
@@ -243,36 +208,36 @@ function rankActors(profile, solutions) {
 
 function formatRouteLabel(route) {
   const normalized = normalizeRoute(route)
-  if (normalized === "methanisation") return "Méthanisation"
+  if (normalized === "methanisation") return "MÃ©thanisation"
   if (normalized === "compostage") return "Compostage"
-  if (normalized === "valorisation energetique") return "Valorisation énergétique"
-  if (normalized === "recyclage matiere") return "Recyclage matière"
-  if (normalized === "elimination securisee") return "Élimination sécurisée"
+  if (normalized === "valorisation energetique") return "Valorisation Ã©nergÃ©tique"
+  if (normalized === "recyclage matiere") return "Recyclage matiÃ¨re"
+  if (normalized === "elimination securisee") return "Ã‰limination sÃ©curisÃ©e"
   return route
 }
 
 function confidenceStatus(confidence) {
   const c = Number(confidence || 0)
-  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette." }
+  if (c < 40) return { label: "Identification faible", message: "Image difficile Ã  analyser. Essayez une photo plus nette." }
   if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger." }
   if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider." }
-  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer." }
+  return { label: "Identification certaine", message: "Identification trÃ¨s probable. Merci de confirmer." }
 }
 
-export async function exportWasteResultPdf({ sourceId = "results", result, form, filename = "wasteai-resultats.pdf" } = {}) {
+export function exportWasteResultPdf({ sourceId = "results", result, form, filename = "wasteai-resultats.pdf" } = {}) {
   if (!document.getElementById(sourceId) && !result && !form) {
-    throw new Error("Aucun résultat à exporter.")
+    throw new Error("Aucun rÃ©sultat Ã  exporter.")
   }
 
-  const { jsPDF } = await import("jspdf")
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true })
 
   const profile = buildWasteProfile(result || {}, form || {})
   const solutions = extractSolutions(result || {})
   const actors = rankActors(profile, solutions)
+  const actorRows = actors.length ? actors : [{ name: "OpÃ©rateur Ã  confirmer", score: 0, justification: "Flux Ã  caractÃ©riser plus finement." }]
   const confidenceInfo = confidenceStatus(result?.confiance_identification)
   const whyPriority = String(result?.explication_detaillee || result?.explication || result?.justification_technique || result?.resume_choix || "").trim()
-  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || "voie non spécifiée").trim()
+  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || "voie non spÃ©cifiÃ©e").trim()
   const routeList = Array.isArray(result?.scores_par_voie) ? result.scores_par_voie : []
   const warnings = listText([
     result?.avertissements,
@@ -282,16 +247,8 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
   const assumptions = listText(Array.isArray(result?.hypotheses_utilisees) ? result.hypotheses_utilisees : [])
   const conditions = listText((Array.isArray(result?.conditions_requises) ? result.conditions_requises : String(result?.conditions_requises || "").split(/;\s*/)).filter(Boolean))
 
-  const saleValue = firstFiniteNumber(
-    result?.valeur_estimee_fcfa_tonne,
-    result?.details_scores_bruts?.market_value_fcfa_tonne,
-    result?.details_scores_bruts?.market_value_fcfa,
-  )
-  const treatmentCost = firstFiniteNumber(
-    result?.cout_estime_fcfa_tonne,
-    result?.details_scores_bruts?.treatment_cost_fcfa_tonne,
-    result?.details_scores_bruts?.treatment_cost_fcfa,
-  )
+  const saleValue = firstFiniteNumber(result?.valeur_estimee_fcfa_tonne, result?.details_scores_bruts?.market_value_fcfa_tonne, result?.details_scores_bruts?.market_value_fcfa)
+  const treatmentCost = firstFiniteNumber(result?.cout_estime_fcfa_tonne, result?.details_scores_bruts?.treatment_cost_fcfa_tonne, result?.details_scores_bruts?.treatment_cost_fcfa)
   const industrialGainTotal = firstFiniteNumber(result?.gain_industriel_fcfa, result?.details_scores_bruts?.gain_industriel_fcfa)
   const industrialGainTon = firstFiniteNumber(result?.gain_industriel_fcfa_tonne, result?.details_scores_bruts?.gain_industriel_fcfa_tonne)
   const roi = firstFiniteNumber(result?.score_global, result?.details_scores_bruts?.roi)
@@ -409,7 +366,7 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
   setText(colors.brand, "bold", 12)
   doc.text("WasteAI - Rapport analytique", margin, 13)
   setText(colors.muted, "normal", 8)
-  doc.text(`Généré le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
+  doc.text(`GÃ©nÃ©rÃ© le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
 
   const heroY = 18
   const heroH = 44
@@ -418,16 +375,16 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
   doc.roundedRect(margin + 1, heroY + 1, contentWidth * 0.67, heroH - 2, 4, 4, "F")
 
   setText(colors.muted, "bold", 8)
-  doc.text("WasteAI - Fiche de synthèse", margin + 4, heroY + 8)
+  doc.text("WasteAI - Fiche de synthÃ¨se", margin + 4, heroY + 8)
   setText(colors.text, "bold", 15)
-  doc.text(wrap(profile.name || "Déchet non précisé", 92).slice(0, 2), margin + 4, heroY + 16, { lineHeightFactor: 1.05 })
+  doc.text(wrap(profile.name || "DÃ©chet non prÃ©cisÃ©", 92).slice(0, 2), margin + 4, heroY + 16, { lineHeightFactor: 1.05 })
   paragraph(clampText(whyPriority || "Analyse technique du flux et de ses voies de valorisation.", 3), margin + 4, heroY + 24, 88, { color: colors.muted, size: 8.5, maxLines: 3 })
 
   let chipX = margin + 4
   const chipY = heroY + 35
-  chipX += chip(`Voie recommandée: ${formatRouteLabel(selectedRoute)}`, chipX, chipY, 88) + 2
-  chipX += chip(profile.type || "Type non précisé", chipX, chipY, 40) + 2
-  chip(`Quantité ${formatOptionalNumber(profile.quantityKg, "kg") || "non précisée"}`, chipX, chipY, 44)
+  chipX += chip(`Voie recommandÃ©e: ${formatRouteLabel(selectedRoute)}`, chipX, chipY, 88) + 2
+  chipX += chip(profile.type || "Type non prÃ©cisÃ©", chipX, chipY, 40) + 2
+  chip(`QuantitÃ© ${formatOptionalNumber(profile.quantityKg, "kg") || "non prÃ©cisÃ©e"}`, chipX, chipY, 44)
 
   const scoreX = margin + contentWidth * 0.69
   panel(scoreX, heroY + 4, contentWidth * 0.27, heroH - 8, colors.surfaceSoft, colors.border, 4)
@@ -441,15 +398,15 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
 
   const summaryY = heroY + heroH + 5
   panel(margin, summaryY, contentWidth, 34, colors.surface, colors.border, 5)
-  sectionTitle("Synthèse économique", margin + 4, summaryY + 8, 42)
+  sectionTitle("SynthÃ¨se Ã©conomique", margin + 4, summaryY + 8, 42)
   const metricY = summaryY + 12
   const metricW = (contentWidth - 9) / 4
-  metricCard(margin + 4, metricY, metricW, 18, "Valeur", formatMaybeNumber(saleValue, "FCFA/t"), "Valeur estimée par tonne")
-  metricCard(margin + 4 + metricW + 3, metricY, metricW, 18, "Coût", formatMaybeNumber(treatmentCost, "FCFA/t"), "Coût de traitement par tonne")
-  metricCard(margin + 4 + (metricW + 3) * 2, metricY, metricW, 18, "Gain net", formatMaybeNumber(industrialGainTotal, "FCFA"), "Gain total projeté")
-  metricCard(margin + 4 + (metricW + 3) * 3, metricY, metricW, 18, "CO2 évité", formatMaybeNumber(co2, "kgCO2e"), "Impact environnemental net")
+  metricCard(margin + 4, metricY, metricW, 18, "Valeur", formatMaybeNumber(saleValue, "FCFA/t"), "Valeur estimÃ©e par tonne")
+  metricCard(margin + 4 + metricW + 3, metricY, metricW, 18, "CoÃ»t", formatMaybeNumber(treatmentCost, "FCFA/t"), "CoÃ»t de traitement par tonne")
+  metricCard(margin + 4 + (metricW + 3) * 2, metricY, metricW, 18, "Gain net", formatMaybeNumber(industrialGainTotal, "FCFA"), "Gain total projetÃ©")
+  metricCard(margin + 4 + (metricW + 3) * 3, metricY, metricW, 18, "CO2 Ã©vitÃ©", formatMaybeNumber(co2, "kgCO2e"), "Impact environnemental net")
   setText(colors.muted, "normal", 7)
-  doc.text(`Impact environnemental: ${formatMaybeNumber(co2, "kgCO2e")} évités.`, margin + 4, summaryY + 31)
+  doc.text(`Impact environnemental: ${formatMaybeNumber(co2, "kgCO2e")} Ã©vitÃ©s.`, margin + 4, summaryY + 31)
 
   const leftY = summaryY + 39
   panel(margin, leftY, leftColWidth, 74, colors.surface, colors.border, 5)
@@ -458,17 +415,17 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
   sectionTitle("Lecture technique", margin + leftColWidth + gap + 4, leftY + 8, 36)
 
   keyValueGrid(margin + 4, leftY + 15, leftColWidth - 8, [
-    ["Déchet", profile.name || "N/R"],
+    ["DÃ©chet", profile.name || "N/R"],
     ["Type", profile.type || "N/R"],
-    ["Humidité", formatPercent(profile.humidity)],
+    ["HumiditÃ©", formatPercent(profile.humidity)],
     ["PCI", formatMaybeNumber(profile.pci, "MJ/kg")],
     ["DCO / DBO", `${formatMaybeNumber(profile.dco, "mg/L")} / ${formatMaybeNumber(profile.dbo, "mg/L")}`],
     ["Contam.", formatPercent(profile.contamination)],
-    ["Métaux", boolLabel(profile.hasMetals)],
+    ["MÃ©taux", boolLabel(profile.hasMetals)],
     ["Chlore", boolLabel(profile.hasChlorine)],
   ])
 
-  paragraph(clampText(whyPriority || "Aucune justification détaillée disponible.", 4), margin + leftColWidth + gap + 4, leftY + 15, rightColWidth - 8, { color: colors.text, size: 8, maxLines: 6 })
+  paragraph(clampText(whyPriority || "Aucune justification dÃ©taillÃ©e disponible.", 4), margin + leftColWidth + gap + 4, leftY + 15, rightColWidth - 8, { color: colors.text, size: 8, maxLines: 6 })
   keyValueGrid(margin + leftColWidth + gap + 4, leftY + 41, rightColWidth - 8, [
     ["Voie retenue", formatRouteLabel(selectedRoute)],
     ["Conditions", conditions.length ? conditions.join(" ; ") : "Aucune condition explicite"],
@@ -477,29 +434,29 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
   doc.addPage()
   fillPage()
   setText(colors.brand, "bold", 12)
-  doc.text("WasteAI - Détails de la décision", margin, 13)
+  doc.text("WasteAI - DÃ©tails de la dÃ©cision", margin, 13)
   setText(colors.muted, "normal", 8)
-  doc.text(`Généré le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
+  doc.text(`GÃ©nÃ©rÃ© le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
 
   const topBlockY = 20
   panel(margin, topBlockY, columnWidth, 108, colors.surface, colors.border, 5)
   panel(margin + columnWidth + gap, topBlockY, columnWidth, 108, colors.surface, colors.border, 5)
-  sectionTitle("Voies examinées", margin + 4, topBlockY + 8, 38)
-  sectionTitle("Opérateurs compatibles", margin + columnWidth + gap + 4, topBlockY + 8, 48)
+  sectionTitle("Voies examinÃ©es", margin + 4, topBlockY + 8, 38)
+  sectionTitle("OpÃ©rateurs compatibles", margin + columnWidth + gap + 4, topBlockY + 8, 48)
 
   let routeCursor = topBlockY + 16
   routeList.slice(0, 3).forEach((item, idx) => {
     const title = formatRouteLabel(item?.solution || item?.filiere || item?.nom || "voie")
     const score = Number(item?.score ?? item?.global_score ?? item?.technical_score ?? 0)
-    const status = String(item?.statut || item?.status || (idx === 0 ? "Recommandée" : "Alternative")).trim()
-    const explanation = clampText(String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || "").trim() || "Aucune justification détaillée disponible.", 2)
+    const status = String(item?.statut || item?.status || (idx === 0 ? "RecommandÃ©e" : "Alternative")).trim()
+    const explanation = clampText(String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || "").trim() || "Aucune justification dÃ©taillÃ©e disponible.", 2)
     const conditionsText = Array.isArray(item?.conditions) ? item.conditions.join(" ; ") : String(item?.conditions || "")
 
     panel(margin + 4, routeCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
     setText(colors.text, "bold", 9)
     doc.text(title, margin + 7, routeCursor + 3)
     setText(colors.muted, "normal", 7)
-    doc.text(`${Number.isFinite(score) ? `${score.toFixed(0)}/100` : "N/R"} · ${status}`, margin + 7, routeCursor + 8)
+    doc.text(`${Number.isFinite(score) ? `${score.toFixed(0)}/100` : "N/R"} | ${status}`, margin + 7, routeCursor + 8)
     if (conditionsText) {
       doc.text(wrap(conditionsText, columnWidth - 20).slice(0, 1), margin + 7, routeCursor + 13, { lineHeightFactor: 1.05 })
     }
@@ -512,7 +469,7 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
   actorRows.slice(0, 3).forEach((actor) => {
     panel(margin + columnWidth + gap + 4, actorCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
     setText(colors.text, "bold", 9)
-    doc.text(actor.name || "Opérateur", margin + columnWidth + gap + 7, actorCursor + 3)
+    doc.text(actor.name || "OpÃ©rateur", margin + columnWidth + gap + 7, actorCursor + 3)
     setText(colors.muted, "normal", 7)
     doc.text(Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : "N/R", margin + columnWidth + gap + 7, actorCursor + 8)
     setText(colors.text, "normal", 8)
@@ -522,9 +479,9 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
 
   const bottomY = 132
   panel(margin, bottomY, contentWidth, 72, colors.surface, colors.border, 5)
-  sectionTitle("Hypothèses et avertissements", margin + 4, bottomY + 8, 54)
+  sectionTitle("HypothÃ¨ses et avertissements", margin + 4, bottomY + 8, 54)
   setText(colors.text, "normal", 8)
-  bulletList(margin + 4, bottomY + 16, contentWidth / 2 - 6, assumptions.length ? assumptions : ["Aucune hypothèse majeure"], 4)
+  bulletList(margin + 4, bottomY + 16, contentWidth / 2 - 6, assumptions.length ? assumptions : ["Aucune hypothÃ¨se majeure"], 4)
   bulletList(margin + contentWidth / 2 + 2, bottomY + 16, contentWidth / 2 - 6, warnings.length ? warnings : ["Aucun avertissement majeur"], 4)
   setText(colors.muted, "normal", 7)
   doc.text(`Gain/t: ${formatMaybeNumber(industrialGainTon, "FCFA/t")}`, margin + 4, bottomY + 63)
@@ -534,9 +491,12 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
   doc.setPage(1)
   doc.text(`Page 1 / ${doc.getNumberOfPages()}`, pageWidth - margin, pageHeight - 10, { align: "right" })
 
-  const blob = doc.output("blob")
-  const url = URL.createObjectURL(blob)
   try {
+    doc.save(filename)
+    return
+  } catch (error) {
+    const blob = doc.output("blob")
+    const url = URL.createObjectURL(blob)
     const link = document.createElement("a")
     link.href = url
     link.download = filename
@@ -544,7 +504,7 @@ export async function exportWasteResultPdf({ sourceId = "results", result, form,
     document.body.appendChild(link)
     link.click()
     link.remove()
-  } finally {
-    URL.revokeObjectURL(url)
+    window.setTimeout(() => URL.revokeObjectURL(url), 1500)
+    if (error) void error
   }
 }

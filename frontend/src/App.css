@@ -3691,3 +3691,35 @@ h4,
   color: #ffd8a8 !important;
   border-color: rgba(255, 153, 0, 0.22) !important;
 }
+
+[data-theme="dark"] .app-shell :is(.bg-white, .bg-slate-50, .bg-slate-100, .bg-gray-50, .bg-gray-100, .bg-emerald-50, .bg-emerald-100, .bg-rose-50, .bg-rose-100, .bg-amber-50, .bg-amber-100, .bg-lime-50, .bg-cyan-50) {
+  background: linear-gradient(180deg, rgba(16, 20, 24, 0.98), rgba(12, 16, 20, 0.96)) !important;
+  color: var(--text) !important;
+  border-color: rgba(49, 214, 155, 0.12) !important;
+}
+
+[data-theme="dark"] .app-shell :is(.text-slate-900, .text-slate-800, .text-slate-700, .text-slate-600, .text-slate-500, .text-gray-900, .text-gray-800, .text-gray-700, .text-gray-600, .text-gray-500) {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .app-shell :is(.text-white, .text-slate-50, .text-gray-50) {
+  color: #f8fffb !important;
+}
+
+[data-theme="dark"] .app-shell :is(.border-slate-200, .border-slate-300, .border-gray-200, .border-gray-300) {
+  border-color: rgba(49, 214, 155, 0.12) !important;
+}
+
+[data-theme="dark"] .app-shell .result-pane,
+[data-theme="dark"] .app-shell .result-pane .result-section-title,
+[data-theme="dark"] .app-shell .result-pane h4,
+[data-theme="dark"] .app-shell .result-pane p,
+[data-theme="dark"] .app-shell .result-pane li,
+[data-theme="dark"] .app-shell .result-pane strong {
+  color: var(--text) !important;
+}
+
+[data-theme="dark"] .app-shell .result-pane {
+  background: linear-gradient(180deg, rgba(6, 9, 11, 0.98), rgba(10, 14, 18, 0.98)) !important;
+  border: 1px solid rgba(49, 214, 155, 0.14) !important;
+}

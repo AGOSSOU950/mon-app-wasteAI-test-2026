@@ -6,9 +6,7 @@ import {
   buildAnalyzePayload,
   identifyWasteFromImage,
   getScientificPrefill,
-  getBeninWasteDatabase,
   pingApi,
-  submitIdentificationCorrection,
 } from "./services/api"
 import useAnalytics from "./hooks/useAnalytics"
 import Header from "./components/Header"
@@ -321,12 +319,6 @@ export default function App() {
   const [aiProposal, setAiProposal] = useState(null)
   const [analysisResult, setAnalysisResult] = useState(null)
 
-  const [beninWasteDb, setBeninWasteDb] = useState([])
-  const [showCorrectionPanel, setShowCorrectionPanel] = useState(false)
-  const [correctionMode, setCorrectionMode] = useState("correct")
-  const [correctionChoice, setCorrectionChoice] = useState("")
-  const [correctionComment, setCorrectionComment] = useState("")
-  const [correctionStatus, setCorrectionStatus] = useState("")
 
   const [toast, setToast] = useState("")
 
@@ -339,23 +331,6 @@ export default function App() {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme)
   }, [theme])
-
-  useEffect(() => {
-    let cancelled = false
-    getBeninWasteDatabase()
-      .then((payload) => {
-        if (cancelled) return
-        const rows = Array.isArray(payload?.dechets) ? payload.dechets : Array.isArray(payload?.wastes) ? payload.wastes : []
-        setBeninWasteDb(rows)
-      })
-      .catch(() => {
-        if (!cancelled) setBeninWasteDb([])
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     const ping = async () => {
@@ -437,10 +412,6 @@ export default function App() {
     setIdentifyLoading(true)
     setIdentifyError("")
     setIdentifyLoadingMessage("Identification automatique en cours...")
-    setCorrectionStatus("")
-    setShowCorrectionPanel(false)
-    setCorrectionChoice("")
-    setCorrectionComment("")
 
     try {
       const compressed = await compressImage(fileOverride)
@@ -546,9 +517,9 @@ export default function App() {
         dataMessage = "Caracteristiques completees automatiquement via la base scientifique."
       }
 
-      const sourceMessage = "Analyse API terminee"
+      const sourceMessage = "Analyse API terminée"
       setBanner(dataMessage ? `${sourceMessage}. ${dataMessage}` : sourceMessage)
-      setToast("Analyse terminee")
+      setToast("Analyse terminée")
     } catch (error) {
       const localResult = analyzeLocally(workingForm)
       const localPayload = buildAnalyzePayload(workingForm)
@@ -556,7 +527,7 @@ export default function App() {
       setAnalysisResult(safeLocalResult)
       persistAnalyticsSnapshot(safeLocalResult, localPayload)
       void refreshAnalytics()
-      setBanner("Analyse locale estimee (IA temporairement indisponible).")
+      setBanner("Analyse locale estimée (IA temporairement indisponible).")
       setApiOnline(false)
 
       if (error?.code === "ECONNABORTED") {
@@ -571,7 +542,7 @@ export default function App() {
         setError(`Erreur: ${error?.message || "inconnue"}`)
       }
 
-      setToast("Analyse locale de secours activee")
+      setToast("Analyse locale de secours activée")
     } finally {
       clearInterval(timer)
       setProgress(100)
@@ -589,11 +560,6 @@ export default function App() {
     setImageFile(null)
     setIdentifyError("")
     setIdentifyLoadingMessage("")
-    setShowCorrectionPanel(false)
-    setCorrectionMode("correct")
-    setCorrectionChoice("")
-    setCorrectionComment("")
-    setCorrectionStatus("")
   }
 
   async function handlePrefill() {
@@ -620,7 +586,7 @@ export default function App() {
       setToast(`Pre-remplissage applique (${merged.appliedCount} champ(s))`)
     } catch (error) {
       void error
-      setToast("Prefill indisponible")
+      setToast("Préremplissage indisponible")
     }
   }
 
@@ -629,35 +595,6 @@ export default function App() {
       `Bonjour, je vous contacte via WasteAI pour: ${resultCard?.nom_exact || resultCard?.nom || "dechet"} (${buyerName}).`,
     )
     window.open(`https://wa.me/?text=${txt}`, "_blank", "noopener,noreferrer")
-  }
-
-  async function submitCorrection(mode = correctionMode) {
-    const correctedNom = mode === "incorrect" ? correctionChoice : (resultCard?.nom_exact || resultCard?.nom)
-    const correctedFiliere = mode === "incorrect"
-      ? (beninWasteDb.find((x) => x.nom_exact === correctionChoice)?.filiere || resultCard?.filiere || "autre")
-      : (resultCard?.filiere || "autre")
-
-    try {
-      await submitIdentificationCorrection({
-        image_filename: imageFile?.name || null,
-        prediction: resultCard,
-        is_correct: mode === "correct",
-        corrected_nom_exact: correctedNom || null,
-        corrected_filiere: correctedFiliere || null,
-        corrected_comment: correctionComment || null,
-        user_context: {
-          pays_cedeao: form.pays_cedeao || "Benin",
-          type_industrie: form.type_industrie || null,
-        },
-      })
-      setCorrectionStatus("Correction enregistree")
-      setShowCorrectionPanel(false)
-      setToast("Merci pour votre retour")
-    } catch (error) {
-      void error
-      setCorrectionStatus("Echec enregistrement correction")
-      setToast("Erreur correction")
-    }
   }
 
   function handleSaveResult() {
@@ -716,15 +653,6 @@ export default function App() {
               result={resultCard}
               form={form}
               onWhatsApp={openWhatsAppContact}
-              correctionMode={correctionMode}
-              setCorrectionMode={setCorrectionMode}
-              correctionChoice={correctionChoice}
-              setCorrectionChoice={setCorrectionChoice}
-              correctionComment={correctionComment}
-              setCorrectionComment={setCorrectionComment}
-              correctionOptions={beninWasteDb}
-              onSubmitCorrection={submitCorrection}
-              correctionStatus={correctionStatus}
               onOpenOperators={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "pilotage")}
               onSave={handleSaveResult}
               compactMode={Boolean(aiProposal && !analysisResult)}
@@ -765,7 +693,7 @@ export default function App() {
       <nav className="mobile-nav" aria-label="Navigation mobile">
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃ©seau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
         ) : null}
 
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>

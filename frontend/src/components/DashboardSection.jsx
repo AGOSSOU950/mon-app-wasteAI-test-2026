@@ -1,4 +1,4 @@
-﻿import React, { useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 import {
   CartesianGrid,
   Line,
@@ -35,14 +35,14 @@ const TYPE_BENCHMARKS = {
 }
 
 const MOCK_WASTE_DATA = [
-  { id: 1, name: "Film PE industriel", quantity: 14, recommendation: "Recyclage matière", cost_per_ton: 120, gain_per_ton: 260, date: "2026-01-12", type: "plastic" },
-  { id: 2, name: "Boues organiques", quantity: 22, recommendation: "Méthanisation", cost_per_ton: 95, gain_per_ton: 210, date: "2026-01-26", type: "organic" },
-  { id: 3, name: "Ferraille légère", quantity: 18, recommendation: "Recyclage métal", cost_per_ton: 180, gain_per_ton: 390, date: "2026-02-03", type: "metal" },
-  { id: 4, name: "Carton compacté", quantity: 11, recommendation: "Valorisation matière", cost_per_ton: 110, gain_per_ton: 190, date: "2026-02-18", type: "paper" },
-  { id: 5, name: "Textiles de coupe", quantity: 9, recommendation: "Réemploi / fibres", cost_per_ton: 130, gain_per_ton: 220, date: "2026-03-04", type: "textile" },
-  { id: 6, name: "Déchets électroniques", quantity: 6, recommendation: "Traitement spécialisé", cost_per_ton: 220, gain_per_ton: 420, date: "2026-03-19", type: "electronic" },
-  { id: 7, name: "Verre trié", quantity: 15, recommendation: "Recyclage matière", cost_per_ton: 90, gain_per_ton: 170, date: "2026-04-02", type: "glass" },
-  { id: 8, name: "Déchets mixtes stabilisés", quantity: 20, recommendation: "Co-traitement", cost_per_ton: 140, gain_per_ton: 200, date: "2026-04-15", type: "mixed" },
+  { id: 1, name: "Film PE industriel", quantity: 14, recommendation: "Recyclage matiÃƒÆ’Ã‚Â¨re", cost_per_ton: 120, gain_per_ton: 260, date: "2026-01-12", type: "plastic" },
+  { id: 2, name: "Boues organiques", quantity: 22, recommendation: "MÃƒÆ’Ã‚Â©thanisation", cost_per_ton: 95, gain_per_ton: 210, date: "2026-01-26", type: "organic" },
+  { id: 3, name: "Ferraille lÃƒÆ’Ã‚Â©gÃƒÆ’Ã‚Â¨re", quantity: 18, recommendation: "Recyclage mÃƒÆ’Ã‚Â©tal", cost_per_ton: 180, gain_per_ton: 390, date: "2026-02-03", type: "metal" },
+  { id: 4, name: "Carton compactÃƒÆ’Ã‚Â©", quantity: 11, recommendation: "Valorisation matiÃƒÆ’Ã‚Â¨re", cost_per_ton: 110, gain_per_ton: 190, date: "2026-02-18", type: "paper" },
+  { id: 5, name: "Textiles de coupe", quantity: 9, recommendation: "RÃƒÆ’Ã‚Â©emploi / fibres", cost_per_ton: 130, gain_per_ton: 220, date: "2026-03-04", type: "textile" },
+  { id: 6, name: "DÃƒÆ’Ã‚Â©chets ÃƒÆ’Ã‚Â©lectroniques", quantity: 6, recommendation: "Traitement spÃƒÆ’Ã‚Â©cialisÃƒÆ’Ã‚Â©", cost_per_ton: 220, gain_per_ton: 420, date: "2026-03-19", type: "electronic" },
+  { id: 7, name: "Verre triÃƒÆ’Ã‚Â©", quantity: 15, recommendation: "Recyclage matiÃƒÆ’Ã‚Â¨re", cost_per_ton: 90, gain_per_ton: 170, date: "2026-04-02", type: "glass" },
+  { id: 8, name: "DÃƒÆ’Ã‚Â©chets mixtes stabilisÃƒÆ’Ã‚Â©s", quantity: 20, recommendation: "Co-traitement", cost_per_ton: 140, gain_per_ton: 200, date: "2026-04-15", type: "mixed" },
 ]
 
 function formatCurrency(value) {
@@ -97,7 +97,7 @@ function normalizeRow(row, index = 0) {
 
   return {
     id: Number(row.id ?? index + 1),
-    name: String(row.name || row.nom || row.waste_name || `Déchet ${index + 1}`),
+    name: String(row.name || row.nom || row.waste_name || `DÃƒÆ’Ã‚Â©chet ${index + 1}`),
     quantity: Number.isFinite(quantity) ? quantity : 0,
     recommendation,
     cost_per_ton: Number.isFinite(costPerTon) ? costPerTon : benchmark.cost_per_ton,
@@ -109,17 +109,17 @@ function normalizeRow(row, index = 0) {
 
 function StatCard({ label, value, hint, tone = "neutral" }) {
   const tones = {
-    neutral: "border-slate-200 bg-white",
-    positive: "border-emerald-200 bg-emerald-50",
-    negative: "border-rose-200 bg-rose-50",
-    amber: "border-amber-200 bg-amber-50",
+    neutral: "border border-[#22303a] bg-[#0f1418]",
+    positive: "border border-[#204136] bg-[#11211c]",
+    negative: "border border-[#4a252a] bg-[#201114]",
+    amber: "border border-[#4a3a1f] bg-[#221c11]",
   }
 
   return (
     <article className={`rounded-2xl border p-4 ${tones[tone]}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">{label}</p>
-      <div className="mt-2 text-2xl font-semibold text-slate-900">{value}</div>
-      <p className="mt-1 text-sm text-slate-600">{hint}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#aab4af]">{label}</p>
+      <div className="mt-2 text-2xl font-semibold text-[#f8fffb]">{value}</div>
+      <p className="mt-1 text-sm text-[#aab4af]">{hint}</p>
     </article>
   )
 }
@@ -128,15 +128,15 @@ function CompactChannel({ channel, isBest = false }) {
   if (!channel) return null
   const net = Number(channel.net_gain_per_ton || 0)
   return (
-    <div className={`rounded-2xl border p-4 ${isBest ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-white"}`}>
+    <div className={`rounded-2xl border p-4 ${isBest ? "border border-[#204136] bg-[#11211c]" : "border border-[#22303a] bg-[#0f1418]"}`}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="font-semibold text-slate-900">{channel.name}</p>
-          <p className="text-sm text-slate-600">{channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
+          <p className="font-semibold text-[#f8fffb]">{channel.name}</p>
+          <p className="text-sm text-[#aab4af]">{channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
         </div>
         {isBest ? <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">Choix</span> : null}
       </div>
-      <div className="mt-3 grid gap-1 text-sm text-slate-600">
+      <div className="mt-3 grid gap-1 text-sm text-[#aab4af]">
         <p>{channel.location}</p>
         <p>{Number(channel.distance_km || 0)} km</p>
         <p>{formatCurrency(net)} / t</p>
@@ -205,44 +205,44 @@ function DashboardSection({ analytics, loading, onRefresh }) {
   const recentRows = [...visibleLignes].slice(0, 4)
 
   return (
-    <section className="rounded-[2rem] border border-slate-200 bg-white p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
-      <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 lg:flex-row lg:items-end lg:justify-between">
+    <section className="rounded-[2rem] border border border-[#22303a] bg-[#0f1418] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
+      <div className="flex flex-col gap-3 border-b border-[#22303a] pb-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700">Pilotage</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">Tableau de bord WasteAI</h2>
-          <p className="mt-1 max-w-2xl text-sm text-slate-600">Lecture des flux, cohérence économique et voie recommandée dans un seul écran.</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9ef0ce]">Pilotage</p>
+          <h2 className="mt-2 text-2xl font-semibold text-[#f8fffb] md:text-3xl">Tableau de bord WasteAI</h2>
+          <p className="mt-1 max-w-2xl text-sm text-[#aab4af]">Lecture des flux, cohÃƒÆ’Ã‚Â©rence ÃƒÆ’Ã‚Â©conomique et voie recommandÃƒÆ’Ã‚Â©e dans un seul ÃƒÆ’Ã‚Â©cran.</p>
         </div>
         <button
           type="button"
           onClick={onRefresh}
           disabled={loading}
-          className="inline-flex items-center justify-center rounded-full border border-slate-300 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60"
+          className="inline-flex items-center justify-center rounded-full border border-[#2a3a35] bg-[#12181d] px-4 py-2 text-sm font-semibold text-[#d9e2dd] transition hover:bg-[#182127] disabled:cursor-not-allowed disabled:opacity-60"
         >
-          {loading ? "Actualisation..." : "Rafraîchir"}
+          {loading ? "Actualisation..." : "RafraÃƒÆ’Ã‚Â®chir"}
         </button>
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Gain total" value={formatCurrency(metrics.totalGain)} hint="Valeur valorisable" tone="positive" />
-        <StatCard label="Coût total" value={formatCurrency(metrics.totalCost)} hint="Traitement et logistique" tone="negative" />
-        <StatCard label="Solde net" value={formatCurrency(metrics.net)} hint={metrics.net >= 0 ? "Position positive" : "Position négative"} tone={metrics.net >= 0 ? "positive" : "negative"} />
+        <StatCard label="CoÃƒÆ’Ã‚Â»t total" value={formatCurrency(metrics.totalCost)} hint="Traitement et logistique" tone="negative" />
+        <StatCard label="Solde net" value={formatCurrency(metrics.net)} hint={metrics.net >= 0 ? "Position positive" : "Position nÃƒÆ’Ã‚Â©gative"} tone={metrics.net >= 0 ? "positive" : "negative"} />
         <StatCard label="Taux de valorisation" value={`${metrics.valorizationRate.toFixed(1)}%`} hint="Flux favorables" tone="amber" />
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_360px]">
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+          <div className="rounded-2xl border border-[#22303a] bg-[#12181d] p-4">
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm text-slate-600">
+              <label className="grid gap-2 text-sm text-[#aab4af]">
                 Mois
-                <select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none">
+                <select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="rounded-xl border border border-[#2a3a35] bg-[#11161b] px-3 py-2 text-[#f8fffb] outline-none">
                   <option value="all">Tous les mois</option>
                   {monthOptions.map((month) => <option key={month} value={month}>{formatMonth(month)}</option>)}
                 </select>
               </label>
-              <label className="grid gap-2 text-sm text-slate-600">
-                Filière
-                <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 outline-none">
+              <label className="grid gap-2 text-sm text-[#aab4af]">
+                FiliÃƒÆ’Ã‚Â¨re
+                <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="rounded-xl border border border-[#2a3a35] bg-[#11161b] px-3 py-2 text-[#f8fffb] outline-none">
                   <option value="all">Toutes</option>
                   {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
@@ -250,13 +250,13 @@ function DashboardSection({ analytics, loading, onRefresh }) {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="rounded-2xl border border border-[#22303a] bg-[#0f1418] p-4">
             <div className="mb-3 flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Tendance des flux</h3>
-                <p className="text-sm text-slate-600">Gain et coût agrégés par mois</p>
+                <h3 className="text-lg font-semibold text-[#f8fffb]">Tendance des flux</h3>
+                <p className="text-sm text-[#aab4af]">Gain et coÃƒÆ’Ã‚Â»t agrÃƒÆ’Ã‚Â©gÃƒÆ’Ã‚Â©s par mois</p>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{visibleLignes.length} flux</span>
+              <span className="rounded-full bg-[#182127] px-3 py-1 text-xs font-semibold text-[#aab4af]">{visibleLignes.length} flux</span>
             </div>
             <div className="h-[220px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -266,7 +266,7 @@ function DashboardSection({ analytics, loading, onRefresh }) {
                   <YAxis stroke="#64748b" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tickFormatter={(value) => formatCurrency(value)} />
                   <Tooltip formatter={(value) => formatCurrency(value)} />
                   <Line type="monotone" dataKey="gain" name="Gain" stroke="#0f766e" strokeWidth={3} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="cost" name="Coût" stroke="#ef4444" strokeWidth={3} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="cost" name="CoÃƒÆ’Ã‚Â»t" stroke="#ef4444" strokeWidth={3} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -274,45 +274,45 @@ function DashboardSection({ analytics, loading, onRefresh }) {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
+          <div className="rounded-2xl border border border-[#22303a] bg-[#0f1418] p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900">Canal cohérent</h3>
-                <p className="text-sm text-slate-600">Acheteur direct ou traitement</p>
+                <h3 className="text-lg font-semibold text-[#f8fffb]">Canal cohÃƒÆ’Ã‚Â©rent</h3>
+                <p className="text-sm text-[#aab4af]">Acheteur direct ou traitement</p>
               </div>
-              <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">Pilotage</span>
+              <span className="rounded-full bg-[#11211c] px-3 py-1 text-xs font-semibold text-[#9ef0ce]">Pilotage</span>
             </div>
             {channelContext && bestChannel ? (
               <div className="mt-4 space-y-3">
-                <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">Recommandé</p>
-                  <p className="mt-1 text-xl font-semibold text-slate-900">{bestChannel.name}</p>
-                  <p className="mt-1 text-sm text-slate-600">{bestChannel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
-                  <p className="mt-2 text-sm text-slate-700">{channelContext.name} - {formatQuantity(channelContext.quantity)} - {channelContext.recommendation}</p>
-                  {!rankedChannels.hasDirectBuyer ? <p className="mt-2 text-sm text-amber-700">Aucun acheteur direct pertinent. La voie de traitement sert de référence.</p> : null}
+                <div className="rounded-2xl border border border-[#204136] bg-[#11211c] p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9ef0ce]">RecommandÃƒÆ’Ã‚Â©</p>
+                  <p className="mt-1 text-xl font-semibold text-[#f8fffb]">{bestChannel.name}</p>
+                  <p className="mt-1 text-sm text-[#aab4af]">{bestChannel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
+                  <p className="mt-2 text-sm text-[#d9e2dd]">{channelContext.name} - {formatQuantity(channelContext.quantity)} - {channelContext.recommendation}</p>
+                  {!rankedChannels.hasDirectBuyer ? <p className="mt-2 text-sm text-amber-700">Aucun acheteur direct pertinent. La voie de traitement sert de rÃƒÆ’Ã‚Â©fÃƒÆ’Ã‚Â©rence.</p> : null}
                 </div>
                 <div className="grid gap-3">
                   {alternatives.map((channel, index) => <CompactChannel key={channel.id} channel={channel} isBest={index === 0} />)}
                 </div>
               </div>
             ) : (
-              <p className="mt-4 text-sm text-slate-600">Aucun canal pertinent pour l’instant.</p>
+              <p className="mt-4 text-sm text-[#aab4af]">Aucun canal pertinent pour lÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢instant.</p>
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4">
-            <h3 className="text-lg font-semibold text-slate-900">Flux récents</h3>
+          <div className="rounded-2xl border border border-[#22303a] bg-[#0f1418] p-4">
+            <h3 className="text-lg font-semibold text-[#f8fffb]">Flux rÃƒÆ’Ã‚Â©cents</h3>
             <div className="mt-3 space-y-3">
               {recentRows.map((row) => {
                 const net = (row.gain_per_ton - row.cost_per_ton) * row.quantity
                 const positive = net >= 0
                 return (
-                  <div key={row.id} className="flex items-start justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                  <div key={row.id} className="flex items-start justify-between gap-3 rounded-xl border border-[#22303a] bg-[#12181d] px-3 py-2">
                     <div className="min-w-0">
-                      <p className="truncate font-medium text-slate-900">{row.name}</p>
-                      <p className="text-sm text-slate-600">{row.recommendation}</p>
+                      <p className="truncate font-medium text-[#f8fffb]">{row.name}</p>
+                      <p className="text-sm text-[#aab4af]">{row.recommendation}</p>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${positive ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}>
+                    <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${positive ? "bg-emerald-100 text-[#9ef0ce]" : "bg-rose-100 text-rose-700"}`}>
                       {formatCurrency(net)}
                     </span>
                   </div>

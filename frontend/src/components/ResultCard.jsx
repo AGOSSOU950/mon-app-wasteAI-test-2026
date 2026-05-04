@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { exportWasteResultPdf } from "../utils/pdfExport"
 
 function badgeClass(filiere) {
@@ -28,10 +28,10 @@ function splitParagraphs(text) {
 
 function confidenceStatus(confidence) {
   const c = Number(confidence || 0)
-  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette.", warn: true }
+  if (c < 40) return { label: "Identification faible", message: "Image difficile Ã  analyser. Essayez une photo plus nette.", warn: true }
   if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger.", warn: false }
   if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider.", warn: false }
-  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer.", warn: false }
+  return { label: "Identification certaine", message: "Identification trÃ¨s probable. Merci de confirmer.", warn: false }
 }
 
 export default function ResultCard({
@@ -39,17 +39,6 @@ export default function ResultCard({
   form,
   onWhatsApp,
   onCorrect,
-  onIncorrect,
-  showCorrection,
-  correctionMode,
-  setCorrectionMode,
-  correctionChoice,
-  setCorrectionChoice,
-  correctionComment,
-  setCorrectionComment,
-  correctionOptions,
-  onSubmitCorrection,
-  correctionStatus,
   onOpenOperators,
   onSave,
   compactMode = false,
@@ -66,7 +55,7 @@ export default function ResultCard({
   const confidence = Number(safeResult.confiance_identification || 0)
   const confidenceInfo = confidenceStatus(confidence)
   const shortDescription = String(safeResult.description_estimee || safeResult.resume_choix || safeResult.justification_technique || "").trim()
-  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "voie non spécifiée")
+  const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "voie non spÃ©cifiÃ©e")
   const alternatives = Array.isArray(safeResult.alternatives) ? safeResult.alternatives : []
   const voiesExaminees = Array.isArray(safeResult.scores_par_voie) && safeResult.scores_par_voie.length > 0 ? safeResult.scores_par_voie.slice(0, 4) : alternatives.slice(0, 4)
   const whyPriority = String(safeResult.explication_detaillee || safeResult.explication || safeResult.justification_technique || safeResult.resume_choix || "").trim()
@@ -111,7 +100,7 @@ export default function ResultCard({
 
   const topMetrics = useMemo(() => ([
     { label: "Valeur", value: `${money(saleValue)} FCFA/t` },
-    { label: "Coût", value: `${money(treatmentCost)} FCFA/t` },
+    { label: "CoÃ»t", value: `${money(treatmentCost)} FCFA/t` },
     { label: "Gain net", value: `${money(industrialGainTotal)} FCFA` },
     { label: "ROI", value: Number.isFinite(roi) ? roi.toFixed(2) : "n/d" },
   ]), [saleValue, treatmentCost, industrialGainTotal, roi])
@@ -122,10 +111,9 @@ export default function ResultCard({
     try {
       setPdfLoading(true)
       setShowDetails(true)
-      await new Promise((resolve) => setTimeout(resolve, 50))
-      await exportWasteResultPdf({ sourceId: "results", result: safeResult, form, filename: "wasteai-resultats.pdf" })
+      exportWasteResultPdf({ sourceId: "results", result: safeResult, form, filename: "wasteai-resultats.pdf" })
     } catch (error) {
-      setPdfError(error?.message || "Échec de génération du PDF.")
+      setPdfError(error?.message || "Ã‰chec de gÃ©nÃ©ration du PDF.")
     } finally {
       setPdfLoading(false)
     }
@@ -141,8 +129,8 @@ export default function ResultCard({
             <span className={badgeClass(filiere)}>{String(filiere || "AUTRE").toUpperCase()}</span>
             <span className="result-chip">{confidenceInfo.label}</span>
           </div>
-          <h3>{safeResult.nom_exact || safeResult.nom || "Déchet non précisé"}</h3>
-          <p className="result-subtitle">{shortDescription || "Analyse structurée des voies de valorisation et des contraintes du flux."}</p>
+          <h3>{safeResult.nom_exact || safeResult.nom || "DÃ©chet non prÃ©cisÃ©"}</h3>
+          <p className="result-subtitle">{shortDescription || "Analyse structurÃ©e des voies de valorisation et des contraintes du flux."}</p>
           <div className="result-chips">
             <span className="result-chip result-chip-strong">{chosenRoute}</span>
             <span className="result-chip">{Number.isFinite(confidence) ? `${Math.round(confidence)} % de confiance` : "Confiance non disponible"}</span>
@@ -158,7 +146,7 @@ export default function ResultCard({
       </div>
 
       <div className="result-pane result-summary">
-        <p className="result-section-title">Synthèse économique</p>
+        <p className="result-section-title">SynthÃ¨se Ã©conomique</p>
         <div className="result-grid result-metrics" style={{ marginTop: 0 }}>
           {hasEconomicData ? (
             topMetrics.map((metric) => (
@@ -168,25 +156,24 @@ export default function ResultCard({
               </div>
             ))
           ) : (
-            <p className="result-status">Estimation économique non disponible pour ce flux.</p>
+            <p className="result-status">Estimation Ã©conomique non disponible pour ce flux.</p>
           )}
         </div>
-        <p className="result-footnote">Impact environnemental: {money(co2)} kgCO2e évités.</p>
+        <p className="result-footnote">Impact environnemental: {money(co2)} kgCO2e Ã©vitÃ©s.</p>
       </div>
 
       <div className="actions-row">
         <button className="btn btn-primary" type="button" onClick={onCorrect}>Valider</button>
-        <button className="btn" type="button" onClick={onIncorrect}>Corriger</button>
-        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>{showDetails ? "Masquer détails" : "Voir détails"}</button>
-        {!compactMode ? <button className="btn" type="button" onClick={onOpenOperators}>Voir opérateurs</button> : null}
+        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>{showDetails ? "Masquer dÃ©tails" : "Voir dÃ©tails"}</button>
+        {!compactMode ? <button className="btn" type="button" onClick={onOpenOperators}>Voir opÃ©rateurs</button> : null}
         {!compactMode ? <button className="btn" type="button" onClick={onSave}>Sauver</button> : null}
-        <button className="btn btn-primary" type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>{pdfLoading ? "Génération PDF..." : "Télécharger PDF"}</button>
+        <button className="btn btn-primary" type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>{pdfLoading ? "GÃ©nÃ©ration PDF..." : "TÃ©lÃ©charger PDF"}</button>
       </div>
 
       {showDetails ? (
         <div className="result-grid result-details">
           <article className="result-pane">
-            <h4>Justification détaillée</h4>
+            <h4>Justification dÃ©taillÃ©e</h4>
             {splitParagraphs(whyPriority).slice(0, 3).map((paragraph, idx) => (
               <p key={`why-${idx}`}>{paragraph}</p>
             ))}
@@ -194,10 +181,10 @@ export default function ResultCard({
           </article>
 
           <article className="result-pane">
-            <h4>Voies examinées</h4>
+            <h4>Voies examinÃ©es</h4>
             <ul>
               {voiesExaminees.map((item, idx) => {
-                const statut = String(item?.statut || item?.status || (item?.compatible === false ? "Non conforme" : idx === 0 ? "Recommandée" : "Alternative")).trim()
+                const statut = String(item?.statut || item?.status || (item?.compatible === false ? "Non conforme" : idx === 0 ? "RecommandÃ©e" : "Alternative")).trim()
                 const explanation = String(item?.explication || item?.pourquoi_pas_prioritaire || "").trim()
                 return (
                   <li key={`route-${idx}`} className="route-item">
@@ -210,45 +197,18 @@ export default function ResultCard({
           </article>
 
           <article className="result-pane">
-            <h4>Repères clés</h4>
-            <p><strong>Valeur estimée:</strong> {money(saleValue)} FCFA/tonne</p>
-            <p><strong>Coût:</strong> {money(treatmentCost)} FCFA/tonne</p>
+            <h4>RepÃ¨res clÃ©s</h4>
+            <p><strong>Valeur estimÃ©e:</strong> {money(saleValue)} FCFA/tonne</p>
+            <p><strong>CoÃ»t:</strong> {money(treatmentCost)} FCFA/tonne</p>
             <p><strong>Gain brut:</strong> {money(industrialGainTotal)} FCFA</p>
-            <p><strong>CO2 évité:</strong> {money(co2)} kg</p>
+            <p><strong>CO2 Ã©vitÃ©:</strong> {money(co2)} kg</p>
             <p><strong>ROI:</strong> {Number.isFinite(roi) ? roi.toFixed(2) : "n/d"}</p>
             {Number.isFinite(industrialGainTon) && industrialGainTon !== 0 ? <p><strong>Gain/t:</strong> {money(industrialGainTon)} FCFA/t</p> : null}
           </article>
         </div>
       ) : null}
 
-      {showCorrection ? (
-        <div className="result-pane result-correction">
-          <p><strong>Corriger l'identification</strong></p>
-          <div className="actions-row">
-            <button className="btn" type="button" onClick={() => setCorrectionMode("correct")}>Identification correcte</button>
-            <button className="btn" type="button" onClick={() => setCorrectionMode("incorrect")}>Identification incorrecte</button>
-          </div>
-          {correctionMode === "incorrect" ? (
-            <div className="field">
-              <label>Choisir le bon déchet</label>
-              <select value={correctionChoice} onChange={(e) => setCorrectionChoice(e.target.value)}>
-                <option value="">Sélectionner...</option>
-                {correctionOptions.map((item) => <option key={item.id} value={item.nom_exact}>{item.nom_exact}</option>)}
-              </select>
-            </div>
-          ) : null}
-          <div className="field">
-            <label>Commentaire</label>
-            <textarea rows={2} value={correctionComment} onChange={(e) => setCorrectionComment(e.target.value)} />
-          </div>
-          <div className="actions-row">
-            <button className="btn btn-primary" type="button" onClick={onSubmitCorrection}>Enregistrer correction</button>
-          </div>
-        </div>
-      ) : null}
-
       {pdfError ? <p className="warn">{pdfError}</p> : null}
-      {correctionStatus ? <p className="result-status">{correctionStatus}</p> : null}
     </section>
   )
 }
