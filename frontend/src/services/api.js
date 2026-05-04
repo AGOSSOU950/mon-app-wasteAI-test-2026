@@ -102,6 +102,28 @@ const DEFAULT_WASTE_TYPE_RULES = {
   },
 }
 
+const BIOMASS_LIGNOCELLULOSIC_HINTS = [
+  "biomasse",
+  "lignocellulos",
+  "lignine",
+  "lignin",
+  "bois",
+  "copeau",
+  "coquille",
+  "coques",
+  "noyau",
+  "palme",
+  "noix de coco",
+  "coco",
+  "paille",
+  "bagasse",
+  "rafle",
+  "rondin",
+  "sciure",
+  "tige",
+  "fibres vegetales",
+  "fibres vegetales",
+]
 const DEFAULT_TYPE_ECONOMIC_MULTIPLIERS = {
   fallback: 1.0,
   category_decision: {
