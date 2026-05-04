@@ -1,4 +1,4 @@
-﻿import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { exportWasteResultPdf } from "../utils/pdfExport"
 
 function badgeClass(filiere) {
@@ -185,7 +185,7 @@ export default function ResultCard({
             <ul>
               {voiesExaminees.map((item, idx) => {
                 const statut = String(item?.statut || item?.status || (item?.compatible === false ? "Non conforme" : idx === 0 ? "Recommandée" : "Alternative")).trim()
-                const explanation = String(item?.explication || item?.pourquoi_pas_prioritaire || "").trim()
+                const explanation = String(item?.justification || item?.explication || item?.pourquoi_pas_prioritaire || "").trim()
                 return (
                   <li key={`route-${idx}`} className="route-item">
                     <div><strong>{String(item?.solution || item?.nom || item?.filiere || "voie")}</strong> - {statut}</div>

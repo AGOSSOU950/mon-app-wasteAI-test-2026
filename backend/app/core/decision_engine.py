@@ -1,4 +1,4 @@
-import json
+﻿import json
 import os
 import re
 import unicodedata
@@ -1315,6 +1315,8 @@ def analyzeMaterialProperties(waste: WasteInput, metrics: dict[str, Any]) -> dic
         cues.append("biodegradabilite elevee")
     elif biodegradability == "low":
         cues.append("biodegradabilite faible")
+    if lignocellulosic and lignine >= 20 and humidity <= 25:
+        cues.append("matrice lignocellulosique seche incompatible avec methanisation et compostage")
 
     return {
         "humidity_pct": humidity,
@@ -1337,6 +1339,23 @@ def _is_dry_lignocellulosic_material(material: dict[str, Any]) -> bool:
     pci = float(material.get("pci_mj_kg") or 0.0)
 
     return lignocellulosic and lignine >= 20.0 and humidity <= 25.0 and pci >= 12.0
+
+
+def _biological_routes_incompatible(material: dict[str, Any]) -> bool:
+    if not material.get("reliable"):
+        return False
+    lignocellulosic = bool(material.get("lignocellulosic"))
+    lignine = float(material.get("lignine_pct") or 0.0)
+    humidity = float(material.get("humidity_pct") or 0.0)
+    return lignocellulosic and lignine >= 20.0 and humidity <= 25.0
+
+
+def _wet_organic_stream(material: dict[str, Any], waste: WasteInput) -> bool:
+    humidity = float(material.get("humidity_pct") or 0.0)
+    dbo = float(material.get("dbo_mg_l") or 0.0)
+    dco = float(material.get("dco_mg_l") or 0.0)
+    return bool(material.get("reliable")) and (material.get("biodegradability") == "high" or _is_abattoir_waste(waste) or (humidity >= 65.0 and (dbo >= 800.0 or dco >= 1800.0)))
+
 
 def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, Any]]:
     if not material.get("reliable"):
@@ -1377,7 +1396,10 @@ def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, 
         meth_conditions.append("faible humidite defavorable a la methanisation")
     if lignocellulosic and lignine > 20:
         meth_score -= 15
-    if lignocellulosic and lignine >= 20 and humidity <= 25:
+    if _biological_routes_incompatible(material):
+        meth_score = 0.0
+        meth_conditions.append("matrice lignocellulosique seche incompatible avec methanisation")
+    elif lignocellulosic and lignine >= 20 and humidity <= 25:
         meth_score -= 30
         meth_conditions.append("matrice lignocellulosique seche defavorable a la methanisation")
     meth_just = "Recommande car flux humide et facilement biodegradable." if meth_score > 0 else "Non recommande pour methanisation: matrice lignocellulosique ou biodegradabilite insuffisante."
@@ -1399,7 +1421,10 @@ def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, 
         comp_score += 10
     if lignocellulosic and lignine > 20:
         comp_score -= 20
-    if lignocellulosic and lignine >= 20 and humidity <= 25:
+    if _biological_routes_incompatible(material):
+        comp_score = 0.0
+        comp_conditions.append("matrice lignocellulosique seche incompatible avec compostage")
+    elif lignocellulosic and lignine >= 20 and humidity <= 25:
         comp_score -= 25
         comp_conditions.append("lignine elevee et secheresse defavorables au compostage")
     comp_just = "Recommande car humidite et structure sont compatibles avec une stabilisation aerobie." if comp_score > 0 else "Non recommande pour compostage: fraction trop lignifiee ou trop seche."
@@ -1495,9 +1520,18 @@ def mergeRecommendations(existing: list[dict[str, Any]], material_scores: list[d
             }
             order.append(key)
 
+    if material.get("electronic") or material.get("metals_heavy"):
+        for key in {"methanisation", "compostage", "biochar", "pyrolyse / biochar", "recyclage matiere"}:
+            if key in merged:
+                current = merged[key]
+                current["score"] = 0.0
+                current["base_score"] = 0.0
+                current["material_score"] = 0.0
+                current["material_delta"] = 0.0
+                current["conditions"] = list(dict.fromkeys([*(current.get("conditions") or []), "flux electronique ou metallique lourd a ecarter de cette voie"]))
+                current["justification"] = "Flux electronique ou metallique lourd: voie ecartee au profit d'une stabilisation ou d'une securisation."
+
     return sorted(merged.values(), key=lambda item: float(item.get("score", 0.0)), reverse=True)
-
-
 def _canonical_material_route(name: str | None) -> str:
     key = _n(str(name or ""))
     aliases = {
@@ -1555,6 +1589,12 @@ def _hybrid_route_score(route: dict[str, Any], material_lookup: dict[str, dict[s
         base += 8.0
     if dry_lignocellulosic and key in {"valorisation_energetique", "biochar"}:
         base += 15.0
+    if material.get("type_dechet") == WasteType.HUILE_USAGEE.value and key in {"valorisation_energetique", "biochar"}:
+        base += 20.0
+    if material.get("category") == WasteCategory.ELECTRONIC.value and key in {"neutralisation_chimique", "elimination_securisee"}:
+        base += 22.0
+    if material.get("category") == WasteCategory.ELECTRONIC.value and key in {"reemploi", "recyclage_matiere", "methanisation_biogaz", "compostage"}:
+        base -= 40.0
 
     mat = material_lookup.get(key)
     if not mat:
@@ -1589,6 +1629,7 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
     contamination = float(waste.taux_contamination_pct or 0.0)
     has_metals = bool(waste.contient_metaux or waste.presence_metaux_lourds)
     has_chlorine = bool(waste.presence_chlore)
+    metal_category = waste.categorie == WasteCategory.METAL
 
     dco_high = dco >= 100000 or (dco >= 1000 and dbo >= 500)
     dbo_high = dbo >= 1000 or (dco > 0 and dbo > 0 and (dco / max(dbo, 1.0)) >= 2.0)
@@ -1617,6 +1658,8 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
     meth_conditions = list(shared_conditions)
     if metals_heavy:
         meth_conditions.append("metaux a limiter avant digestion")
+    if metal_category:
+        meth_conditions.append("flux metallique incompatible avec la digestion")
     if chlorine_risk:
         meth_conditions.append("chlore a verifier avant digestion")
     meth_score = 20.0
@@ -1642,6 +1685,8 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
     comp_conditions = list(shared_conditions)
     if metals_heavy:
         comp_conditions.append("metaux a retirer pour stabilisation biologique")
+    if metal_category:
+        comp_conditions.append("flux metallique incompatible avec le compostage")
     if chlorine_risk:
         comp_conditions.append("chlore a verifier avant compostage")
     comp_score = 15.0
@@ -1683,6 +1728,9 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
         bio_score -= 10
     if chlorine_risk:
         bio_score -= 20
+    if metal_category:
+        bio_score = 0.0
+        bio_conditions.append("flux metallique incompatible avec le biochar")
 
     energy_conditions = list(shared_conditions)
     if chlorine_risk:
@@ -1733,6 +1781,22 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
     if max(meth_score, comp_score, bio_score, energy_score, mater_score) < 40:
         elim_score += 20
 
+    electronic = waste.categorie == WasteCategory.ELECTRONIC
+    if electronic or metals_heavy or metal_category:
+        meth_score = 0.0
+        comp_score = 0.0
+        bio_score = 0.0
+        meth_conditions.append("flux electronique ou metallique lourd incompatible avec la methanisation")
+        comp_conditions.append("flux electronique ou metallique lourd incompatible avec le compostage")
+        bio_conditions.append("flux electronique ou metallique lourd incompatible avec le biochar")
+        if electronic:
+            energy_score -= 15
+        if metal_category:
+            mater_score += 25
+        elif has_metals:
+            mater_score += 15
+        elim_score += 20
+
     base = [
         make_item("methanisation", meth_score, meth_conditions, "Forte DCO/DBO et humidite favorable orientent vers un traitement biologique avec biogaz.", "methanisation_biogaz"),
         make_item("compostage", comp_score, comp_conditions, "Charge biodegradable et humidite intermediaire compatibles avec une stabilisation aerobie.", "compostage"),
@@ -1741,6 +1805,11 @@ def _score_generic_solutions(waste: WasteInput, metrics: dict[str, Any]) -> list
         make_item("recyclage matiere", mater_score, mater_conditions, "Recuperation matiere privilegiee si la fraction utile est valorisable et si le flux reste maitrise.", "recyclage_matiere"),
         make_item("elimination securisee", elim_score, elim_conditions, "Voie de dernier recours lorsque les contraintes sanitaires ou techniques restent trop fortes.", "elimination_securisee"),
     ]
+
+    material = dict(material)
+    material["electronic"] = electronic
+    material["metals_heavy"] = metals_heavy
+    material["metal_category"] = metal_category
 
     material_scores = _material_recommendation_scores(material)
     return mergeRecommendations(base, material_scores, material)
@@ -1775,7 +1844,7 @@ def _llm_enrichment(waste: WasteInput) -> str | None:
     return chat_completion_text(
         system_prompt=system_prompt,
         user_prompt=prompt,
-        model=os.getenv("OPENAI_MODEL", "gpt-5.4"),
+        model=os.getenv("OPENAI_MODEL", "gpt-5.5"),
         max_tokens=500,
         temperature=0.1,
         timeout_s=35,
@@ -1874,9 +1943,14 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
             chosen = paint_choice
             hierarchy_reasons = ["Flux peinture/revetement: neutralisation chimique prioritaire."] + hierarchy_reasons
 
+    material_lookup = _material_score_map(generic_scores)
     classement_filieres = [
         {**_minimal_voie(x), "statut": ("Recommandee" if x.get("filiere") == chosen["filiere"] and x.get("feasible", True) else "Alternative recommandee" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Alternative" if x.get("feasible", True) else "Non conforme")}
-        for x in sorted(evald, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)
+        for x in sorted(
+            evald,
+            key=lambda z: (_hybrid_route_score(z, material_lookup, material_profile), float(z.get("technical_score", 0.0))),
+            reverse=True,
+        )
     ]
     alternatives = [_minimal_voie(x) for x in generic_scores if str(x.get("solution") or "") != str(chosen.get("filiere") or "")][:4]
 
@@ -2026,7 +2100,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         score_global=round(score_global, 2),
         alternatives=alternatives,
         classement_filieres=classement_filieres,
-        scores_par_voie=generic_scores,
+        scores_par_voie=[_minimal_voie(x) for x in generic_scores],
         conditions_requises=_req(chosen.get("conditions", [])),
         avertissements=(" | ".join(warnings) if warnings else "Aucun avertissement majeur."),
         donnees_manquantes_critiques=missing_critical,
@@ -2139,6 +2213,7 @@ def _scientific_profile(w: WasteInput, wt: WasteType, m: dict[str, float]) -> di
     category = getattr(w.categorie, "value", w.categorie) or "autre"
     danger = getattr(w.niveau_danger, "value", w.niveau_danger) or "faible"
     abattoir = _is_abattoir_waste(w)
+    metal_category = category == WasteCategory.METAL.value
     wet_organic = abattoir or _is_organic_waste_text(w) or category == WasteCategory.ORGANIC.value or wt == WasteType.BOUE_DE_VIDANGE
     lignocellulosic = wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE or any(k in _waste_text(w) for k in ["bagasse", "sciure", "coque", "tige", "bois", "lignine", "cellulose"])
     plastic = category == WasteCategory.PLASTIC.value or wt == WasteType.PLASTIQUE
@@ -2155,6 +2230,7 @@ def _scientific_profile(w: WasteInput, wt: WasteType, m: dict[str, float]) -> di
         "contamination_pct": contamination,
         "category": category,
         "danger": danger,
+        "metal_category": metal_category,
         "abattoir": abattoir,
         "wet_organic": wet_organic,
         "lignocellulosic": lignocellulosic,
@@ -2188,10 +2264,30 @@ def _apply_scientific_route_bias(w: WasteInput, wt: WasteType, m: dict[str, floa
     textile = bool(profile["textile"])
     chlorine_risk = bool(profile["chlorine_risk"])
     reusable_textile = bool(profile["reusable_textile"])
+    dry_lignocellulosic = _is_dry_lignocellulosic_material(profile)
+    electronic = w.categorie == WasteCategory.ELECTRONIC
+    has_metals = bool(w.contient_metaux or w.presence_metaux_lourds)
+    metal_category = w.categorie == WasteCategory.METAL
+    metals_heavy = has_metals
     danger = str(profile["danger"])
 
     if filiere == "methanisation_biogaz":
-        if wet_organic:
+        if dry_lignocellulosic:
+            tech -= 70.0
+            feasible = False
+            blocked_reason = "Biomasse lignocellulosique seche incompatible avec la methanisation."
+            notes.append("Matrice lignocellulosique seche: methanisation ecartee au profit d'une voie thermique ou de biochar.")
+        elif plastic and (contamination > 35 or chlorine_risk):
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Flux plastique contamine ou chlore incompatible avec la methanisation."
+            notes.append("Flux plastique mixte ou chlore: methanisation ecartee.")
+        elif electronic or metals_heavy or metal_category:
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Dechet electronique ou charge metallique incompatible avec la methanisation."
+            notes.append("Dechet electronique ou fortement metallique: methanisation ecartee.")
+        elif wet_organic:
             if humidity >= 70 and (dbo >= 1000 or dco >= 2500):
                 tech += 22.0
                 notes.append("Flux humide et fortement biodegradable: methanisation priorisee pour convertir la DBO/DCO en biogaz.")
@@ -2200,6 +2296,11 @@ def _apply_scientific_route_bias(w: WasteInput, wt: WasteType, m: dict[str, floa
                 notes.append("Humidite elevee et charge organique suffisante: digestion anaerobie robuste.")
             elif humidity >= 45:
                 tech += 8.0
+        elif not wet_organic and lignocellulosic and lignine >= 20 and humidity <= 45:
+            tech -= 35.0
+            feasible = False
+            blocked_reason = "Biomasse lignocellulosique trop seche ou trop lignee pour la methanisation."
+            notes.append("Matrice fibreuse et peu biodegradables: methanisation ecartee.")
         if ratio is not None and ratio <= 4.5 and (dbo >= 500 or dco >= 1000):
             tech += 6.0
             notes.append("Ratio DCO/DBO compatible avec un digesteur stabilisable.")
@@ -2217,7 +2318,22 @@ def _apply_scientific_route_bias(w: WasteInput, wt: WasteType, m: dict[str, floa
             tech -= 10.0
 
     elif filiere == "compostage":
-        if wet_organic and 40 <= humidity <= 70 and contamination <= 35:
+        if dry_lignocellulosic:
+            tech -= 65.0
+            feasible = False
+            blocked_reason = "Biomasse lignocellulosique seche incompatible avec le compostage."
+            notes.append("Matrice lignocellulosique seche: compostage ecarte au profit d'une voie de valorisation thermique.")
+        elif plastic and (contamination > 35 or chlorine_risk):
+            tech -= 55.0
+            feasible = False
+            blocked_reason = "Flux plastique contamine ou chlore incompatible avec le compostage."
+            notes.append("Flux plastique mixte ou chlore: compostage ecarte.")
+        elif electronic or metals_heavy or metal_category:
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Dechet electronique ou charge metallique incompatible avec le compostage."
+            notes.append("Dechet electronique ou fortement metallique: compostage ecarte.")
+        elif wet_organic and 40 <= humidity <= 70 and contamination <= 35:
             tech += 16.0
             notes.append("Matiere organique stabilisable par compostage avec humidite exploitable.")
         elif lignocellulosic and 35 <= humidity <= 65 and contamination <= 25:
@@ -2241,6 +2357,21 @@ def _apply_scientific_route_bias(w: WasteInput, wt: WasteType, m: dict[str, floa
             tech += 20.0
             notes.append("Flux plastique propre et sec: recyclage mecanique prioritaire.")
             conditions.extend(["tri fin", "lavage si necessaire"])
+        elif plastic and (contamination > 35 or humidity > 45 or chlorine_risk):
+            tech -= 40.0
+            feasible = False
+            blocked_reason = "Flux plastique trop contamine ou instable pour le recyclage matiere."
+            notes.append("Flux plastique mixte ou contamine: recyclage matiere ecarte.")
+        elif electronic or metals_heavy:
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Dechet electronique ou charge metallique incompatible avec le recyclage matiere."
+            notes.append("Dechet electronique ou fortement metallique: recyclage matiere classique ecarte.")
+        elif wt == WasteType.HUILE_USAGEE:
+            tech -= 55.0
+            feasible = False
+            blocked_reason = "Huile usagee incompatible avec le recyclage matiere."
+            notes.append("Huile usagee: recyclage matiere ecarte au profit d'une voie thermique ou de regeneration.")
         elif textile and contamination <= 20 and humidity <= 35:
             tech += 16.0
             notes.append("Flux textile compatible avec une preparation matiere ou un effilochage.")
@@ -2263,9 +2394,24 @@ def _apply_scientific_route_bias(w: WasteInput, wt: WasteType, m: dict[str, floa
         if textile and reusable_textile and contamination <= 15 and humidity <= 35 and danger in {"faible", "moyen"}:
             tech += 22.0
             notes.append("Textile reutilisable propre: reemploi en tete de sequence.")
+        elif textile and not reusable_textile:
+            tech -= 35.0
+            feasible = False
+            blocked_reason = "Textile non reutilisable: reemploi impossible."
+            notes.append("Etat textile ou contamination insuffisants pour le reemploi.")
+        elif electronic or metals_heavy or metal_category:
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Dechet electronique ou charge metallique incompatible avec le reemploi."
+            notes.append("Dechet electronique ou fortement metallique: reemploi ecarte.")
+        elif wt == WasteType.HUILE_USAGEE:
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Huile usagee incompatible avec le reemploi."
+            notes.append("Huile usagee: reemploi ecarte.")
         elif plastic and contamination <= 15 and humidity <= 35 and danger in {"faible", "moyen"}:
-            tech += 12.0
-            notes.append("Flux plastique propre et homogene: reemploi possible si la qualite est conservee.")
+            tech -= 30.0
+            blocked_reason = "Flux plastique trop contamine pour le reemploi."
         else:
             tech -= 10.0
         if wet_organic or abattoir:
@@ -2274,14 +2420,39 @@ def _apply_scientific_route_bias(w: WasteInput, wt: WasteType, m: dict[str, floa
             tech -= 20.0
 
     elif filiere == "neutralisation_chimique":
-        if chlorine_risk or danger in {"eleve", "critique"} or w.categorie == WasteCategory.CHEMICAL:
-            tech += 18.0
-            notes.append("Stabilisation chimique utile pour un flux reactif, chlore ou dangereux.")
+        if _is_paint_or_coating_waste(w) or chlorine_risk or danger in {"eleve", "critique"} or w.categorie == WasteCategory.CHEMICAL or electronic or metals_heavy or metal_category:
+            tech += 30.0
+            notes.append("Stabilisation chimique utile pour un flux reactif, chlore, dangereux ou charge en metaux lourds.")
+        elif wt == WasteType.HUILE_USAGEE:
+            tech -= 12.0
+            notes.append("Huile usagee: neutralisation chimique reservee aux cas fortement contamines.")
         else:
             tech -= 22.0
 
+    elif filiere == "pyrolyse_gazification":
+        if electronic or metals_heavy or metal_category:
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Dechet electronique ou charge metallique incompatible avec la pyrolyse/gazification."
+            notes.append("Dechet electronique ou fortement metallique: pyrolyse/gazification ecartee.")
+        elif pci >= 15 and humidity <= 25 and not chlorine_risk:
+            tech += 16.0
+            notes.append("PCI eleve et faible humidite compatibles avec une pyrolyse/gazification de stabilisation.")
+            conditions.append("tri et controle emissions")
+        else:
+            tech -= 15.0
+        if chlorine_risk:
+            tech -= 20.0
+        if humidity > 50:
+            tech -= 10.0
+
     elif filiere == "co_incineration_cimenterie":
-        if pci >= 15 and humidity <= 35 and not chlorine_risk:
+        if electronic or metals_heavy or metal_category:
+            tech -= 60.0
+            feasible = False
+            blocked_reason = "Dechet electronique ou charge metallique incompatible avec la co-incineration."
+            notes.append("Dechet electronique ou fortement metallique: co-incineration ecartee.")
+        elif pci >= 15 and humidity <= 35 and not chlorine_risk:
             tech += 18.0
             notes.append("PCI eleve et humidite faible compatibles avec co-incineration en cimenterie.")
             conditions.append("autorisation cimenterie")
@@ -2437,7 +2608,16 @@ def _select(
         return chosen, reasons
 
     non_elimination = [x for x in feasible if x.get("filiere") != DECISION_ELIMINATION]
-    if non_elimination:
+    if non_elimination and material.get("reliable"):
+        contamination = float(waste.taux_contamination_pct or 0.0)
+        humidity = float(material.get("humidity_pct") or 0.0)
+        chlorine_risk = bool(waste.presence_chlore or _is_pvc(waste))
+        if (waste.categorie == WasteCategory.PLASTIC or _is_probably_plastic_text(waste)) and contamination <= 20.0 and humidity <= 40.0 and not chlorine_risk:
+            preferred = [x for x in non_elimination if x.get("filiere") == "recyclage_matiere" and x.get("feasible", True)]
+            if preferred:
+                chosen = sorted(preferred, key=lambda z: (rank(z), float(z.get("technical_score", 0.0))), reverse=True)[0]
+                reasons.append("Plastique propre: recyclage matiere prioritaire sur le reemploi.")
+                return chosen, reasons
         by = {g: [x for x in non_elimination if x["hierarchy"] == g] for g in HIERARCHY}
         best = {g: (sorted(by[g], key=lambda z: (rank(z), float(z.get("technical_score", 0.0))), reverse=True)[0] if by[g] else None) for g in HIERARCHY}
         baseline = next((best[g] for g in HIERARCHY if best.get(g)), None)
@@ -2445,7 +2625,7 @@ def _select(
 
         if baseline and top_candidate and top_candidate.get("filiere") != baseline.get("filiere"):
             advantage = rank(top_candidate) - rank(baseline)
-            threshold = 3.0 if material.get("reliable") and material.get("lignocellulosic") else 5.0
+            threshold = 3.0 if material.get("reliable") else 5.0
             if advantage >= threshold:
                 reasons.append("Score hybride physico-chimique superieur a la priorite hierarchique.")
                 return top_candidate, reasons
@@ -2574,3 +2754,17 @@ def _alternatives(chosen: dict[str, Any], evald: list[dict[str, Any]]) -> list[d
             "reglementaire": round(float(x.get("regulatory_score", 0.0)), 2),
         })
     return out
+
+
+
+
+
+
+
+
+
+
+
+
+
+

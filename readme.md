@@ -1,4 +1,4 @@
-﻿# WasteWise
+# WasteWise
 
 Plateforme web d'analyse de dechets industriels, recommandation de valorisation, et marketplace B2B.
 
@@ -35,6 +35,6 @@ Exemple: `.env.exemple`
 
 - `OPENAI_API_KEY` ou `AFRI_API_KEY`
 - `OPENAI_BASE_URL` ou `DATABASE_URL`
-- `OPENAI_MODEL` (ex: `gpt-5.4-mini`)
+- `OPENAI_MODEL` (ex: `gpt-5.5`)
 - `CORS_ORIGINS` (optionnel)
 - `WASTEAI_ADMIN_KEY` (optionnel)

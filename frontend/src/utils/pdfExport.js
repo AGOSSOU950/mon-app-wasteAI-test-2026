@@ -1,4 +1,4 @@
-﻿import { jsPDF } from "jspdf"
+import { jsPDF } from "jspdf"
 import { CHANNELS, rankChannels } from "../services/localChannelsEngine.js"
 
 function formatDate(value = new Date()) {
@@ -16,6 +16,49 @@ function formatOptionalNumber(value, unit = "") {
   return unit ? `${formatted} ${unit}` : formatted
 }
 
+function parsePdfNumber(value) {
+  if (value === null || value === undefined || value === "") return Number.NaN
+  if (typeof value === "number") return value
+
+  const normalized = String(value)
+    .trim()
+    .replace(/[\u202f\u00a0\s]/g, "")
+    .replace(/[\/]/g, "")
+    .replace(/[^0-9,.-]/g, "")
+
+  if (!normalized) return Number.NaN
+
+  if (normalized.includes(",") && !normalized.includes(".")) {
+    return Number(normalized.replace(/,/g, "."))
+  }
+
+  return Number(normalized.replace(/,/g, ""))
+}
+
+function formatPdfMoney(value) {
+  const n = parsePdfNumber(value)
+  if (!Number.isFinite(n)) return "N/R"
+  return `${Math.round(n)}f`
+}
+
+function formatPdfNumber(value, unit = "") {
+  const n = parsePdfNumber(value)
+  if (!Number.isFinite(n)) return "N/R"
+  const text = Number.isInteger(n) ? `${Math.round(n)}` : `${new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 }).format(n).replace(/\s+/g, "")}`
+  return unit ? `${text} ${unit}` : text
+}
+
+function pdfSafeText(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\u202f\u00a0]/g, " ")
+    .replace(/[’‘]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+}
 function normalizeText(value) {
   return String(value || "")
     .normalize("NFD")
@@ -295,11 +338,11 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     doc.setFillColor(...colors.brand)
     doc.roundedRect(x, y - 4, width, 8, 2, 2, "F")
     setText([255, 255, 255], "bold", 10)
-    doc.text(text, x + 3, y + 1.5)
+    doc.text(pdfSafeText(text), x + 3, y + 1.5)
     setText(colors.text)
   }
 
-  const wrap = (text, width) => doc.splitTextToSize(String(text || ""), width)
+  const wrap = (text, width) => doc.splitTextToSize(pdfSafeText(String(text || "")), width)
 
   const paragraph = (text, x, y, width, options = {}) => {
     const { font = "normal", size = 10, color = colors.text, maxLines = null } = options
@@ -311,22 +354,23 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   }
 
   const chip = (label, x, y, maxWidth) => {
-    const textWidth = doc.getTextWidth(label)
+    const safeLabel = pdfSafeText(label)
+    const textWidth = doc.getTextWidth(safeLabel)
     const width = Math.min(maxWidth, textWidth + 6)
     doc.setFillColor(...colors.brandSoft)
     doc.setDrawColor(...colors.border)
     doc.roundedRect(x, y - 3.2, width, 6.4, 3, 3, "FD")
     setText(colors.brand, "bold", 8)
-    doc.text(label, x + 3, y)
+    doc.text(safeLabel, x + 3, y)
     return width
   }
 
   const metricCard = (x, y, w, h, label, value, hint) => {
     panel(x, y, w, h, colors.surface, colors.border, 3)
     setText(colors.muted, "bold", 8)
-    doc.text(label, x + 3, y + 5.5)
+    doc.text(pdfSafeText(label), x + 3, y + 5.5)
     setText(colors.text, "bold", 13)
-    doc.text(String(value || "N/R"), x + 3, y + 12)
+    doc.text(pdfSafeText(String(value || "N/R")), x + 3, y + 12)
     if (hint) {
       setText(colors.muted, "normal", 8)
       doc.text(wrap(hint, w - 6).slice(0, 2), x + 3, y + 17, { lineHeightFactor: 1.05 })
@@ -337,7 +381,7 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     let cursorY = y
     items.forEach(([label, value]) => {
       setText(colors.muted, "bold", 8)
-      doc.text(`${label}:`, x, cursorY)
+      doc.text(pdfSafeText(`${label}:`), x, cursorY)
       setText(colors.text, "normal", 8)
       const lines = wrap(String(value || "N/R"), width - 28)
       doc.text(lines, x + 26, cursorY, { lineHeightFactor: 1.05 })
@@ -351,7 +395,7 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     items.slice(0, maxItems).forEach((item) => {
       const lines = wrap(String(item || ""), width - 4)
       setText(colors.text, "normal", 8)
-      doc.text(`- ${lines[0] || ""}`, x, cursorY)
+      doc.text(pdfSafeText(`- ${lines[0] || ""}`), x, cursorY)
       if (lines.length > 1) {
         doc.text(lines.slice(1), x + 4, cursorY + 4, { lineHeightFactor: 1.05 })
         cursorY += 4 * lines.length
@@ -364,9 +408,9 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
 
   fillPage()
   setText(colors.brand, "bold", 12)
-  doc.text("WasteAI - Rapport analytique", margin, 13)
+  doc.text(pdfSafeText("WasteAI - Rapport analytique"), margin, 13)
   setText(colors.muted, "normal", 8)
-  doc.text(`Généré le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
+  doc.text(pdfSafeText(`Genere le ${formatDate()}`), pageWidth - margin, 13, { align: "right" })
 
   const heroY = 18
   const heroH = 44
@@ -375,38 +419,38 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   doc.roundedRect(margin + 1, heroY + 1, contentWidth * 0.67, heroH - 2, 4, 4, "F")
 
   setText(colors.muted, "bold", 8)
-  doc.text("WasteAI - Fiche de synthèse", margin + 4, heroY + 8)
+  doc.text(pdfSafeText("WasteAI - Fiche de synthese"), margin + 4, heroY + 8)
   setText(colors.text, "bold", 15)
-  doc.text(wrap(profile.name || "Déchet non précisé", 92).slice(0, 2), margin + 4, heroY + 16, { lineHeightFactor: 1.05 })
+  doc.text(wrap(profile.name || "Dechet non precise", 92).slice(0, 2), margin + 4, heroY + 16, { lineHeightFactor: 1.05 })
   paragraph(clampText(whyPriority || "Analyse technique du flux et de ses voies de valorisation.", 3), margin + 4, heroY + 24, 88, { color: colors.muted, size: 8.5, maxLines: 3 })
 
   let chipX = margin + 4
   const chipY = heroY + 35
   chipX += chip(`Voie recommandée: ${formatRouteLabel(selectedRoute)}`, chipX, chipY, 88) + 2
   chipX += chip(profile.type || "Type non précisé", chipX, chipY, 40) + 2
-  chip(`Quantité ${formatOptionalNumber(profile.quantityKg, "kg") || "non précisée"}`, chipX, chipY, 44)
+  chip(`Quantite ${formatPdfNumber(profile.quantityKg, "kg") || "non precise"}`, chipX, chipY, 44)
 
   const scoreX = margin + contentWidth * 0.69
   panel(scoreX, heroY + 4, contentWidth * 0.27, heroH - 8, colors.surfaceSoft, colors.border, 4)
   setText(colors.muted, "bold", 7)
-  doc.text("Lecture rapide", scoreX + 3, heroY + 10)
+  doc.text(pdfSafeText("Lecture rapide"), scoreX + 3, heroY + 10)
   setText(colors.text, "bold", 12)
-  doc.text(confidenceInfo.label, scoreX + 3, heroY + 17)
+  doc.text(pdfSafeText(confidenceInfo.label), scoreX + 3, heroY + 17)
   setText(colors.muted, "normal", 8)
   doc.text(wrap(confidenceInfo.message, contentWidth * 0.24).slice(0, 2), scoreX + 3, heroY + 24, { lineHeightFactor: 1.05 })
-  doc.text(formatDate(), scoreX + 3, heroY + 39)
+  doc.text(pdfSafeText(formatDate()), scoreX + 3, heroY + 39)
 
   const summaryY = heroY + heroH + 5
   panel(margin, summaryY, contentWidth, 34, colors.surface, colors.border, 5)
-  sectionTitle("Synthèse économique", margin + 4, summaryY + 8, 42)
+  sectionTitle("Synthese economique", margin + 4, summaryY + 8, 42)
   const metricY = summaryY + 12
   const metricW = (contentWidth - 9) / 4
-  metricCard(margin + 4, metricY, metricW, 18, "Valeur", formatMaybeNumber(saleValue, "FCFA/t"), "Valeur estimée par tonne")
-  metricCard(margin + 4 + metricW + 3, metricY, metricW, 18, "Coût", formatMaybeNumber(treatmentCost, "FCFA/t"), "Coût de traitement par tonne")
-  metricCard(margin + 4 + (metricW + 3) * 2, metricY, metricW, 18, "Gain net", formatMaybeNumber(industrialGainTotal, "FCFA"), "Gain total projeté")
-  metricCard(margin + 4 + (metricW + 3) * 3, metricY, metricW, 18, "CO2 évité", formatMaybeNumber(co2, "kgCO2e"), "Impact environnemental net")
+  metricCard(margin + 4, metricY, metricW, 18, "Valeur", formatPdfMoney(saleValue), "Valeur estimee par tonne")
+  metricCard(margin + 4 + metricW + 3, metricY, metricW, 18, "Cout", formatPdfMoney(treatmentCost), "Cout de traitement par tonne")
+  metricCard(margin + 4 + (metricW + 3) * 2, metricY, metricW, 18, "Gain net", formatPdfMoney(industrialGainTotal), "Gain total projete")
+  metricCard(margin + 4 + (metricW + 3) * 3, metricY, metricW, 18, "CO2 evite", formatPdfNumber(co2, "kgCO2e"), "Impact environnemental net")
   setText(colors.muted, "normal", 8)
-  doc.text(`Impact environnemental: ${formatMaybeNumber(co2, "kgCO2e")} évités.`, margin + 4, summaryY + 31)
+  doc.text(pdfSafeText(`Impact environnemental: ${formatPdfNumber(co2, "kgCO2e")} evites.`), margin + 4, summaryY + 31)
 
   const leftY = summaryY + 39
   panel(margin, leftY, leftColWidth, 74, colors.surface, colors.border, 5)
@@ -415,17 +459,17 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   sectionTitle("Lecture technique", margin + leftColWidth + gap + 4, leftY + 8, 36)
 
   keyValueGrid(margin + 4, leftY + 15, leftColWidth - 8, [
-    ["Déchet", profile.name || "N/R"],
+    ["Dechet", profile.name || "N/R"],
     ["Type", profile.type || "N/R"],
-    ["Humidité", formatPercent(profile.humidity)],
-    ["PCI", formatMaybeNumber(profile.pci, "MJ/kg")],
-    ["DCO / DBO", `${formatMaybeNumber(profile.dco, "mg/L")} / ${formatMaybeNumber(profile.dbo, "mg/L")}`],
-    ["Contam.", formatPercent(profile.contamination)],
-    ["Métaux", boolLabel(profile.hasMetals)],
+    ["Humidite", formatPdfNumber(profile.humidity, "%")],
+    ["PCI", formatPdfNumber(profile.pci, "MJ/kg")],
+    ["DCO / DBO", `${formatPdfNumber(profile.dco, "mg/L")} / ${formatPdfNumber(profile.dbo, "mg/L")}`],
+    ["Contam.", formatPdfNumber(profile.contamination, "%")],
+    ["Metaux", boolLabel(profile.hasMetals)],
     ["Chlore", boolLabel(profile.hasChlorine)],
   ])
 
-  paragraph(clampText(whyPriority || "Aucune justification détaillée disponible.", 4), margin + leftColWidth + gap + 4, leftY + 15, rightColWidth - 8, { color: colors.text, size: 8, maxLines: 6 })
+  paragraph(clampText(whyPriority || "Aucune justification detaillee disponible.", 4), margin + leftColWidth + gap + 4, leftY + 15, rightColWidth - 8, { color: colors.text, size: 8, maxLines: 6 })
   keyValueGrid(margin + leftColWidth + gap + 4, leftY + 41, rightColWidth - 8, [
     ["Voie retenue", formatRouteLabel(selectedRoute)],
     ["Conditions", conditions.length ? conditions.join(" ; ") : "Aucune condition explicite"],
@@ -434,15 +478,15 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   doc.addPage()
   fillPage()
   setText(colors.brand, "bold", 12)
-  doc.text("WasteAI - Détails de la décision", margin, 13)
+  doc.text(pdfSafeText("WasteAI - Details de la decision"), margin, 13)
   setText(colors.muted, "normal", 8)
-  doc.text(`Généré le ${formatDate()}`, pageWidth - margin, 13, { align: "right" })
+  doc.text(pdfSafeText(`Genere le ${formatDate()}`), pageWidth - margin, 13, { align: "right" })
 
   const topBlockY = 20
   panel(margin, topBlockY, columnWidth, 108, colors.surface, colors.border, 5)
   panel(margin + columnWidth + gap, topBlockY, columnWidth, 108, colors.surface, colors.border, 5)
-  sectionTitle("Voies examinées", margin + 4, topBlockY + 8, 38)
-  sectionTitle("Opérateurs compatibles", margin + columnWidth + gap + 4, topBlockY + 8, 48)
+  sectionTitle("Voies examinees", margin + 4, topBlockY + 8, 38)
+  sectionTitle("Operateurs compatibles", margin + columnWidth + gap + 4, topBlockY + 8, 48)
 
   let routeCursor = topBlockY + 16
   routeList.slice(0, 3).forEach((item, idx) => {
@@ -454,9 +498,9 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
 
     panel(margin + 4, routeCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
     setText(colors.text, "bold", 10)
-    doc.text(title, margin + 7, routeCursor + 3.5)
+    doc.text(pdfSafeText(title), margin + 7, routeCursor + 3.5)
     setText(colors.muted, "normal", 7)
-    doc.text(`${Number.isFinite(score) ? `${score.toFixed(0)}/100` : "N/R"} | ${status}`, margin + 7, routeCursor + 9)
+    doc.text(pdfSafeText(`${Number.isFinite(score) ? `${score.toFixed(0)}/100` : "N/R"} | ${status}`), margin + 7, routeCursor + 9)
     if (conditionsText) {
       doc.text(wrap(conditionsText, columnWidth - 20).slice(0, 1), margin + 7, routeCursor + 14, { lineHeightFactor: 1.05 })
     }
@@ -469,9 +513,9 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   actorRows.slice(0, 3).forEach((actor) => {
     panel(margin + columnWidth + gap + 4, actorCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
     setText(colors.text, "bold", 9)
-    doc.text(actor.name || "Opérateur", margin + columnWidth + gap + 7, actorCursor + 3)
+    doc.text(pdfSafeText(actor.name || "Operateur"), margin + columnWidth + gap + 7, actorCursor + 3)
     setText(colors.muted, "normal", 7)
-    doc.text(Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : "N/R", margin + columnWidth + gap + 7, actorCursor + 9)
+    doc.text(pdfSafeText(Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : "N/R"), margin + columnWidth + gap + 7, actorCursor + 9)
     setText(colors.text, "normal", 8)
     doc.text(wrap(clampText(actor.justification || "", 2), columnWidth - 14).slice(0, 2), margin + columnWidth + gap + 7, actorCursor + 15, { lineHeightFactor: 1.05 })
     actorCursor += 31
@@ -479,17 +523,17 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
 
   const bottomY = 132
   panel(margin, bottomY, contentWidth, 72, colors.surface, colors.border, 5)
-  sectionTitle("Hypothèses et avertissements", margin + 4, bottomY + 8, 54)
+  sectionTitle("Hypotheses et avertissements", margin + 4, bottomY + 8, 54)
   setText(colors.text, "normal", 8)
   bulletList(margin + 4, bottomY + 16, contentWidth / 2 - 6, assumptions.length ? assumptions : ["Aucune hypothèse majeure"], 4)
   bulletList(margin + contentWidth / 2 + 2, bottomY + 16, contentWidth / 2 - 6, warnings.length ? warnings : ["Aucun avertissement majeur"], 4)
   setText(colors.muted, "normal", 7)
-  doc.text(`Gain/t: ${formatMaybeNumber(industrialGainTon, "FCFA/t")}`, margin + 4, bottomY + 63)
-  doc.text(`ROI: ${Number.isFinite(roi) ? roi.toFixed(2) : "N/R"}`, margin + contentWidth / 2 + 2, bottomY + 63)
-  doc.text(`Page 2 / ${doc.getNumberOfPages()}`, pageWidth - margin, pageHeight - 10, { align: "right" })
+  doc.text(pdfSafeText(`Gain/t: ${formatPdfMoney(industrialGainTon)}`), margin + 4, bottomY + 63)
+  doc.text(pdfSafeText(`ROI: ${Number.isFinite(roi) ? roi.toFixed(2) : "N/R"}`), margin + contentWidth / 2 + 2, bottomY + 63)
+  doc.text(pdfSafeText(`Page 2 / ${doc.getNumberOfPages()}`), pageWidth - margin, pageHeight - 10, { align: "right" })
 
   doc.setPage(1)
-  doc.text(`Page 1 / ${doc.getNumberOfPages()}`, pageWidth - margin, pageHeight - 10, { align: "right" })
+  doc.text(pdfSafeText(`Page 1 / ${doc.getNumberOfPages()}`), pageWidth - margin, pageHeight - 10, { align: "right" })
 
   try {
     doc.save(filename)
@@ -508,3 +552,5 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     if (error) void error
   }
 }
+
+

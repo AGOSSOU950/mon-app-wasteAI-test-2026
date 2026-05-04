@@ -427,7 +427,7 @@ def identify_waste_from_image(image_bytes: bytes, media_type: str, filename: str
             instruction=_build_prompt(),
             image_bytes=processed_bytes,
             media_type=processed_media_type,
-            model=(os.getenv("OPENAI_VISION_MODEL") or os.getenv("OPENAI_MODEL") or "gpt-4.1").strip(),
+            model=(os.getenv("OPENAI_VISION_MODEL") or os.getenv("OPENAI_MODEL") or "gpt-5.5").strip(),
             max_tokens=320,
             timeout_s=35,
         )

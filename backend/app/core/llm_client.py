@@ -32,7 +32,7 @@ def get_llm_base_url() -> str | None:
     return _normalize_base_url(os.getenv("OPENAI_BASE_URL") or os.getenv("DATABASE_URL"))
 
 
-def get_llm_model(default: str = "gpt-4.1") -> str:
+def get_llm_model(default: str = "gpt-5.5") -> str:
     return (os.getenv("OPENAI_MODEL") or default).strip()
 
 
@@ -189,7 +189,7 @@ def vision_completion_json(
         logger.warning("Vision call skipped: missing API key or endpoint")
         return None
 
-    selected_model = (model or (os.getenv("OPENAI_VISION_MODEL") or "gpt-4.1")).strip()
+    selected_model = (model or (os.getenv("OPENAI_VISION_MODEL") or "gpt-5.5")).strip()
     encoded = base64.b64encode(image_bytes).decode("utf-8")
     image_data_url = f"data:{media_type};base64,{encoded}"
     body = {
