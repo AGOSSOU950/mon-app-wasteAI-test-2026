@@ -1327,6 +1327,16 @@ def analyzeMaterialProperties(waste: WasteInput, metrics: dict[str, Any]) -> dic
         "cues": cues,
     }
 
+def _is_dry_lignocellulosic_material(material: dict[str, Any]) -> bool:
+    if not material.get("reliable"):
+        return False
+
+    lignocellulosic = bool(material.get("lignocellulosic"))
+    lignine = float(material.get("lignine_pct") or 0.0)
+    humidity = float(material.get("humidity_pct") or 0.0)
+    pci = float(material.get("pci_mj_kg") or 0.0)
+
+    return lignocellulosic and lignine >= 20.0 and humidity <= 25.0 and pci >= 12.0
 
 def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, Any]]:
     if not material.get("reliable"):
@@ -1367,6 +1377,9 @@ def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, 
         meth_conditions.append("faible humidite defavorable a la methanisation")
     if lignocellulosic and lignine > 20:
         meth_score -= 15
+    if lignocellulosic and lignine >= 20 and humidity <= 25:
+        meth_score -= 30
+        meth_conditions.append("matrice lignocellulosique seche defavorable a la methanisation")
     meth_just = "Recommande car flux humide et facilement biodegradable." if meth_score > 0 else "Non recommande pour methanisation: matrice lignocellulosique ou biodegradabilite insuffisante."
 
     comp_score = 0.0
@@ -1386,6 +1399,9 @@ def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, 
         comp_score += 10
     if lignocellulosic and lignine > 20:
         comp_score -= 20
+    if lignocellulosic and lignine >= 20 and humidity <= 25:
+        comp_score -= 25
+        comp_conditions.append("lignine elevee et secheresse defavorables au compostage")
     comp_just = "Recommande car humidite et structure sont compatibles avec une stabilisation aerobie." if comp_score > 0 else "Non recommande pour compostage: fraction trop lignifiee ou trop seche."
 
     energy_score = 0.0
@@ -1396,6 +1412,8 @@ def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, 
     if humidity < 20:
         energy_score += 30
     if lignine > 20:
+        energy_score += 20
+    if lignocellulosic and lignine >= 20 and humidity <= 25:
         energy_score += 20
     if humidity > 60:
         energy_score -= 30
@@ -1413,6 +1431,8 @@ def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, 
         biochar_score += 20
     elif humidity < 25:
         biochar_score += 10
+    if lignocellulosic and lignine >= 20 and humidity <= 25:
+        biochar_score += 15
     if humidity > 30:
         biochar_score -= 10
     biochar_just = "Recommande car matrice lignocellulosique adaptee au biochar." if biochar_score > 0 else "Faible aptitude au biochar en l'absence de lignine ou de secheresse suffisante."
@@ -1521,6 +1541,7 @@ def _hybrid_route_score(route: dict[str, Any], material_lookup: dict[str, dict[s
     lignine = float(material.get("lignine_pct") or 0.0)
     humidity = float(material.get("humidity_pct") or 0.0)
     pci = float(material.get("pci_mj_kg") or 0.0)
+    dry_lignocellulosic = _is_dry_lignocellulosic_material(material)
 
     if key == "reemploi" and (material.get("lignocellulosic") or lignine > 20.0 or humidity > 45.0):
         base -= 20.0
@@ -1528,8 +1549,12 @@ def _hybrid_route_score(route: dict[str, Any], material_lookup: dict[str, dict[s
         base -= 18.0
     if key in {"methanisation_biogaz", "compostage"} and lignine > 20.0:
         base -= 12.0
+    if dry_lignocellulosic and key in {"methanisation_biogaz", "compostage"}:
+        base -= 35.0
     if key in {"valorisation_energetique", "biochar"} and (pci > 12.0 or humidity < 25.0):
         base += 8.0
+    if dry_lignocellulosic and key in {"valorisation_energetique", "biochar"}:
+        base += 15.0
 
     mat = material_lookup.get(key)
     if not mat:
@@ -1540,8 +1565,12 @@ def _hybrid_route_score(route: dict[str, Any], material_lookup: dict[str, dict[s
 
     if key in {"methanisation_biogaz", "compostage"} and lignine > 20.0:
         weight += 0.08
+    if dry_lignocellulosic and key in {"methanisation_biogaz", "compostage"}:
+        weight += 0.15
     if key in {"valorisation_energetique", "biochar"} and (pci > 12.0 or humidity < 25.0):
         weight += 0.05
+    if dry_lignocellulosic and key in {"valorisation_energetique", "biochar"}:
+        weight += 0.12
 
     return _b(base + (weight * (material_score - 50.0)))
 
@@ -1780,6 +1809,14 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     generic_scores = _score_generic_solutions(effective_waste, metrics)
 
     chosen, hierarchy_reasons = _select(effective_waste, evald, generic_scores, material_profile)
+    if material_profile.get("reliable") and _is_dry_lignocellulosic_material(material_profile):
+        preferred = [x for x in evald if x.get("filiere") in {"biochar", "valorisation_energetique", "charbon_actif"} and x.get("feasible", True)]
+        if preferred:
+            chosen = sorted(preferred, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)[0]
+            hierarchy_reasons = [
+                "Biomasse lignocellulosique seche: methanisation et compostage de-priorises de facon hard-rule.",
+                f"Priorite a {chosen.get('filiere')} selon PCI={float(material_profile.get('pci_mj_kg') or 0.0):.1f} MJ/kg, lignine={float(material_profile.get('lignine_pct') or 0.0):.1f}% et humidite={float(material_profile.get('humidity_pct') or 0.0):.1f}%.",
+            ]
     if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE and material_profile.get("reliable"):
         material_lignine = float(material_profile.get("lignine_pct") or 0.0)
         material_humidity = float(material_profile.get("humidity_pct") or 0.0)
@@ -1796,7 +1833,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         humidity_pct = float(metrics.get("humidite_pct", 100.0 - float(metrics.get("siccite_pct", 0.0) or 0.0)) or 0.0)
         lignine = float(metrics.get("taux_lignine_pct", 0.0) or 0.0)
         pci = float(metrics.get("pci_mj_kg", 0.0) or 0.0)
-        if humidity_pct <= 25.0 and lignine >= 20.0 and pci >= 15.0:
+        if humidity_pct <= 25.0 and lignine >= 20.0 and pci >= 12.0:
             qt = max(0.01, float(effective_waste.quantite_kg) / 1000.0)
             val, treat, roi, eco, value_pt, cost_pt = _eco("biochar", qt, effective_waste.pays_cedeao or "Benin")
             env, social, co2 = _env_social(effective_waste, "biochar", effective_waste.pays_cedeao or "Benin")
@@ -1823,6 +1860,14 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
                 "co2_avoided_kg": round(co2, 2),
             }
             hierarchy_reasons = ["Biomasse lignocellulosique seche: biochar prioritaire avant les autres voies."]
+    elif _is_dry_lignocellulosic_material(material_profile):
+        preferred = [x for x in evald if x.get("filiere") in {"biochar", "valorisation_energetique", "charbon_actif"} and x.get("feasible", True)]
+        if preferred:
+            chosen = sorted(preferred, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)[0]
+            hierarchy_reasons = [
+                "Biomasse lignocellulosique seche identifiee par analyse matiere: methanisation et compostage de-priorises.",
+                f"Priorite a {chosen.get('filiere')} selon PCI={float(material_profile.get('pci_mj_kg') or 0.0):.1f} MJ/kg, lignine={float(material_profile.get('lignine_pct') or 0.0):.1f}% et humidite={float(material_profile.get('humidity_pct') or 0.0):.1f}%.",
+            ]
     if _is_paint_or_coating_waste(effective_waste):
         paint_choice = next((x for x in evald if x.get("filiere") == "neutralisation_chimique" and x.get("feasible", True)), None)
         if paint_choice is not None:

@@ -274,7 +274,7 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     brandSoft: [233, 244, 239],
   }
 
-  const setText = (color, font = "normal", size = 10) => {
+  const setText = (color, font = "normal", size = 11) => {
     doc.setTextColor(...color)
     doc.setFont("helvetica", font)
     doc.setFontSize(size)
@@ -302,7 +302,7 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   const wrap = (text, width) => doc.splitTextToSize(String(text || ""), width)
 
   const paragraph = (text, x, y, width, options = {}) => {
-    const { font = "normal", size = 9, color = colors.text, maxLines = null } = options
+    const { font = "normal", size = 10, color = colors.text, maxLines = null } = options
     setText(color, font, size)
     const lines = wrap(text, width)
     const output = maxLines ? lines.slice(0, maxLines) : lines
@@ -323,13 +323,13 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
 
   const metricCard = (x, y, w, h, label, value, hint) => {
     panel(x, y, w, h, colors.surface, colors.border, 3)
-    setText(colors.muted, "bold", 7)
-    doc.text(label, x + 3, y + 5)
-    setText(colors.text, "bold", 11)
-    doc.text(String(value || "N/R"), x + 3, y + 11)
+    setText(colors.muted, "bold", 8)
+    doc.text(label, x + 3, y + 5.5)
+    setText(colors.text, "bold", 13)
+    doc.text(String(value || "N/R"), x + 3, y + 12)
     if (hint) {
-      setText(colors.muted, "normal", 7)
-      doc.text(wrap(hint, w - 6).slice(0, 2), x + 3, y + 16.2, { lineHeightFactor: 1.05 })
+      setText(colors.muted, "normal", 8)
+      doc.text(wrap(hint, w - 6).slice(0, 2), x + 3, y + 17, { lineHeightFactor: 1.05 })
     }
   }
 
@@ -405,7 +405,7 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   metricCard(margin + 4 + metricW + 3, metricY, metricW, 18, "Coût", formatMaybeNumber(treatmentCost, "FCFA/t"), "Coût de traitement par tonne")
   metricCard(margin + 4 + (metricW + 3) * 2, metricY, metricW, 18, "Gain net", formatMaybeNumber(industrialGainTotal, "FCFA"), "Gain total projeté")
   metricCard(margin + 4 + (metricW + 3) * 3, metricY, metricW, 18, "CO2 évité", formatMaybeNumber(co2, "kgCO2e"), "Impact environnemental net")
-  setText(colors.muted, "normal", 7)
+  setText(colors.muted, "normal", 8)
   doc.text(`Impact environnemental: ${formatMaybeNumber(co2, "kgCO2e")} évités.`, margin + 4, summaryY + 31)
 
   const leftY = summaryY + 39
@@ -453,15 +453,15 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     const conditionsText = Array.isArray(item?.conditions) ? item.conditions.join(" ; ") : String(item?.conditions || "")
 
     panel(margin + 4, routeCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
-    setText(colors.text, "bold", 9)
-    doc.text(title, margin + 7, routeCursor + 3)
+    setText(colors.text, "bold", 10)
+    doc.text(title, margin + 7, routeCursor + 3.5)
     setText(colors.muted, "normal", 7)
-    doc.text(`${Number.isFinite(score) ? `${score.toFixed(0)}/100` : "N/R"} | ${status}`, margin + 7, routeCursor + 8)
+    doc.text(`${Number.isFinite(score) ? `${score.toFixed(0)}/100` : "N/R"} | ${status}`, margin + 7, routeCursor + 9)
     if (conditionsText) {
-      doc.text(wrap(conditionsText, columnWidth - 20).slice(0, 1), margin + 7, routeCursor + 13, { lineHeightFactor: 1.05 })
+      doc.text(wrap(conditionsText, columnWidth - 20).slice(0, 1), margin + 7, routeCursor + 14, { lineHeightFactor: 1.05 })
     }
     setText(colors.text, "normal", 8)
-    doc.text(wrap(explanation, columnWidth - 14).slice(0, 2), margin + 7, routeCursor + 19, { lineHeightFactor: 1.05 })
+    doc.text(wrap(explanation, columnWidth - 14).slice(0, 2), margin + 7, routeCursor + 20, { lineHeightFactor: 1.05 })
     routeCursor += 31
   })
 
@@ -471,9 +471,9 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     setText(colors.text, "bold", 9)
     doc.text(actor.name || "Opérateur", margin + columnWidth + gap + 7, actorCursor + 3)
     setText(colors.muted, "normal", 7)
-    doc.text(Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : "N/R", margin + columnWidth + gap + 7, actorCursor + 8)
+    doc.text(Number.isFinite(Number(actor.score)) ? `${Math.round(Number(actor.score))}/100` : "N/R", margin + columnWidth + gap + 7, actorCursor + 9)
     setText(colors.text, "normal", 8)
-    doc.text(wrap(clampText(actor.justification || "", 2), columnWidth - 14).slice(0, 2), margin + columnWidth + gap + 7, actorCursor + 14, { lineHeightFactor: 1.05 })
+    doc.text(wrap(clampText(actor.justification || "", 2), columnWidth - 14).slice(0, 2), margin + columnWidth + gap + 7, actorCursor + 15, { lineHeightFactor: 1.05 })
     actorCursor += 31
   })
 

@@ -115,6 +115,26 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
         self.assertTrue(any(item.get("solution") == "biochar" for item in (result.scores_par_voie or [])))
 
 
+    def test_coque_de_noix_de_coco_dry_lignocellulosic_routes_to_biochar(self) -> None:
+        waste = WasteInput(
+            nom="coque de noix de coco",
+            categorie=WasteCategory.OTHER,
+            type_dechet=WasteType.OTHER,
+            type_industrie=IndustryType.OTHER,
+            quantite_kg=850,
+            niveau_danger=DangerLevel.LOW,
+            description="Biomasse lignocellulosique seche avec PCI eleve, lignine elevee et humidite faible",
+            contient_metaux=False,
+            pays_cedeao="Benin",
+            pci_mj_kg=18.0,
+            taux_lignine_pct=28.0,
+            taux_humidite_pct=8.0,
+        )
+        result = analyser_dechet(waste)
+        self.assertEqual(result.decision_principale, "biochar")
+        self.assertTrue(any(item.get("solution") == "biochar" for item in (result.scores_par_voie or [])))
+        self.assertFalse(any(item.get("solution") == "methanisation" for item in (result.scores_par_voie or [])[:3]))
+        self.assertIn("biochar", str(result.explication_detaillee or "").lower())
     def test_textile_reusable_routes_to_reemploi(self) -> None:
         waste = WasteInput(
             nom="vetements propres reutilisables",
