@@ -1,10 +1,10 @@
 ﻿:root {
   color-scheme: dark;
-  --bg: #07100e;
-  --bg-elevated: #0d1513;
-  --surface: #101917;
-  --surface-2: #15211d;
-  --surface-3: #1a2723;
+  --bg: #0f1714;
+  --bg-elevated: #15211d;
+  --surface: #182420;
+  --surface-2: #1d2b27;
+  --surface-3: #22312c;
   --text: #f1f6f4;
   --muted: #b1bdb7;
   --line: rgba(255, 255, 255, 0.08);
@@ -14,8 +14,8 @@
   --brand-soft: rgba(143, 224, 181, 0.12);
   --warn: #e0ba63;
   --danger: #ef9b86;
-  --shadow: 0 30px 80px rgba(0, 0, 0, 0.38);
-  --shadow-soft: 0 14px 36px rgba(0, 0, 0, 0.18);
+  --shadow: 0 30px 80px rgba(8, 16, 14, 0.28);
+  --shadow-soft: 0 14px 36px rgba(8, 16, 14, 0.14);
   --radius-xl: 30px;
   --radius-lg: 22px;
   --radius-md: 16px;
@@ -65,7 +65,7 @@ body {
   background:
     radial-gradient(1000px 520px at 12% 0%, color-mix(in srgb, var(--brand) 16%, transparent), transparent 56%),
     radial-gradient(820px 420px at 88% 6%, color-mix(in srgb, var(--warn) 10%, transparent), transparent 50%),
-    linear-gradient(180deg, color-mix(in srgb, var(--bg) 96%, #000) 0%, var(--bg) 100%);
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 88%, var(--bg-elevated)) 0%, var(--bg) 100%);
   font-family: var(--font-ui, "Space Grotesk", "Segoe UI", sans-serif);
   line-height: 1.5;
   text-rendering: optimizeLegibility;
@@ -85,16 +85,16 @@ body::after {
 
 body::before {
   background-image:
-    linear-gradient(transparent 95%, rgba(255, 255, 255, 0.02) 100%),
-    linear-gradient(90deg, transparent 95%, rgba(255, 255, 255, 0.02) 100%);
+    linear-gradient(transparent 95%, rgba(255, 255, 255, 0.018) 100%),
+    linear-gradient(90deg, transparent 95%, rgba(255, 255, 255, 0.018) 100%);
   background-size: 100% 40px, 40px 100%;
   opacity: 0.22;
 }
 
 body::after {
   background:
-    radial-gradient(circle at center, transparent 55%, rgba(0, 0, 0, 0.16) 100%);
-  opacity: 0.45;
+    radial-gradient(circle at center, transparent 55%, rgba(8, 15, 13, 0.12) 100%);
+  opacity: 0.35;
 }
 
 h1,

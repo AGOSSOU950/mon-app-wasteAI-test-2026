@@ -3,10 +3,11 @@ import regulatoryProfiles from "../data/regulatory_profiles.json"
 
 const HAS_EXPLICIT_API_URL = Boolean(import.meta.env.VITE_API_URL)
 const API_URL = HAS_EXPLICIT_API_URL ? import.meta.env.VITE_API_URL : ""
-const API_BASE = API_URL.replace(/\/$/, "")
 const REMOTE_API_BASE = "https://wasteai-api.wasteai-gildas.workers.dev"
 const REMOTE_API_URL = REMOTE_API_BASE.replace(/\/$/, "")
-const SHOULD_TRY_REMOTE_FALLBACK = !HAS_EXPLICIT_API_URL || ((API_BASE !== REMOTE_API_URL) && /(^https?:\/\/(127\.0\.0\.1|localhost))|(^https?:\/\/[::1])/.test(API_BASE))
+const IS_LOCALHOST = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1|::1)$/.test(window.location.hostname)
+const API_BASE = IS_LOCALHOST ? "" : API_URL.replace(/\/$/, "")
+const SHOULD_TRY_REMOTE_FALLBACK = !IS_LOCALHOST && (!HAS_EXPLICIT_API_URL || ((API_BASE !== REMOTE_API_URL) && /(^https?:\/\/(127\.0\.0\.1|localhost))|(^https?:\/\/[::1])/.test(API_BASE)))
 
 
 
@@ -290,7 +291,7 @@ function shouldFallbackToRemote(error) {
   if (!axios.isAxiosError(error)) return false
   if (error.code === "ECONNABORTED") return true
   if (!error.response) return true
-  return error.response.status >= 500
+  return error.response.status >= 500 || error.response.status === 405
 }
 
 async function requestWithFallback(config) {
@@ -298,7 +299,14 @@ async function requestWithFallback(config) {
     return await http.request(config)
   } catch (error) {
     if (!shouldFallbackToRemote(error)) throw error
-    return remoteHttp.request(config)
+    try {
+      return await remoteHttp.request(config)
+    } catch (remoteError) {
+      if (axios.isAxiosError(remoteError) && remoteError.response?.status === 405) {
+        remoteError.message = `${remoteError.message}. Route not allowed on API cible: verifie que le backend expose bien ${String(config?.url || "")} avec la methode ${String(config?.method || "get").toUpperCase()}.`
+      }
+      throw remoteError
+    }
   }
 }
 
