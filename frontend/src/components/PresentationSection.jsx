@@ -46,7 +46,7 @@ const STEPS = [
 
 export default function PresentationSection({ onGoAnalyze }) {
   return (
-    <section className="card presentation-wrap presentation-home presentation-saas">
+    <section className="card presentation-wrap">
       <div className="presentation-topline">
         <span>WasteAI / plateforme d’aide à la décision déchets</span>
         <span>Industries · Réglementation · Valorisation</span>
@@ -54,8 +54,7 @@ export default function PresentationSection({ onGoAnalyze }) {
 
       <div className="presentation-hero">
         <div className="presentation-hero-copy">
-          <p className="presentation-kicker">Décision industrielle</p>
-          <p className="eyebrow">WasteAI</p>
+          <p className="presentation-kicker eyebrow">Décision industrielle</p>
           <h2>Du déchet à une décision de valorisation claire.</h2>
           <p className="presentation-subtitle">
             Une lecture technique pour les déchets ménagers et industriels, avec prise en compte des voies locales,
@@ -81,7 +80,9 @@ export default function PresentationSection({ onGoAnalyze }) {
           </div>
 
           <div className="presentation-actions">
-            <button className="btn btn-primary" type="button" onClick={onGoAnalyze}>Lancer une analyse</button>
+            <button className="btn btn-primary" type="button" onClick={onGoAnalyze}>
+              Lancer une analyse
+            </button>
             <p className="presentation-action-note">Rapide, exploitable, orienté terrain.</p>
           </div>
         </div>
@@ -105,7 +106,7 @@ export default function PresentationSection({ onGoAnalyze }) {
         </div>
       </div>
 
-      <div className="presentation-grid presentation-grid-saas">
+      <div className="presentation-grid">
         {FEATURES.map((item) => (
           <article key={item.title} className="presentation-item">
             <h3>{item.title}</h3>

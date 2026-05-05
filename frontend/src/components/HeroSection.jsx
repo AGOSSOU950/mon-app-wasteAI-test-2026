@@ -28,7 +28,7 @@ export default function HeroSection({ onAnalyzeNow }) {
           orienter rapidement vers la voie la plus réaliste.
         </p>
 
-        <div className="hero-stats">
+        <div className="hero-stats" aria-label="Indicateurs clés">
           <div className="hero-stat">
             <strong>{values.a.toLocaleString("fr-FR")}</strong>
             <span>analyses traitées</span>
@@ -44,22 +44,24 @@ export default function HeroSection({ onAnalyzeNow }) {
         </div>
 
         <div className="actions-row">
-          <button className="btn btn-primary" type="button" onClick={onAnalyzeNow}>Analyser un flux</button>
+          <button className="btn btn-primary" type="button" onClick={onAnalyzeNow}>
+            Analyser un flux
+          </button>
         </div>
       </div>
 
       <div className="hero-visual" aria-hidden="true">
-        <div className="hero-card hero-card-main">
+        <div className="hero-card">
           <span>Lecture</span>
           <strong>Technique, coût, conformité</strong>
           <small>En un seul écran</small>
         </div>
-        <div className="hero-card hero-card-secondary">
+        <div className="hero-card">
           <span>Focus</span>
           <strong>Voies utiles</strong>
           <small>Sans surcharge visuelle</small>
         </div>
-        <div className="hero-card hero-card-tertiary">
+        <div className="hero-card">
           <span>Terrain</span>
           <strong>Opérateurs locaux</strong>
           <small>Contact direct</small>

@@ -1,102 +1,43 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 
 :root {
-  --bg: #f4f5ef;
-  --surface: #ffffff;
-  --surface-soft: #f8faf5;
-  --text: #1f2e2a;
-  --muted: #5d6f68;
-  --line: #d6e1d8;
-  --brand: #1f7a55;
-  --brand-strong: #146343;
-  --brand-soft: #e8f3ed;
-  --shadow: 0 10px 30px rgba(24, 56, 44, 0.08);
-
-  --font-ui: "Space Grotesk", "Manrope", "Segoe UI", sans-serif;
+  --font-ui: "Space Grotesk", "Segoe UI", sans-serif;
   --font-title: "Plus Jakarta Sans", "Space Grotesk", "Segoe UI", sans-serif;
-
-  font-family: var(--font-ui);
-  color: var(--text);
-  background: radial-gradient(1200px 500px at 0% 0%, #e8efe6 0%, var(--bg) 55%);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 
-* {
-  box-sizing: border-box;
+html,
+body,
+#root {
+  min-height: 100%;
 }
 
 body {
   margin: 0;
-  color: var(--text);
-  background: radial-gradient(1200px 500px at 0% 0%, #e8efe6 0%, var(--bg) 55%);
 }
 
-#root {
-  max-width: 1180px;
-  margin: 0 auto;
-  min-height: 100svh;
-  padding: 18px 14px 32px;
+button,
+input,
+select,
+textarea {
+  font: inherit;
 }
 
-h1,
-h2,
-h3,
-h4 {
-  font-family: var(--font-title);
-  color: var(--text);
-}
-
-p {
-  color: var(--muted);
-}
-
-button {
-  font-family: var(--font-ui);
-}
-
-table {
-  background: var(--surface);
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-img {
-  display: block;
-  max-width: 100%;
-}
-
+button,
 input,
 select,
 textarea,
-button {
-  transition: all 0.2s ease;
+a {
+  -webkit-tap-highlight-color: transparent;
 }
 
-input:focus,
-select:focus,
-textarea:focus {
-  outline: none;
-  border-color: #1f7a55 !important;
-  box-shadow: 0 0 0 3px rgba(31, 122, 85, 0.16);
+::selection {
+  background: rgba(116, 210, 165, 0.28);
+  color: inherit;
 }
 
-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: saturate(1.05);
-}
-
-button:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-@media (max-width: 760px) {
-  #root {
-    padding: 12px 10px 24px;
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
   }
 }

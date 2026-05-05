@@ -9,61 +9,51 @@ export default function ChannelCard({ channel, isBest = false, onContact, onSele
   const routeHints = Array.isArray(channel.acceptedRouteHints) ? channel.acceptedRouteHints.slice(0, 4) : []
 
   return (
-    <article className={`rounded-3xl border p-5 shadow-[0_18px_48px_rgba(2,6,23,0.22)] transition ${isBest ? "border-emerald-400 bg-[#11211c] ring-1 ring-emerald-400/40" : "border-[#22303a] bg-[#0f1418]"}`}>
-      <div className="flex items-start justify-between gap-4">
+    <article className={`channel-card ${isBest ? "is-best" : ""}`}>
+      <div className="channel-card-head">
         <div>
-          <p className="text-lg font-semibold text-[#f8fffb]">{channel.name}</p>
-          <p className="mt-1 text-sm text-[#aab4af]">{channel.type}</p>
+          <p className="channel-card-name">{channel.name}</p>
+          <p className="channel-card-subtitle">{channel.type}</p>
         </div>
         {isBest ? (
-          <span className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+          <span className="channel-card-pill">
             {channel.kind === "buyer" ? "Cible prioritaire" : "Voie prioritaire"}
           </span>
         ) : null}
       </div>
 
-      <div className="mt-4 grid gap-2 text-sm text-[#d9e2dd]">
-        <p><span className="font-medium text-[#aab4af]">Type :</span> {channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
-        <p><span className="font-medium text-[#aab4af]">Localisation :</span> {channel.location}</p>
-        <p><span className="font-medium text-[#aab4af]">Distance :</span> {Number(channel.distance_km || 0)} km</p>
-        <p><span className="font-medium text-[#aab4af]">Coût / tonne :</span> {money(channel.estimated_cost_per_ton)} FCFA</p>
-        <p><span className="font-medium text-[#aab4af]">Gain estimé :</span> {money(channel.potential_gain_per_ton)} FCFA</p>
-        <p><span className="font-medium text-[#aab4af]">Contact :</span> {channel.contact}</p>
+      <div className="channel-card-grid">
+        <p><span>Type :</span> {channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
+        <p><span>Localisation :</span> {channel.location}</p>
+        <p><span>Distance :</span> {Number(channel.distance_km || 0)} km</p>
+        <p><span>Coût / tonne :</span> {money(channel.estimated_cost_per_ton)} FCFA</p>
+        <p><span>Gain estimé :</span> {money(channel.potential_gain_per_ton)} FCFA</p>
+        <p><span>Contact :</span> {channel.contact}</p>
       </div>
 
       {families.length > 0 ? (
-        <div className="mt-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#aab4af]">Filières acceptées</p>
-          <div className="mt-2 flex flex-wrap gap-2">
+        <div className="channel-card-block">
+          <p className="channel-card-label">Filières acceptées</p>
+          <div className="channel-card-tags">
             {families.map((family) => (
-              <span key={family} className="rounded-full bg-[#182127] px-3 py-1 text-xs font-medium text-[#d9e2dd]">
-                {family}
-              </span>
+              <span key={family}>{family}</span>
             ))}
           </div>
         </div>
       ) : null}
 
       {routeHints.length > 0 ? (
-        <div className="mt-4">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#aab4af]">Voies compatibles</p>
-          <p className="mt-2 text-sm text-[#aab4af]">{routeHints.join(" · ")}</p>
+        <div className="channel-card-block">
+          <p className="channel-card-label">Voies compatibles</p>
+          <p>{routeHints.join(" · ")}</p>
         </div>
       ) : null}
 
-      <div className="mt-5 flex flex-wrap gap-3">
-        <button
-          type="button"
-          onClick={() => onContact?.(channel)}
-          className="rounded-full bg-[#0a0e12] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1b2429]"
-        >
+      <div className="channel-card-actions">
+        <button type="button" className="btn btn-primary" onClick={() => onContact?.(channel)}>
           Contacter
         </button>
-        <button
-          type="button"
-          onClick={() => onSelect?.(channel)}
-          className="rounded-full border border-[#2a3a35] px-4 py-2 text-sm font-semibold text-[#d9e2dd] transition hover:border-slate-500 hover:text-[#f8fffb]"
-        >
+        <button type="button" className="btn btn-secondary" onClick={() => onSelect?.(channel)}>
           Voir le détail
         </button>
       </div>

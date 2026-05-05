@@ -1,4 +1,4 @@
-﻿import React from "react"
+import React from "react"
 
 const CEDEAO_COUNTRIES = [
   "Benin",
@@ -50,6 +50,7 @@ const WASTE_TYPES = [
   "caoutchouc",
   "bois",
   "biomasse",
+  "biomasse_lignocellulosique",
   "boues",
   "huiles_usees",
   "solvants",
@@ -93,11 +94,11 @@ export default function AnalysisForm({
             <label htmlFor="waste-photo" className="sr-only">Photo du déchet</label>
             <input id="waste-photo" type="file" accept="image/*" onChange={onImageChange} />
             <div className="actions-row">
-              <button className="btn" type="button" onClick={onIdentify} disabled={identifyLoading}>{identifyLoading ? "Identification..." : "Relancer"}</button>
+              <button className="btn" type="button" onClick={onIdentify} disabled={identifyLoading}>
+                {identifyLoading ? "Identification..." : "Relancer"}
+              </button>
             </div>
-            <div style={{ marginTop: 10 }}>
-              <small>{identifyLoading ? (identifyLoadingMessage || "Analyse en cours...") : "Identification automatique au chargement. Vérifiez puis validez."}</small>
-            </div>
+            <small>{identifyLoading ? (identifyLoadingMessage || "Analyse en cours...") : "Identification automatique au chargement. Vérifiez puis validez."}</small>
           </div>
         </>
       ) : null}
@@ -119,14 +120,12 @@ export default function AnalysisForm({
         <div className="field" style={{ gridColumn: "1 / -1" }}><label htmlFor="waste-description">Description</label><textarea id="waste-description" placeholder="État, contamination, origine, process industriel..." value={form.description || ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
       </div>
 
-      <p style={{ margin: "10px 0 0", color: "var(--muted)", fontSize: 13 }}>
+      <p className="form-note">
         Conseil: pour les déchets organiques, précisez l’origine (abattoir, cuisine, marché, biodéchets ménagers, boues biologiques) et l’humidité si possible.
       </p>
 
-      <h3 className="step-title" style={{ marginTop: 16 }}>Étape 3 - Données physico-chimiques</h3>
-      <p style={{ margin: "0 0 10px", color: "var(--muted)" }}>
-        Prioritaires si elles sont renseignées. Sinon, WasteAI complète avec la base scientifique.
-      </p>
+      <h3 className="step-title">Étape 3 - Données physico-chimiques</h3>
+      <p className="form-note">Prioritaires si elles sont renseignées. Sinon, WasteAI complète avec la base scientifique.</p>
       <div className="form-grid">
         <div className="field"><label htmlFor="waste-pci">PCI (MJ/kg)</label><input id="waste-pci" type="number" step="0.1" placeholder="Ex: 28" value={form.pci_mj_kg || ""} onChange={(e) => setForm({ ...form, pci_mj_kg: e.target.value })} /></div>
         <div className="field"><label htmlFor="waste-lignin">Taux de lignine (%)</label><input id="waste-lignin" type="number" step="0.1" placeholder="Ex: 30" value={form.taux_lignine_pct || ""} onChange={(e) => setForm({ ...form, taux_lignine_pct: e.target.value })} /></div>
@@ -142,7 +141,7 @@ export default function AnalysisForm({
         <div className="field"><label htmlFor="waste-heavy-metals">Métaux lourds</label><select id="waste-heavy-metals" value={form.presence_metaux_lourds ?? ""} onChange={(e) => setForm({ ...form, presence_metaux_lourds: e.target.value })}><option value="">Non renseigné</option><option value="true">Oui</option><option value="false">Non</option></select></div>
       </div>
 
-      <h3 className="step-title" style={{ marginTop: 16 }}>Actions</h3>
+      <h3 className="step-title">Actions</h3>
       <div className="actions-row">
         <button className="btn btn-primary" type="button" onClick={onAnalyze} disabled={loading}>{loading ? "Analyse en cours..." : "Analyser"}</button>
         <button className="btn" type="button" onClick={onReset}>Réinitialiser</button>

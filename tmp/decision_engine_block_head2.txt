@@ -1,0 +1,900 @@
+﻿def _is_composition_estimated(w: WasteInput, wt: WasteType) -> bool:
+    if wt == WasteType.BOUE_DE_VIDANGE:
+        return w.dbo_mg_l is None or w.dco_mg_l is None
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        return w.pci_mj_kg is None or w.taux_lignine_pct is None
+    if wt in {WasteType.PLASTIQUE, WasteType.TEXTILE, WasteType.HUILE_USAGEE}:
+        return w.pci_mj_kg is None
+    if wt == WasteType.OTHER:
+        return True
+    return any(v is None for v in [w.pci_mj_kg, w.taux_lignine_pct, w.dbo_mg_l, w.dco_mg_l])
+
+def _waste_family_label(w: WasteInput, wt: WasteType) -> str:
+    if _is_abattoir_waste(w):
+        return "abattoir"
+    if _is_organic_waste_text(w):
+        return "organique"
+    if wt == WasteType.PLASTIQUE:
+        return "plastique"
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        return "agricole"
+    if w.categorie == WasteCategory.CHEMICAL:
+        return "industriel"
+    if w.categorie == WasteCategory.METAL:
+        return "industriel"
+    if wt == WasteType.BOUE_DE_VIDANGE:
+        return "organique"
+    if wt == WasteType.OTHER:
+        probable_family, _ = _probable_family_and_subtype_from_text(w)
+        return probable_family
+    return "industriel"
+
+def _waste_subtype_label(w: WasteInput, wt: WasteType) -> str:
+    if _is_abattoir_waste(w):
+        return "biomasse animale"
+    if w.categorie == WasteCategory.CHEMICAL:
+        return "dechet chimique de peinture/revetement" if _is_paint_or_coating_waste(w) else "dechet chimique industriel"
+    if wt == WasteType.OTHER:
+        _, probable_subtype = _probable_family_and_subtype_from_text(w)
+        return probable_subtype
+    mapping = {
+        WasteType.BIOMASSE_LIGNOCELLULOSIQUE: "biomasse lignocellulosique",
+        WasteType.BOUE_DE_VIDANGE: "matiere organique humide",
+        WasteType.HUILE_USAGEE: "fraction lipidique",
+        WasteType.TEXTILE: "fibre polymerique",
+        WasteType.PLASTIQUE: "polymere thermoplastique",
+        WasteType.OTHER: "biomasse mixte probable",
+    }
+    return mapping.get(wt, "biomasse mixte probable")
+
+def _is_lipid_rich(w: WasteInput, wt: WasteType) -> bool:
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal)])
+    if any(k in txt for k in ["graisse", "lipide", "suif", "gras", "huile"]):
+        return True
+    return wt == WasteType.HUILE_USAGEE or _is_abattoir_waste(w)
+
+
+def _is_animal_protein_rich(w: WasteInput) -> bool:
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal), _n(w.origine_flux)])
+    return any(k in txt for k in ["abattoir", "animal", "viscere", "tripe", "sang", "carcasse", "proteine"])
+
+
+def _estimate_composition_labels(w: WasteInput, wt: WasteType, metrics: dict[str, float]) -> list[str]:
+    comp: list[str] = []
+    humidity_pct = _effective_humidity_pct(w, metrics)
+    humidity = _humidity_level_from_pct(humidity_pct)
+    txt = " ".join([_n(w.nom), _n(w.description), _n(w.produit_principal), _n(w.origine_flux)])
+
+    if _is_abattoir_waste(w):
+        comp.extend([
+            "matiere organique elevee",
+            "proteines animales",
+            "lipides animaux",
+            "humidite elevee",
+            "mineraux traces",
+        ])
+        return comp
+
+    if any(k in txt for k in ["dechet alimentaire", "alimentaire", "reste alimentaire", "agroalimentaire"]):
+        comp.extend(["glucides", "matiere organique"])
+
+    if any(k in txt for k in ["bois", "sciure", "copeaux", "bagasse", "lignine", "cellulose"]):
+        comp.extend(["cellulose", "lignine"])
+
+    if any(k in txt for k in ["plastique", "pet", "pehd", "pvc", "poly"]):
+        comp.append("polymeres synthetiques")
+
+    if wt in {WasteType.BIOMASSE_LIGNOCELLULOSIQUE, WasteType.BOUE_DE_VIDANGE}:
+        comp.append("matiere organique")
+    if wt == WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        comp.append("cellulose/lignine")
+    if wt == WasteType.HUILE_USAGEE:
+        comp.append("lipides/hydrocarbures")
+    if wt == WasteType.PLASTIQUE:
+        comp.append("polymeres")
+    if w.categorie == WasteCategory.METAL:
+        comp.append("mineraux/metaux")
+    if wt == WasteType.BOUE_DE_VIDANGE and float(metrics.get("dbo_mg_l", 0.0) or 0.0) > 800:
+        comp.append("fraction biodegradable elevee")
+
+    if wt == WasteType.OTHER and not comp:
+        _, probable_subtype = _probable_family_and_subtype_from_text(w)
+        if probable_subtype == "biomasse mixte probable":
+            comp.append("biomasse mixte probable")
+        elif "polymere" in probable_subtype:
+            comp.append("polymeres synthetiques")
+        elif "lignocellulosique" in probable_subtype:
+            comp.extend(["cellulose", "lignine"])
+        elif "alimentaire" in probable_subtype:
+            comp.extend(["glucides", "matiere organique"])
+
+    comp.append(f"humidite {humidity}")
+    return list(dict.fromkeys(comp))
+
+
+def _priority_from_filiere(filiere: str) -> str:
+    high = {"biochar", "methanisation_biogaz", "biodiesel_combustible", "regeneration_huiles", "neutralisation_chimique", "refonte_metaux", "recyclage_mecanique_plastique", "charbon_actif", "recyclage_papetier", "pyrolyse_plastique", "farines_animales_engrais"}
+    medium = {"compostage", "epandage_agricole", "effilochage_textile", "reemploi_textile", "reemploi_pieces_metalliques", "reemploi_plastique", "reemploi_carton_emballage"}
+    if filiere in high:
+        return "haute"
+    if filiere in medium:
+        return "moyenne"
+    return "basse"
+
+
+def _build_expert_valorization_profile(w: WasteInput, wt: WasteType, metrics: dict[str, float], evald: list[dict[str, Any]], regulatory: dict[str, Any]) -> dict[str, Any]:
+    waste_type = _waste_family_label(w, wt)
+    subtype = _waste_subtype_label(w, wt)
+    humidity_pct = _effective_humidity_pct(w, metrics)
+    humidity = _humidity_level_from_pct(humidity_pct)
+    state = _state_from_waste(w, wt, metrics)
+    composition = _estimate_composition_labels(w, wt, metrics)
+    composition_estimee = _is_composition_estimated(w, wt)
+
+    ranked = sorted([x for x in evald if x.get("feasible", True)], key=lambda z: float(z.get("global_score", 0.0)), reverse=True)
+    valorisations: list[dict[str, str]] = []
+
+    def add_valo(name: str, priority: str, justification: str) -> None:
+        if any(v["nom"] == name for v in valorisations):
+            return
+        valorisations.append({"nom": name, "priorite": priority, "justification": justification})
+
+    if _is_abattoir_waste(w):
+        add_valo("methanisation_biogaz", "haute", "Matiere organique humide elevee: production de biogaz et digestat stabilise, voie robuste en contexte CEDEAO.")
+        if _is_lipid_rich(w, wt):
+            add_valo("biodiesel_combustible", "haute", "Fraction lipidique valorisable en esters energetiques apres pretraitement.")
+        add_valo("farines_animales_engrais", "moyenne", "Proteines animales valorisables sous contraintes sanitaires strictes et conformite reglementaire locale.")
+        add_valo("compostage", "moyenne", "Option biologique complementaire apres hygienisation/pretraitement.")
+        if w.niveau_danger in {"faible", "moyen"}:
+            add_valo("epandage_agricole", "moyenne", "Applicable uniquement apres controle microbiologique et autorisation locale.")
+
+    for item in ranked:
+        filiere = str(item.get("filiere") or "")
+        if not filiere:
+            continue
+        add_valo(filiere, _priority_from_filiere(filiere), str(item.get("technical_reason") or "Justification technique multicritere."))
+        if len(valorisations) >= 5:
+            break
+
+    if not any(v["priorite"] == "haute" for v in valorisations):
+        for item in ranked:
+            filiere = str(item.get("filiere") or "")
+            if filiere and filiere != DECISION_ELIMINATION:
+                existing = next((v for v in valorisations if v["nom"] == filiere), None)
+                if existing:
+                    existing["priorite"] = "haute"
+                    existing["justification"] = "Meilleure option a forte valeur retenue par scoring technico-economique."
+                else:
+                    add_valo(filiere, "haute", "Meilleure option a forte valeur retenue par scoring technico-economique.")
+                break
+
+    add_valo(DECISION_ELIMINATION, "basse", "Voie de securite obligatoire en cas de non-conformite sanitaire/reglementaire des autres filieres.")
+
+    priority_rank = {"haute": 0, "moyenne": 1, "basse": 2}
+    valorisations = sorted(valorisations, key=lambda v: priority_rank.get(str(v.get("priorite") or ""), 3))
+
+
+    contraintes = [
+        "sanitaire: pretraitement/hygienisation requis pour flux animaux ou putrescibles",
+        "reglementation: conformite CEDEAO/Bamako et autorisations locales obligatoires",
+        "technique: tri, controle qualite et caracterisation physico-chimique avant orientation finale",
+    ]
+    if str(regulatory.get("status") or "") == "non_conforme":
+        contraintes.append("reglementation: certaines voies sont bloquees tant que la non-conformite persiste")
+
+    return {
+        "type": waste_type,
+        "categorie": subtype,
+        "etat": state,
+        "humidite": humidity,
+        "composition": composition,
+        "composition_estimee": composition_estimee,
+        "mention_composition": "Les donnees de composition sont estimees automatiquement" if composition_estimee else "",
+        "valorisations": valorisations,
+        "contraintes": contraintes,
+    }
+def _metrics(w: WasteInput, wt: WasteType) -> tuple[dict[str, float], list[str], list[str]]:
+    defaults = TYPICAL.get(wt.value, TYPICAL[WasteType.OTHER.value])
+    assumptions: list[str] = []
+    missing: list[str] = []
+
+    met_desc = _pct(w.description, ["metaux", "metal"])
+    met = met_desc if met_desc is not None else (60.0 if w.contient_metaux else defaults["metaux_pct"])
+    if w.contient_metaux and met_desc is None:
+        assumptions.append("Teneur en metaux supposee a 60% (contient_metaux=true).")
+
+    humidity_desc = _pct(w.description, ["humidite", "humide", "hygrometrie", "teneur en eau"])
+    sic_desc = _pct(w.description, ["siccite", "sechage", "matiere seche"])
+
+    humidity = float(w.taux_humidite_pct) if w.taux_humidite_pct is not None else None
+    if humidity is not None:
+        assumptions.append(f"Humidite fournie par l'utilisateur ({humidity:.1f}%).")
+    elif humidity_desc is not None:
+        humidity = float(humidity_desc)
+        assumptions.append(f"Humidite extraite de la description ({humidity:.1f}%).")
+
+    sic = float(sic_desc) if sic_desc is not None else None
+    if humidity is None and sic is not None:
+        humidity = max(0.0, min(100.0, 100.0 - float(sic)))
+        assumptions.append(f"Humidite deduite de la siccite ({humidity:.1f}%).")
+    if humidity is None:
+        d = _n(w.description)
+        if "humide" in d:
+            humidity = 82.0
+            sic = 18.0
+            assumptions.append("Humidite estimee a 82% (decrit humide).")
+        elif "sec" in d:
+            humidity = 35.0
+            sic = 65.0
+            assumptions.append("Humidite estimee a 35% (decrit sec).")
+        else:
+            humidity = max(0.0, min(100.0, 100.0 - float(defaults["siccite_pct"])))
+            assumptions.append(f"Humidite typique appliquee ({humidity:.1f}%).")
+    if sic is None:
+        sic = max(0.0, min(100.0, 100.0 - float(humidity)))
+    if humidity is not None and sic is not None and w.taux_humidite_pct is not None and sic_desc is None:
+        sic = max(0.0, min(100.0, 100.0 - float(humidity)))
+
+    out = {
+        "pci_mj_kg": float(w.pci_mj_kg) if w.pci_mj_kg is not None else float(defaults.get("pci_mj_kg", 0.0)),
+        "dbo_mg_l": float(w.dbo_mg_l) if w.dbo_mg_l is not None else float(defaults.get("dbo_mg_l", 0.0)),
+        "dco_mg_l": float(w.dco_mg_l) if w.dco_mg_l is not None else float(defaults.get("dco_mg_l", 0.0)),
+        "taux_lignine_pct": float(w.taux_lignine_pct) if w.taux_lignine_pct is not None else float(defaults.get("taux_lignine_pct", 0.0)),
+        "metaux_pct": float(met),
+        "siccite_pct": float(sic),
+        "humidite_pct": float(humidity),
+    }
+
+    if w.pci_mj_kg is None:
+        assumptions.append(f"PCI typique applique ({out['pci_mj_kg']} MJ/kg).")
+    if wt == WasteType.BOUE_DE_VIDANGE:
+        if w.dbo_mg_l is None:
+            assumptions.append(f"DBO typique appliquee ({out['dbo_mg_l']} mg/L)."); missing.append("DBO (mg/L)")
+        if w.dco_mg_l is None:
+            assumptions.append(f"DCO typique appliquee ({out['dco_mg_l']} mg/L)."); missing.append("DCO (mg/L)")
+    if wt in {WasteType.BIOMASSE_LIGNOCELLULOSIQUE, WasteType.PLASTIQUE, WasteType.TEXTILE, WasteType.HUILE_USAGEE} and w.pci_mj_kg is None:
+        missing.append("PCI (MJ/kg)")
+    if w.categorie == WasteCategory.METAL and met_desc is None:
+        missing.append("teneur_metaux_%")
+    if w.taux_humidite_pct is None and humidity_desc is None and sic_desc is None:
+        assumptions.append(f"Humidite typique appliquee ({out['humidite_pct']:.1f}%).")
+
+    return out, assumptions, sorted(set(missing))
+
+
+def _cand(f: str, h: str, t: float, reason: str, conds: list[str], feasible: bool = True, blocked: str | None = None) -> dict[str, Any]:
+    return {"filiere": f, "hierarchy": h, "technical_score": _b(t), "technical_reason": reason, "conditions": conds, "feasible": feasible, "blocked_reason": blocked}
+
+
+def _eco(f: str, qt: float, country: str | None) -> tuple[float, float, float, float, float, float]:
+    price, cost = float(LOCAL_MARKET.get(f, 90000.0)), float(TREATMENT_COST.get(f, 70000.0))
+    if _n(country) == "benin":
+        price *= 1.03
+        cost *= 0.97
+    value, treat = price * qt, cost * qt
+    net = value - treat
+    roi = (net / treat) if treat > 1e-6 else 0.0
+    return value, treat, roi, _b(50.0 + roi * 55.0), price, cost
+
+
+def _env_social(w: WasteInput, f: str, country: str | None) -> tuple[float, float, float]:
+    p = get_country_environmental_profile(country)
+    avoided = float(CO2_AVOIDED.get(f, 120.0)) * float(p.get("avoided_multiplier") or 1.0)
+    gen = float(p.get("generated_multiplier") or 1.0)
+    env = _b(50.0 + avoided / 12.0 - max(0.0, gen - 1.0) * 10.0)
+    if w.niveau_danger in {"eleve", "critique"} and f in {"vente_marketplace", "vente_ferrailleur_certifie"}:
+        env -= 30
+    social = float(SOCIAL.get(f, 55.0)) + float(AVAIL_BENIN.get(f, 0.0) if _n(country) == "benin" else 0.0)
+    return _b(env), _b(social), max(0.0, avoided)
+
+
+def _evaluate(
+    w: WasteInput,
+    candidates: list[dict[str, Any]],
+    country: str | None,
+    metrics: dict[str, float],
+    score_adjustments: dict[str, float] | None = None,
+) -> list[dict[str, Any]]:
+    qt = max(0.01, float(w.quantite_kg) / 1000.0)
+    out: list[dict[str, Any]] = []
+    for c in candidates:
+        val, treat, roi, eco, value_pt, cost_pt = _eco(c["filiere"], qt, country)
+        env, social, co2 = _env_social(w, c["filiere"], country)
+        tech = c["technical_score"] if c.get("feasible", True) else max(5.0, c["technical_score"] - 40.0)
+
+        pci = float(metrics.get("pci_mj_kg", 0.0) or 0.0)
+        lignine = float(metrics.get("taux_lignine_pct", 0.0) or 0.0)
+        dbo = float(metrics.get("dbo_mg_l", 0.0) or 0.0)
+        dco = float(metrics.get("dco_mg_l", 0.0) or 0.0)
+        humidity_pct = float(metrics.get("humidite_pct", max(0.0, 100.0 - float(metrics.get("siccite_pct", 0.0) or 0.0))) or 0.0)
+        dco_dbo = (dco / dbo) if dbo > 0 else 99.0
+        material = analyzeMaterialProperties(w, metrics)
+        material_reliable = bool(material.get("reliable"))
+        material_lignine = float(material.get("lignine_pct") or 0.0)
+        material_humidity = float(material.get("humidity_pct") or 0.0)
+        material_biodeg = str(material.get("biodegradability") or "unknown")
+        material_ligno = bool(material.get("lignocellulosic"))
+        if c["filiere"] == "biochar":
+            if float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 20 and humidity_pct <= 25.0 and pci >= 15.0:
+                tech += 18.0
+            elif float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 15 and humidity_pct <= 30.0:
+                tech += 10.0
+        if c["filiere"] == "methanisation_biogaz":
+            if dbo >= 1200 and dco_dbo <= 3.5:
+                tech += 18.0
+            elif dbo >= 800 and dco_dbo <= 4.5:
+                tech += 10.0
+            elif dbo < 500:
+                tech -= 20.0
+        if c["filiere"] == "compostage":
+            if 45.0 <= humidity_pct <= 70.0 and dco_dbo <= 4.5:
+                tech += 12.0
+            elif humidity_pct < 30.0:
+                tech -= 6.0
+        if c["filiere"] == "charbon_actif":
+            if float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 25 and humidity_pct <= 25.0:
+                tech += 12.0
+            elif float(metrics.get("taux_lignine_pct", 0.0) or 0.0) >= 15 and humidity_pct <= 30.0:
+                tech += 5.0
+
+        if humidity_pct >= 70.0:
+            if c["hierarchy"] == "energie":
+                tech -= 15.0
+            if c["filiere"] in {"methanisation_biogaz", "compostage", "epandage_agricole"}:
+                tech += 10.0
+            if c["filiere"] in {"recyclage_mecanique_plastique", "reemploi_plastique", "reemploi_textile", "reemploi_carton_emballage", "effilochage_textile"}:
+                tech -= 8.0
+        elif humidity_pct <= 30.0:
+            if c["hierarchy"] == "energie":
+                tech += 10.0
+            if c["filiere"] in {"methanisation_biogaz", "compostage"}:
+                tech -= 6.0
+
+        if c["hierarchy"] == "energie":
+            if pci >= 16:
+                tech += 10.0
+            elif pci < 8:
+                tech -= 18.0
+            if c["filiere"] == "methanisation_biogaz":
+                if dbo >= 1200 and dco_dbo <= 3.0:
+                    tech += 18.0
+                elif dbo < 500:
+                    tech -= 20.0
+
+        if c["filiere"] == "charbon_actif":
+            if lignine >= 25:
+                tech += 12.0
+            elif lignine >= 15:
+                tech += 5.0
+
+        if material_reliable:
+            if c["filiere"] == "methanisation_biogaz":
+                if material_ligno and material_lignine > 20:
+                    tech -= 35.0
+                if material_biodeg == "low":
+                    tech -= 20.0
+                elif material_biodeg == "high" and material_humidity > 50:
+                    tech += 10.0
+            if c["filiere"] == "compostage":
+                if material_ligno and material_lignine > 20:
+                    tech -= 25.0
+                if material_biodeg == "high" and 40 <= material_humidity <= 70:
+                    tech += 10.0
+                if material_biodeg == "low":
+                    tech -= 15.0
+            if c["filiere"] == "biochar":
+                if material_lignine > 20:
+                    tech += 15.0
+                if material_humidity <= 25.0:
+                    tech += 10.0
+            if c["hierarchy"] == "energie":
+                if pci > 12:
+                    tech += 10.0
+                if material_humidity < 20.0:
+                    tech += 8.0
+
+        if c["hierarchy"] == "reemploi" and w.niveau_danger in {"eleve", "critique"}:
+            tech -= 25.0
+
+        if _n(country) == "benin" and w.categorie == WasteCategory.METAL and c["hierarchy"] == "vente":
+            tech -= 10.0
+            if _is_export_intent(w):
+                c["feasible"] = False
+                c["blocked_reason"] = "Benin: exportation de ferraille restreinte, vente export non autorisee."
+                tech -= 35.0
+
+        tech = _b(tech)
+        g = _b(WEIGHT_TECH * tech + WEIGHT_ECO * eco + WEIGHT_ENV * env + WEIGHT_SOCIAL * social)
+        x = dict(c)
+        x.update({
+            "economic_score": round(eco, 2),
+            "environmental_score": round(env, 2),
+            "social_score": round(social, 2),
+            "regulatory_score": 0.0,
+            "global_score": round(g, 2),
+            "market_value_fcfa": round(val, 2),
+            "market_value_fcfa_tonne": round(value_pt, 2),
+            "treatment_cost_fcfa": round(treat, 2),
+            "treatment_cost_fcfa_tonne": round(cost_pt, 2),
+            "gain_industriel_fcfa": round(val - treat, 2),
+            "gain_industriel_fcfa_tonne": round(value_pt - cost_pt, 2),
+            "roi": round(roi, 4),
+            "co2_avoided_kg": round(co2, 2),
+        })
+        out.append(x)
+
+    if score_adjustments is None:
+        decision_labels = [DECISION_REEMPLOI, DECISION_MATIERE, DECISION_ENERGIE, DECISION_VENTE]
+
+        l = get_learning_adjustments(
+            waste_type=getattr(_infer_type(w), "value", str(_infer_type(w))),
+            country=country,
+            decision_labels=decision_labels,
+        )
+        deltas = l.get("deltas", {}) if isinstance(l, dict) else {}
+
+        ml = get_ml_score_adjustments(
+            waste_type=getattr(_infer_type(w), "value", str(_infer_type(w))),
+            country=country,
+            quantity_kg=float(w.quantite_kg),
+            decision_labels=decision_labels,
+        )
+        ml_deltas = ml.get("deltas", {}) if isinstance(ml, dict) else {}
+        score_adjustments = {
+            DECISION_REEMPLOI: float(deltas.get(DECISION_REEMPLOI, 0.0)) + float(ml_deltas.get(DECISION_REEMPLOI, 0.0)),
+            DECISION_MATIERE: float(deltas.get(DECISION_MATIERE, 0.0)) + float(ml_deltas.get(DECISION_MATIERE, 0.0)),
+            DECISION_ENERGIE: float(deltas.get(DECISION_ENERGIE, 0.0)) + float(ml_deltas.get(DECISION_ENERGIE, 0.0)),
+            DECISION_VENTE: float(deltas.get(DECISION_VENTE, 0.0)) + float(ml_deltas.get(DECISION_VENTE, 0.0)),
+        }
+    for x in out:
+        if x["hierarchy"] == "reemploi":
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_REEMPLOI, 0.0)))
+        elif x["hierarchy"] == "matiere":
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_MATIERE, 0.0)))
+        elif x["hierarchy"] == "energie":
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_ENERGIE, 0.0)))
+        elif x["hierarchy"] == "vente":
+            x["global_score"] = _b(x["global_score"] + float(score_adjustments.get(DECISION_VENTE, 0.0)))
+    return out
+
+
+def _label_for_hierarchy(hierarchy: str, labels: dict[str, str]) -> str | None:
+    if hierarchy == "reemploi":
+        return labels["reemploi"]
+    if hierarchy == "matiere":
+        return labels["matiere"]
+    if hierarchy == "energie":
+        return labels["energetique"]
+    if hierarchy == "vente":
+        return labels["vente"]
+    return None
+
+
+def _apply_regulatory_priority(evald: list[dict[str, Any]], blocked: dict[str, list[str]], regulatory: dict[str, Any], labels: dict[str, str], references: list[str]) -> list[dict[str, Any]]:
+    risk = float(regulatory.get("risk_score") or 0.0)
+    status = str(regulatory.get("status") or "conforme_sous_conditions")
+    has_bamako = any("bamako" in _n(ref) for ref in references)
+
+    for x in evald:
+        label = _label_for_hierarchy(x.get("hierarchy", ""), labels)
+        block_reasons = blocked.get(label, []) if label else []
+
+        reg_score = _b(100.0 - risk)
+        if status == "non_conforme":
+            reg_score -= 25.0
+        elif status == "conforme_sous_conditions":
+            reg_score -= 10.0
+        if has_bamako:
+            reg_score += 5.0
+
+        if block_reasons:
+            x["feasible"] = False
+            joined = " | ".join(block_reasons)
+            x["blocked_reason"] = f"{x['blocked_reason']} | {joined}" if x.get("blocked_reason") else joined
+            reg_score = min(reg_score, 15.0)
+
+        x["regulatory_score"] = round(_b(reg_score), 2)
+        x["global_score"] = round(
+            _b(
+                WEIGHT_TECH * float(x.get("technical_score", 0.0))
+                + WEIGHT_ECO * float(x.get("economic_score", 0.0))
+                + WEIGHT_ENV * float(x.get("environmental_score", 0.0))
+                + WEIGHT_SOCIAL * float(x.get("social_score", 0.0))
+                + WEIGHT_REG * float(x.get("regulatory_score", 0.0))
+            ),
+            2,
+        )
+
+    return evald
+
+def _select(evald: list[dict[str, Any]]) -> tuple[dict[str, Any], list[str]]:
+    reasons: list[str] = []
+    elim = [x for x in evald if x["hierarchy"] == "elimination" and x.get("feasible", True)]
+
+    by = {g: [x for x in evald if x["hierarchy"] == g and x.get("feasible", True)] for g in HIERARCHY}
+    best = {g: (sorted(by[g], key=lambda z: z["global_score"], reverse=True)[0] if by[g] else None) for g in HIERARCHY}
+
+    # Exception industrielle: si la meilleure option energetique depasse nettement la meilleure matiere,
+    # on la retient malgre la hierarchie (cas PCI/DBO-DCO tres favorables).
+    if best.get("matiere") and best.get("energie"):
+        if float(best["energie"]["global_score"]) >= float(best["matiere"]["global_score"]) + 8.0:
+            reasons.append("Energie retenue: superiority nette sur matiere selon scoring multicriteres.")
+            return best["energie"], reasons
+
+    for g in HIERARCHY:
+        if best.get(g):
+            chosen = best[g]
+            if g == "reemploi":
+                reasons.append("Hierarchie appliquee: reemploi retenu en priorite (sobriete matiere/energie).")
+            elif g == "matiere":
+                reasons.append("Hierarchie appliquee: matiere retenue car faisable.")
+            elif g == "energie":
+                reasons.append("Energie retenue car matiere non faisable ou moins robuste.")
+            else:
+                reasons.append("Vente retenue en dernier recours seulement.")
+            return chosen, reasons
+
+    if elim:
+        reasons.append("Aucune voie de valorisation conforme: elimination securisee imposee.")
+        return sorted(elim, key=lambda z: z["global_score"], reverse=True)[0], reasons
+
+    feasible_any = [x for x in evald if x.get("feasible", True)]
+    if feasible_any:
+        reasons.append("Aucune voie prioritaire disponible: meilleure option faisable retenue.")
+        return sorted(feasible_any, key=lambda z: z["global_score"], reverse=True)[0], reasons
+
+    reasons.append("Aucune filiere de valorisation conforme: elimination securisee par precaution.")
+    return {
+        "filiere": DECISION_ELIMINATION,
+        "hierarchy": "elimination",
+        "technical_score": 70.0,
+        "technical_reason": "Fallback de conformite: absence de filiere conforme.",
+        "conditions": ["transport ADR", "centre agree", "bordereau de suivi"],
+        "feasible": True,
+        "blocked_reason": None,
+        "economic_score": 20.0,
+        "environmental_score": 25.0,
+        "social_score": 30.0,
+        "regulatory_score": 85.0,
+        "global_score": 48.0,
+        "market_value_fcfa": 0.0,
+        "treatment_cost_fcfa": 140000.0,
+        "roi": -1.0,
+        "co2_avoided_kg": 0.0,
+    }, reasons
+def _route_status_label(route: dict[str, Any], chosen: dict[str, Any]) -> str:
+    if route.get("filiere") == chosen.get("filiere"):
+        return "Recommandee" if route.get("feasible", True) else "Recommandee sous conditions"
+    if not route.get("feasible", True):
+        return "Non conforme"
+    score = float(route.get("global_score", 0.0))
+    if score >= 70.0:
+        return "Alternative recommandee"
+    if score >= 55.0:
+        return "Alternative"
+    return "Pertinence faible"
+
+
+def _alternatives(chosen: dict[str, Any], evald: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    order = sorted([x for x in evald if x["filiere"] != chosen["filiere"]], key=lambda z: z["global_score"], reverse=True)
+    out: list[dict[str, Any]] = []
+    for x in order[:4]:
+        why = "Score global inferieur a la filiere principale."
+        if chosen["hierarchy"] != x["hierarchy"] and chosen["hierarchy"] in {"matiere", "energie"}:
+            why = f"Moins prioritaire dans la hierarchie ({x['hierarchy']} apres {chosen['hierarchy']})."
+        if not x.get("feasible", True):
+            why = x.get("blocked_reason") or "Non faisable techniquement/reglementairement."
+        out.append({"filiere": x["filiere"], "score": round(float(x["global_score"]), 2), "statut": _route_status_label(x, chosen), "pourquoi_pas_prioritaire": why, "blocked": not x.get("feasible", True), "blocked_reason": x.get("blocked_reason")})
+    return out
+
+
+def _req(conds: list[str]) -> str:
+    return "; ".join(dict.fromkeys(conds)) if conds else "Aucune condition specifique identifiee."
+
+
+def _format_physico_chemical_context(waste: WasteInput, metrics: dict[str, Any]) -> str:
+    cues: list[str] = []
+    nature: list[str] = []
+
+    if waste.categorie:
+        nature.append(f"categorie {getattr(waste.categorie, 'value', waste.categorie)}")
+    if waste.type_dechet:
+        nature.append(f"type {getattr(waste.type_dechet, 'value', waste.type_dechet)}")
+    if waste.type_plastique:
+        nature.append(f"plastique {waste.type_plastique}")
+    if waste.composition_textile:
+        nature.append(f"composition textile {waste.composition_textile}")
+    if waste.etat_textile:
+        nature.append(f"etat textile {waste.etat_textile}")
+    if waste.produit_principal:
+        nature.append(f"produit principal {waste.produit_principal}")
+    if waste.origine_flux:
+        nature.append(f"origine {waste.origine_flux}")
+
+    pci = metrics.get("pci_mj_kg")
+    lignine = metrics.get("taux_lignine_pct")
+    dbo = metrics.get("dbo_mg_l")
+    dco = metrics.get("dco_mg_l")
+    contamination = waste.taux_contamination_pct if waste.taux_contamination_pct is not None else metrics.get("metaux_pct")
+    humidity_pct = _effective_humidity_pct(waste, metrics)
+
+    if pci is not None:
+        cues.append(f"PCI estime a {float(pci):.1f} MJ/kg, ce qui oriente plutot vers une voie energetique ou de revalorisation thermique")
+    if lignine is not None:
+        cues.append(f"taux de lignine de {float(lignine):.1f}% compatible avec une stabilisation matiere ou biochar selon l'humidite")
+    if dbo is not None and dco is not None:
+        cues.append(f"charge organique mesuree via DBO {float(dbo):.0f} mg/L et DCO {float(dco):.0f} mg/L, utile pour arbitrer vers methanisation ou traitement biologique")
+    if humidity_pct is not None:
+        cues.append(f"humidite mesuree a {float(humidity_pct):.1f}% qui oriente la preparation (sechage, drainage, broyage ou digestion selon la filiere)")
+    if _is_abattoir_waste(waste):
+        cues.append("flux d'abattoir interprete comme flux organique humide a forte charge biodegradables, donc prioritairement oriente vers methanisation ou compostage apres hygienisation")
+    if getattr(waste.categorie, 'value', waste.categorie) == WasteCategory.PLASTIC.value or waste.type_dechet == WasteType.PLASTIQUE:
+        cues.append("flux plastique: le recyclage mecanique domine si le lot est propre; le chlore ou la contamination poussent vers une autre voie")
+    if waste.type_dechet == WasteType.TEXTILE:
+        cues.append("flux textile: le reemploi ou l'effilochage sont favorises si le lot est propre, homogene et reutilisable")
+    if contamination is not None:
+        cues.append(f"taux de contamination estime a {float(contamination):.1f}% qui penalise les voies exigeant une matiere tres propre")
+    if waste.presence_chlore:
+        cues.append("presence de chlore qui limite les voies thermiques sans traitement des emissions")
+    if waste.presence_metaux_lourds or waste.contient_metaux:
+        cues.append("presence de metaux qui favorise une recuperation metallique ou une securisation avant toute autre filiere")
+    if waste.presence_metaux_lourds is False and waste.contient_metaux is False and not cues:
+        cues.append("absence d'indicateur de contamination critique, ce qui laisse ouvertes les voies de recyclage ou de reemploi si la qualite du lot le permet")
+
+    nature_txt = ", ".join(nature) if nature else "nature du flux partiellement renseignee"
+    cues_txt = "; ".join(cues) if cues else "donnees physico-chimiques partielles, analyse basee surtout sur la nature du dechet et les contraintes reglementaires"
+    return f"Le choix technique part de la nature du flux ({nature_txt}) et de ses signaux physico-chimiques: {cues_txt}."
+
+
+
+
+def _process_engineering_notes(waste: WasteInput, chosen: dict[str, Any], metrics: dict[str, Any]) -> str:
+    filiere = str(chosen.get('filiere') or '').lower()
+    pretreatment: list[str] = []
+    hse: list[str] = []
+    yield_note = ''
+
+    contamination = float(waste.taux_contamination_pct or 0.0)
+    humidity_pct = _effective_humidity_pct(waste, metrics)
+    pci = metrics.get('pci_mj_kg')
+    dbo = metrics.get('dbo_mg_l')
+    dco = metrics.get('dco_mg_l')
+    lignine = metrics.get('taux_lignine_pct')
+
+    if filiere in {'methanisation_biogaz', 'compostage'}:
+        pretreatment += ['tri des indesirables', 'homogeneisation du lot']
+        if contamination > 10:
+            pretreatment.append('depottage / lavage / dedensification si necessaire')
+        if humidity_pct is not None and humidity_pct > 75:
+            pretreatment.append('gestion des lixiviats et drainage')
+        if dbo is not None and dco is not None:
+            pretreatment.append('controle DBO/DCO avant envoi en filiere biologique')
+        hse.append('maitrise des odeurs, lixiviats et risques biologiques')
+        yield_note = 'Rendement attendu plus stable lorsque le lot est homogene et peu contamine; une humidite elevee favorise les voies biologiques mais impose souvent drainage, homogenisation et eventuel co-substrat.'
+    elif filiere in {'recyclage_matiere', 'reemploi'}:
+        pretreatment += ['tri fin', 'controle qualite', 'conditionnement du lot']
+        if filiere == 'recyclage_matiere':
+            if contamination > 15 or (humidity_pct is not None and humidity_pct > 40):
+                pretreatment.append('lavage ou re-tri avant recyclage')
+            yield_note = 'Le rendement matiere depend surtout de la purete du flux, de la stabilite de composition et de l humidite; plus la contamination ou l humidite montent, plus le taux de rebuts augmente.'
+        else:
+            if contamination > 15:
+                pretreatment.append('reparation ou reconditionnement avant reemploi')
+            yield_note = 'Le reemploi reste pertinent seulement pour un lot propre, homogene et visuellement acceptable; la contamination ou l usure degradent rapidement la valeur.'
+        hse.append('poussieres, manutention, hygiene et integrite du lot')
+    elif filiere in {'pyrolyse_plastique', 'combustion_gazeification', 'co_incineration_cimenterie', 'combustible_solide_recupere'}:
+        pretreatment += ['broyage', 'sechage', 'homogeneisation PCI']
+        if humidity_pct is not None and humidity_pct > 40:
+            pretreatment.append('sechage additionnel')
+        if waste.presence_chlore:
+            pretreatment.append('dechloration / exclusion si PVC dominant')
+        if waste.presence_metaux_lourds or waste.contient_metaux:
+            pretreatment.append('controle metaux et cendres')
+        hse.append('controle emissions, HCl/dioxines, filtration et autorisations d installation')
+        yield_note = 'La performance depend du PCI, de l humidite et du taux de chlore; au-dessus des seuils critiques, la voie thermique perd en robustesse.'
+    elif filiere in {'refonte_metaux', 'vente_ferrailleur_certifie'}:
+        pretreatment += ['tri metallique', 'segregation des alliages', 'decontamination superficielle']
+        if humidity_pct is not None and humidity_pct > 60:
+            pretreatment.append('sechage avant refonte pour limiter pertes et corrosion')
+        hse.append('gestion des copeaux, huiles et poussieres metalliques')
+        yield_note = 'Le rendement economique est surtout lie au taux de recuperation metallique et au niveau de contamination residuelle.'
+    elif filiere == 'neutralisation_chimique':
+        pretreatment += ['identification des reactifs', 'neutralisation controlee', 'gestion des effluents']
+        hse.append('protocole chimique renforce et confinement')
+        yield_note = 'La neutralisation chimique est reservee aux flux reactifs ou incompatibles avec les autres filieres.'
+    else:
+        pretreatment += ['tri initial', 'controle qualite', 'conditionnement du lot']
+        hse.append('mesures standard de manutention et tracabilite')
+        yield_note = 'Le rendement est estime de maniere prudente faute de donnees de conversion detaillees.'
+
+    if waste.niveau_danger in {'eleve', 'critique'}:
+        hse.append('procedure renforcee de confinement et EPI')
+    if pci is not None and pci < 8:
+        hse.append('PCI faible: voie energetique peu robuste sans pretraitement')
+    if humidity_pct is not None and humidity_pct > 70:
+        hse.append('humidite elevee: attention aux lixiviats, a la stabilite de stockage et au transport')
+    if humidity_pct is not None and humidity_pct < 25:
+        hse.append('flux sec: risque poussiere et auto-echauffement pour certaines filieres')
+    if lignine is not None and lignine >= 25:
+        pretreatment.append('valoriser la fraction lignocellulosique pour limiter la combustion brute')
+
+    pretreatment_txt = ', '.join(dict.fromkeys(pretreatment)) if pretreatment else 'aucun pretraitement specifique identifie'
+    hse_txt = ', '.join(dict.fromkeys(hse)) if hse else 'mesures HSE standard'
+    return f"Pretraitement recommande: {pretreatment_txt}. HSE: {hse_txt}. {yield_note}"
+
+
+def _build_explication_paragraphs(
+    waste: WasteInput,
+    metrics: dict[str, Any],
+    chosen: dict[str, Any],
+    routes: list[dict[str, Any]],
+    regulatory: dict[str, Any],
+    reg_refs: list[str],
+    hierarchy_reasons: list[str],
+) -> str:
+    physico = _format_physico_chemical_context(waste, metrics)
+    process = _process_engineering_notes(waste, chosen, metrics)
+    top_routes = sorted(routes, key=lambda z: float(z.get("global_score", 0.0)), reverse=True)[:3]
+
+    route_lines: list[str] = []
+    for idx, route in enumerate(top_routes, start=1):
+        route_lines.append(
+            f"{idx}. {route.get('filiere')}: {route.get('technical_reason') or route.get('blocked_reason') or route.get('explication') or 'Aucune justification detaillee disponible.'}"
+        )
+
+    p1 = (
+        f"1) Lecture technique. Filiere retenue est {chosen.get('filiere')}. Elle est coherente avec le profil du flux: {physico} {process} "
+        f"La selection repose sur la nature physico-chimique du lot, la stabilite d'exploitation et la compatibilite avec les contraintes de traitement."
+    )
+
+    p2 = (
+        "2) Comparison des voies. Alternatives examinees: "
+        + (" ".join(route_lines) if route_lines else "Aucune alternative exploitable n'a pu etre maintenue.")
+        + " La presence de trois voies permet de comparer la robustesse technique plutot que de forcer un choix unique trop tot."
+    )
+
+    cost = float(chosen.get("treatment_cost_fcfa", 0.0))
+    market = float(chosen.get("market_value_fcfa", 0.0))
+    gain = float(chosen.get("gain_industriel_fcfa", market - cost))
+    co2 = float(chosen.get("co2_avoided_kg", 0.0))
+    reg_status = str(regulatory.get("status", "unknown"))
+    reg_warnings = regulatory.get("warnings") or []
+    warning_txt = f" Alertes notables: {'; '.join(str(w) for w in reg_warnings[:2])}." if reg_warnings else ""
+    p3 = (
+        f"3) Cout, impact et cadre reglementaire. Le cout de traitement estime est d'environ {cost:.0f} FCFA/t pour une valeur de marche de {market:.0f} FCFA/t, soit un gain industriel net de {gain:.0f} FCFA/t. "
+        f"L'impact environnemental associe est d'environ {co2:.1f} kgCO2e evites par tonne sur la voie retenue. "
+        f"Le filtre CEDEAO/Bamako a ete applique avant validation finale, avec un statut de conformite {reg_status}; points de vigilance: {(', '.join(str(w) for w in reg_warnings[:2]) if reg_warnings else 'aucun blocage majeur signale')}."
+    )
+
+    return "\n\n".join([p1, p2, p3])
+
+
+
+def analyzeMaterialProperties(waste: WasteInput, metrics: dict[str, Any]) -> dict[str, Any]:
+    humidity = _effective_humidity_pct(waste, metrics)
+    pci = float(metrics.get("pci_mj_kg", 0.0) or 0.0)
+    lignine = float(metrics.get("taux_lignine_pct", 0.0) or 0.0)
+
+    raw_text = " ".join(
+        str(part)
+        for part in [
+            waste.nom,
+            waste.description,
+            waste.produit_principal,
+            waste.composition_textile,
+            waste.type_plastique,
+            getattr(waste.type_dechet, "value", waste.type_dechet),
+            getattr(waste.categorie, "value", waste.categorie),
+            waste.origine_flux,
+        ]
+        if part
+    )
+    text = _n(raw_text)
+
+    lignocellulosic = bool(
+        waste.type_dechet == WasteType.BIOMASSE_LIGNOCELLULOSIQUE
+        or any(k in text for k in [
+            "bagasse",
+            "sciure",
+            "coque",
+            "palmiste",
+            "noix de palme",
+            "noyau de palme",
+            "fibre de palm",
+            "bois",
+            "lignine",
+            "cellulose",
+            "tige",
+            "raffia",
+            "peau de cafe",
+            "coquille",
+        ])
+    )
+    fibrous = bool(lignocellulosic or any(k in text for k in ["fibre", "fibres", "bagasse", "coque", "noyau", "bois", "tige", "rafia", "raffia"]))
+    easily_biodegradable = bool(
+        _is_abattoir_waste(waste)
+        or _is_organic_waste_text(waste)
+        or any(k in text for k in ["boue", "dechet alimentaire", "alimentaire", "restes", "pulpe", "marc", "legume", "fruit", "dechets verts"])
+    )
+
+    if lignocellulosic and lignine == 0:
+        lignine = 25.0
+    if lignocellulosic and (humidity is None or humidity == 0):
+        humidity = 35.0
+    if lignocellulosic and pci == 0:
+        pci = 15.0
+
+    if lignocellulosic and lignine >= 20 and (humidity is not None and humidity < 40):
+        biodegradability = "low"
+    elif easily_biodegradable or (humidity is not None and humidity >= 50 and not lignocellulosic):
+        biodegradability = "high"
+    elif fibrous or pci >= 10:
+        biodegradability = "medium"
+    else:
+        biodegradability = "unknown"
+
+    reliable = any(v is not None for v in [humidity, pci, lignine]) or lignocellulosic or easily_biodegradable or fibrous
+    cues: list[str] = []
+    if humidity is not None:
+        cues.append(f"humidite {humidity:.1f}%")
+    if pci:
+        cues.append(f"PCI {pci:.1f} MJ/kg")
+    if lignine:
+        cues.append(f"lignine {lignine:.1f}%")
+    if lignocellulosic:
+        cues.append("matrice lignocellulosique detectee")
+    if fibrous and not lignocellulosic:
+        cues.append("structure fibreuse detectee")
+    if biodegradability == "high":
+        cues.append("biodegradabilite elevee")
+    elif biodegradability == "low":
+        cues.append("biodegradabilite faible")
+    if lignocellulosic and lignine >= 20 and humidity <= 25:
+        cues.append("matrice lignocellulosique seche incompatible avec methanisation et compostage")
+
+    return {
+        "humidity_pct": humidity,
+        "pci_mj_kg": pci,
+        "lignine_pct": lignine,
+        "lignocellulosic": lignocellulosic,
+        "fibrous": fibrous,
+        "biodegradability": biodegradability,
+        "reliable": reliable,
+        "cues": cues,
+    }
+
+def _is_dry_lignocellulosic_material(material: dict[str, Any]) -> bool:
+    if not material.get("reliable"):
+        return False
+
+    lignocellulosic = bool(material.get("lignocellulosic"))
+    lignine = float(material.get("lignine_pct") or 0.0)
+    humidity = float(material.get("humidity_pct") or 0.0)
+    pci = float(material.get("pci_mj_kg") or 0.0)
+
+    return lignocellulosic and lignine >= 20.0 and humidity <= 25.0 and pci >= 12.0
+
+
+def _biological_routes_incompatible(material: dict[str, Any]) -> bool:
+    if not material.get("reliable"):
+        return False
+    lignocellulosic = bool(material.get("lignocellulosic"))
+    lignine = float(material.get("lignine_pct") or 0.0)
+    humidity = float(material.get("humidity_pct") or 0.0)
+    return lignocellulosic and lignine >= 20.0 and humidity <= 25.0
+
+
+def _wet_organic_stream(material: dict[str, Any], waste: WasteInput) -> bool:
+    humidity = float(material.get("humidity_pct") or 0.0)
+    dbo = float(material.get("dbo_mg_l") or 0.0)
+    dco = float(material.get("dco_mg_l") or 0.0)
+    return bool(material.get("reliable")) and (material.get("biodegradability") == "high" or _is_abattoir_waste(waste) or (humidity >= 65.0 and (dbo >= 800.0 or dco >= 1800.0)))
+
+
+def _material_recommendation_scores(material: dict[str, Any]) -> list[dict[str, Any]]:
+    if not material.get("reliable"):
+        return []
+
+    humidity = float(material.get("humidity_pct") or 0.0)
+    pci = float(material.get("pci_mj_kg") or 0.0)
+    lignine = float(material.get("lignine_pct") or 0.0)

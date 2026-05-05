@@ -74,6 +74,7 @@ export default function ResultCard({
   const chosenRoute = String(safeResult.decision_principale || safeResult.decision || safeResult?.valorisation_1?.methode || "Voie non précisée")
   const alternatives = Array.isArray(safeResult.alternatives) ? safeResult.alternatives : []
   const voiesExaminees = Array.isArray(safeResult.scores_par_voie) && safeResult.scores_par_voie.length > 0 ? safeResult.scores_par_voie.slice(0, 4) : alternatives.slice(0, 4)
+  const tableauDecision = Array.isArray(safeResult.tableau_decision) && safeResult.tableau_decision.length > 0 ? safeResult.tableau_decision : Array.isArray(source?.tableau_decision) ? source.tableau_decision : []
   const whyPriority = String(safeResult.explication_detaillee || safeResult.explication || safeResult.justification_technique || safeResult.resume_choix || "").trim()
   const buyers = Array.isArray(safeResult.acheteurs_benin) ? safeResult.acheteurs_benin.map(normalizeBuyer).filter(Boolean) : []
   const co2 = firstFiniteNumber(
@@ -165,7 +166,7 @@ export default function ResultCard({
 
       <div className="result-pane result-summary">
         <p className="result-section-title">Synthèse économique</p>
-        <div className="result-grid result-metrics" style={{ marginTop: 0 }}>
+        <div className="result-grid result-metrics">
           {hasEconomicData ? (
             topMetrics.map((metric) => (
               <div key={metric.label}>
@@ -181,11 +182,15 @@ export default function ResultCard({
       </div>
 
       <div className="actions-row result-actions">
-        <button className="btn btn-primary" type="button" onClick={onCorrect}>Valider</button>
-        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>{showDetails ? "Masquer les détails" : "Voir les détails"}</button>
+        <button className="btn btn-primary" type="button" onClick={onCorrect || (() => {})}>Valider</button>
+        <button className="btn" type="button" onClick={() => setShowDetails((v) => !v)}>
+          {showDetails ? "Masquer les détails" : "Voir les détails"}
+        </button>
         {!compactMode ? <button className="btn" type="button" onClick={onOpenOperators}>Voir opérateurs</button> : null}
         {!compactMode ? <button className="btn" type="button" onClick={onSave}>Sauver</button> : null}
-        <button className="btn btn-primary" type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>{pdfLoading ? "Génération PDF..." : "Télécharger PDF"}</button>
+        <button className="btn btn-primary" type="button" onClick={handleDownloadPdf} disabled={pdfLoading}>
+          {pdfLoading ? "Génération PDF..." : "Télécharger PDF"}
+        </button>
       </div>
 
       {buyers.length > 0 ? (
@@ -219,6 +224,45 @@ export default function ResultCard({
               <p key={`why-${idx}`}>{paragraph}</p>
             ))}
             <p><strong>Voie retenue :</strong> {chosenRoute}</p>
+          </article>
+
+          <article className="result-pane">
+            <h4>Tableau de décision</h4>
+            {tableauDecision.length > 0 ? (
+              <div className="decision-table-wrap">
+                <table className="decision-table">
+                  <thead>
+                    <tr>
+                      <th>Famille</th>
+                      <th>Voie</th>
+                      <th>Seuils</th>
+                      <th>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tableauDecision.slice(0, 6).map((item, idx) => {
+                      const seuils = item?.seuils && typeof item.seuils === "object"
+                        ? Object.entries(item.seuils).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(", ") : String(value)}`).join(" | ")
+                        : String(item?.seuils || "")
+                      const note = String(item?.justification || item?.conditions?.[0] || "").trim()
+                      return (
+                        <tr key={`decision-${idx}`}>
+                          <td>{String(item?.famille || "-")}</td>
+                          <td>
+                            <strong>{String(item?.solution || item?.filiere || "-")}</strong>
+                            {note ? <div className="route-explanation">{note}</div> : null}
+                          </td>
+                          <td>{seuils || "Aucun seuil explicite"}</td>
+                          <td>{String(item?.statut || (item?.conforme ? "Conforme" : "Hors seuil"))}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p>Aucune matrice explicite disponible pour ce flux.</p>
+            )}
           </article>
 
           <article className="result-pane">

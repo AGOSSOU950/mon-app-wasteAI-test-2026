@@ -290,6 +290,7 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
         result = analyser_dechet(waste)
         self.assertEqual(result.decision_principale, "recyclage_matiere")
         self.assertTrue(any(item.get("solution") == "recyclage_matiere" for item in (result.classement_filieres or [])))
+        self.assertTrue(any(item.get("filiere") == "recyclage_matiere" for item in (result.tableau_decision or [])))
         self.assertIn("recyclage", str(result.explication_detaillee or "").lower())
 
     def test_electronic_waste_with_heavy_metals_blocks_biological_routes(self) -> None:
@@ -357,9 +358,13 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
             if route is not None:
                 self.assertEqual(str(route.get("statut")), "Non conforme")
         self.assertTrue(any(item.get("solution") == "recyclage_matiere" for item in (result.classement_filieres or [])))
+        self.assertTrue(any(item.get("filiere") == "recyclage_matiere" for item in (result.tableau_decision or [])))
 
 if __name__ == "__main__":
     unittest.main()
+
+
+
 
 
 

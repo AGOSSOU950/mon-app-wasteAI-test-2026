@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
@@ -291,18 +291,22 @@ function mergeScientificDefaults(formState, defaults) {
   return { mergedForm: next, appliedCount }
 }
 
-function analysisContextFromResult(resultCard, form) {
-  return {
-    name: resultCard?.nom_exact || resultCard?.nom || form.nom,
-    quantity: Number(form.quantite_kg || 0),
-    recommendation: resultCard?.decision_principale || resultCard?.decision || resultCard?.valorisation_1?.methode || "",
-    wasteType: resultCard?.filiere || form.filiere || form.categorie,
+function getInitialTheme() {
+  if (typeof window === "undefined") return "dark"
+  try {
+    const stored = window.localStorage.getItem("wasteai_theme")
+    if (stored === "dark" || stored === "light") return stored
+  } catch (error) {
+    void error
   }
+
+  return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
 }
+
 
 export default function App() {
   const [view, setView] = useState("presentation")
-  const [theme, setTheme] = useState("dark")
+  const [theme, setTheme] = useState(() => getInitialTheme())
   const [apiOnline, setApiOnline] = useState(true)
 
   const [form, setForm] = useState(INITIAL_FORM)
@@ -330,6 +334,12 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme)
+    document.documentElement.style.colorScheme = theme
+    try {
+      localStorage.setItem("wasteai_theme", theme)
+    } catch (error) {
+      void error
+    }
   }, [theme])
 
   useEffect(() => {
@@ -359,7 +369,6 @@ export default function App() {
   }, [toast])
 
   const resultCard = useMemo(() => normalizeResultToCard(analysisResult || aiProposal), [analysisResult, aiProposal])
-  const analysisContext = useMemo(() => analysisContextFromResult(resultCard, form), [resultCard, form])
 
   function handleTouchStart(event) {
     const touch = event.touches?.[0]
@@ -649,10 +658,11 @@ export default function App() {
             {error ? <p className="warn">{error}</p> : null}
             {banner ? <p>{banner}</p> : null}
 
-            <ResultCard
+                        <ResultCard
               result={resultCard}
               form={form}
               onWhatsApp={openWhatsAppContact}
+              onCorrect={applyAiSuggestion}
               onOpenOperators={() => setView(MARKETPLACE_ENABLED ? "marketplace" : "pilotage")}
               onSave={handleSaveResult}
               compactMode={Boolean(aiProposal && !analysisResult)}
@@ -690,12 +700,12 @@ export default function App() {
         <Footer apiOnline={apiOnline} />
       </div>
 
-      <nav className="mobile-nav" aria-label="Navigation mobile">
+            <nav className="mobile-nav" aria-label="Navigation mobile">
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
+        <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyse</button>
         {FEATURES.marketplace ? (
           <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
         ) : null}
-
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
         <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>
       </nav>
@@ -705,3 +715,7 @@ export default function App() {
     </main>
   )
 }
+
+
+
+

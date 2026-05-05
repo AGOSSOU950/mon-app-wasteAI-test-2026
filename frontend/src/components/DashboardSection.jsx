@@ -108,18 +108,11 @@ function normalizeRow(row, index = 0) {
 }
 
 function StatCard({ label, value, hint, tone = "neutral" }) {
-  const tones = {
-    neutral: "border border-[#22303a] bg-[#0f1418]",
-    positive: "border border-[#204136] bg-[#11211c]",
-    negative: "border border-[#4a252a] bg-[#201114]",
-    amber: "border border-[#4a3a1f] bg-[#221c11]",
-  }
-
   return (
-    <article className={`rounded-2xl border p-4 ${tones[tone]}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#aab4af]">{label}</p>
-      <div className="mt-2 text-2xl font-semibold text-[#f8fffb]">{value}</div>
-      <p className="mt-1 text-sm text-[#aab4af]">{hint}</p>
+    <article className={`kpi-card kpi-${tone}`}>
+      <p>{label}</p>
+      <strong>{value}</strong>
+      <span>{hint}</span>
     </article>
   )
 }
@@ -128,15 +121,15 @@ function CompactChannel({ channel, isBest = false }) {
   if (!channel) return null
   const net = Number(channel.net_gain_per_ton || 0)
   return (
-    <div className={`rounded-2xl border p-4 ${isBest ? "border border-[#204136] bg-[#11211c]" : "border border-[#22303a] bg-[#0f1418]"}`}>
-      <div className="flex items-start justify-between gap-3">
+    <div className={`channel-card compact ${isBest ? "is-best" : ""}`}>
+      <div className="channel-card-head">
         <div>
-          <p className="font-semibold text-[#f8fffb]">{channel.name}</p>
-          <p className="text-sm text-[#aab4af]">{channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
+          <p className="channel-card-name">{channel.name}</p>
+          <p className="channel-card-subtitle">{channel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
         </div>
-        {isBest ? <span className="rounded-full bg-emerald-600 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">Choix</span> : null}
+        {isBest ? <span className="channel-card-pill">Choix</span> : null}
       </div>
-      <div className="mt-3 grid gap-1 text-sm text-[#aab4af]">
+      <div className="channel-card-grid compact-grid">
         <p>{channel.location}</p>
         <p>{Number(channel.distance_km || 0)} km</p>
         <p>{formatCurrency(net)} / t</p>
@@ -205,114 +198,106 @@ function DashboardSection({ analytics, loading, onRefresh }) {
   const recentRows = [...visibleLignes].slice(0, 4)
 
   return (
-    <section className="rounded-[2rem] border border border-[#22303a] bg-[#0f1418] p-4 shadow-[0_18px_40px_rgba(15,23,42,0.06)] md:p-6">
-      <div className="flex flex-col gap-3 border-b border-[#22303a] pb-4 lg:flex-row lg:items-end lg:justify-between">
+    <section className="dashboard-wrap card">
+      <div className="dashboard-header">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-[#9ef0ce]">Pilotage</p>
-          <h2 className="mt-2 text-2xl font-semibold text-[#f8fffb] md:text-3xl">Tableau de bord WasteAI</h2>
-          <p className="mt-1 max-w-2xl text-sm text-[#aab4af]">Lecture des flux, cohérence économique et voie recommandée dans un seul écran.</p>
+          <p className="eyebrow">Pilotage</p>
+          <h2>Tableau de bord WasteAI</h2>
+          <p>Lecture des flux, cohérence économique et voie recommandée dans un seul écran.</p>
         </div>
-        <button
-          type="button"
-          onClick={onRefresh}
-          disabled={loading}
-          className="inline-flex items-center justify-center rounded-full border border-[#2a3a35] bg-[#12181d] px-4 py-2 text-sm font-semibold text-[#d9e2dd] transition hover:bg-[#182127] disabled:cursor-not-allowed disabled:opacity-60"
-        >
+        <button type="button" onClick={onRefresh} disabled={loading} className="btn btn-secondary">
           {loading ? "Actualisation..." : "Rafraîchir"}
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+      <div className="dashboard-kpis">
         <StatCard label="Gain total" value={formatCurrency(metrics.totalGain)} hint="Valeur valorisable" tone="positive" />
         <StatCard label="Coût total" value={formatCurrency(metrics.totalCost)} hint="Traitement et logistique" tone="negative" />
         <StatCard label="Solde net" value={formatCurrency(metrics.net)} hint={metrics.net >= 0 ? "Position positive" : "Position négative"} tone={metrics.net >= 0 ? "positive" : "negative"} />
         <StatCard label="Taux de valorisation" value={`${metrics.valorizationRate.toFixed(1)}%`} hint="Flux favorables" tone="amber" />
       </div>
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_360px]">
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-[#22303a] bg-[#12181d] p-4">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <label className="grid gap-2 text-sm text-[#aab4af]">
-                Mois
-                <select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="rounded-xl border border border-[#2a3a35] bg-[#11161b] px-3 py-2 text-[#f8fffb] outline-none">
-                  <option value="all">Tous les mois</option>
-                  {monthOptions.map((month) => <option key={month} value={month}>{formatMonth(month)}</option>)}
-                </select>
-              </label>
-              <label className="grid gap-2 text-sm text-[#aab4af]">
-                Filière
-                <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} className="rounded-xl border border border-[#2a3a35] bg-[#11161b] px-3 py-2 text-[#f8fffb] outline-none">
-                  <option value="all">Toutes</option>
-                  {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
-                </select>
-              </label>
-            </div>
+      <div className="dashboard-graphs">
+        <div className="graph-pane">
+          <div className="dashboard-filters">
+            <label>
+              Mois
+              <select value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)}>
+                <option value="all">Tous les mois</option>
+                {monthOptions.map((month) => <option key={month} value={month}>{formatMonth(month)}</option>)}
+              </select>
+            </label>
+            <label>
+              Filière
+              <select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)}>
+                <option value="all">Toutes</option>
+                {typeOptions.map((type) => <option key={type} value={type}>{type}</option>)}
+              </select>
+            </label>
           </div>
 
-          <div className="rounded-2xl border border border-[#22303a] bg-[#0f1418] p-4">
-            <div className="mb-3 flex items-center justify-between">
+          <div className="chart-shell">
+            <div className="chart-head">
               <div>
-                <h3 className="text-lg font-semibold text-[#f8fffb]">Tendance des flux</h3>
-                <p className="text-sm text-[#aab4af]">Gain et coût agrégés par mois</p>
+                <h3>Tendance des flux</h3>
+                <p>Gain et coût agrégés par mois</p>
               </div>
-              <span className="rounded-full bg-[#182127] px-3 py-1 text-xs font-semibold text-[#aab4af]">{visibleLignes.length} flux</span>
+              <span className="chart-pill">{visibleLignes.length} flux</span>
             </div>
-            <div className="h-[220px] w-full">
+            <div className="chart-frame">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={monthlySeries} margin={{ top: 10, right: 12, bottom: 6, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                  <XAxis dataKey="label" stroke="#64748b" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} />
-                  <YAxis stroke="#64748b" tickLine={false} axisLine={{ stroke: "#cbd5e1" }} tickFormatter={(value) => formatCurrency(value)} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(164,177,171,0.14)" />
+                  <XAxis dataKey="label" stroke="rgba(164,177,171,0.8)" tickLine={false} axisLine={{ stroke: "rgba(164,177,171,0.2)" }} />
+                  <YAxis stroke="rgba(164,177,171,0.8)" tickLine={false} axisLine={{ stroke: "rgba(164,177,171,0.2)" }} tickFormatter={(value) => formatCurrency(value)} />
                   <Tooltip formatter={(value) => formatCurrency(value)} />
-                  <Line type="monotone" dataKey="gain" name="Gain" stroke="#0f766e" strokeWidth={3} dot={{ r: 3 }} />
-                  <Line type="monotone" dataKey="cost" name="Coût" stroke="#ef4444" strokeWidth={3} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="gain" name="Gain" stroke="#74d2a5" strokeWidth={3} dot={{ r: 3 }} />
+                  <Line type="monotone" dataKey="cost" name="Coût" stroke="#e05656" strokeWidth={3} dot={{ r: 3 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="rounded-2xl border border border-[#22303a] bg-[#0f1418] p-4">
-            <div className="flex items-start justify-between gap-3">
+        <div className="graph-pane">
+          <div className="channel-panel">
+            <div className="chart-head">
               <div>
-                <h3 className="text-lg font-semibold text-[#f8fffb]">Canal cohérent</h3>
-                <p className="text-sm text-[#aab4af]">Acheteur direct ou traitement</p>
+                <h3>Canal cohérent</h3>
+                <p>Acheteur direct ou traitement</p>
               </div>
-              <span className="rounded-full bg-[#11211c] px-3 py-1 text-xs font-semibold text-[#9ef0ce]">Pilotage</span>
+              <span className="chart-pill">Pilotage</span>
             </div>
             {channelContext && bestChannel ? (
-              <div className="mt-4 space-y-3">
-                <div className="rounded-2xl border border border-[#204136] bg-[#11211c] p-4">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#9ef0ce]">Recommandé</p>
-                  <p className="mt-1 text-xl font-semibold text-[#f8fffb]">{bestChannel.name}</p>
-                  <p className="mt-1 text-sm text-[#aab4af]">{bestChannel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</p>
-                  <p className="mt-2 text-sm text-[#d9e2dd]">{channelContext.name} - {formatQuantity(channelContext.quantity)} - {channelContext.recommendation}</p>
-                  {!rankedChannels.hasDirectBuyer ? <p className="mt-2 text-sm text-amber-700">Aucun acheteur direct pertinent. La voie de traitement sert de référence.</p> : null}
-                </div>
-                <div className="grid gap-3">
-                  {alternatives.map((channel, index) => <CompactChannel key={channel.id} channel={channel} isBest={index === 0} />)}
-                </div>
+              <div className="channel-highlight">
+                <p className="eyebrow">Recommandé</p>
+                <strong>{bestChannel.name}</strong>
+                <span>{bestChannel.kind === "buyer" ? "Acheteur direct" : "Canal de traitement"}</span>
+                <p>{channelContext.name} - {formatQuantity(channelContext.quantity)} - {channelContext.recommendation}</p>
+                {!rankedChannels.hasDirectBuyer ? <p className="channel-note">Aucun acheteur direct pertinent. La voie de traitement sert de référence.</p> : null}
               </div>
             ) : (
-              <p className="mt-4 text-sm text-[#aab4af]">Aucun canal pertinent pour l’instant.</p>
+              <p className="muted-line">Aucun canal pertinent pour l’instant.</p>
             )}
+
+            <div className="channel-stack">
+              {alternatives.map((channel, index) => <CompactChannel key={channel.id} channel={channel} isBest={index === 0} />)}
+            </div>
           </div>
 
-          <div className="rounded-2xl border border border-[#22303a] bg-[#0f1418] p-4">
-            <h3 className="text-lg font-semibold text-[#f8fffb]">Flux récents</h3>
-            <div className="mt-3 space-y-3">
+          <div className="recent-panel">
+            <h3>Flux récents</h3>
+            <div className="recent-list">
               {recentRows.map((row) => {
                 const net = (row.gain_per_ton - row.cost_per_ton) * row.quantity
                 const positive = net >= 0
                 return (
-                  <div key={row.id} className="flex items-start justify-between gap-3 rounded-xl border border-[#22303a] bg-[#12181d] px-3 py-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-medium text-[#f8fffb]">{row.name}</p>
-                      <p className="text-sm text-[#aab4af]">{row.recommendation}</p>
+                  <div key={row.id} className="recent-row">
+                    <div className="recent-copy">
+                      <p>{row.name}</p>
+                      <span>{row.recommendation}</span>
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-1 text-xs font-semibold ${positive ? "bg-emerald-100 text-[#9ef0ce]" : "bg-rose-100 text-rose-700"}`}>
+                    <span className={`recent-badge ${positive ? "positive" : "negative"}`}>
                       {formatCurrency(net)}
                     </span>
                   </div>

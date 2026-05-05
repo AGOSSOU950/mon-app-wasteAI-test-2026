@@ -99,12 +99,13 @@ const DEFAULT_WASTE_TYPE_RULES = {
     refs: ["Presence de metaux lourds: interdiction des voies diffuses, traitement specialise requis."],
   },
   lignin_high: {
-    refs: ["Biomasse lignocellulosique: voie charbon actif ou biogaz selon qualite du flux."],
+    refs: ["Biomasse lignocellulosique seche: biochar ou valorisation thermique prioritaire selon PCI et humidite."],
   },
 }
 
 const BIOMASS_LIGNOCELLULOSIC_HINTS = [
   "biomasse",
+  "biomasse_lignocellulosique",
   "lignocellulos",
   "lignine",
   "lignin",
@@ -409,7 +410,7 @@ function guessCategory(payload) {
   const pci = Number(payload?.pci_mj_kg || 0)
   if (biomassHints || (lignin >= 20 && humidity <= 35 && pci >= 12)) return "biomasse"
 
-  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodéchet", "biodechet", "biodéchets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
+  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodÃ©chet", "biodechet", "biodÃ©chets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
   if (organicHints.some((k) => merged.includes(k))) return "organique"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
