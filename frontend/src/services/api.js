@@ -418,7 +418,7 @@ function guessCategory(payload) {
   const pci = Number(payload?.pci_mj_kg || 0)
   if (biomassHints || (lignin >= 20 && humidity <= 35 && pci >= 12)) return "biomasse"
 
-  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodÃ©chet", "biodechet", "biodÃ©chets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
+  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodÃƒÂ©chet", "biodechet", "biodÃƒÂ©chets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
   if (organicHints.some((k) => merged.includes(k))) return "organique"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
@@ -845,7 +845,7 @@ function sanitizeDryLignocellulosicRoutes(payload, result, forcedDecision = "cha
   const normalizeRouteName = (item) => normalizeText(item?.solution || item?.filiere || item?.nom || item?.route_key || "")
   const blockedMessage = "Biomasse lignocellulosique seche: voie biologique de-priorisee au profit du biochar/thermique."
 
-  const stripRoutes = (list) => (Array.isArray(list) ? list.filter((item) => !blockedRoutes.has(normalizeRouteName(item))) : list)
+  const stripRoutes = (list) => (Array.isArray(list) ? list.filter((item) => !blockedRoutes.has(normalizeRouteName(item))) : [])
   const markBlocked = (item) => {
     if (!item) return item
     const routeName = normalizeRouteName(item)
@@ -865,10 +865,10 @@ function sanitizeDryLignocellulosicRoutes(payload, result, forcedDecision = "cha
     decision_principale: forcedDecision,
     decision: forcedDecision,
     mode_valorisation_propose: forcedDecision,
-    alternatives: stripRoutes(result?.alternatives).map(markBlocked),
-    scores_par_voie: stripRoutes(result?.scores_par_voie).map(markBlocked),
-    tableau_decision: stripRoutes(result?.tableau_decision).map(markBlocked),
-    classement_filieres: stripRoutes(result?.classement_filieres).map(markBlocked),
+    alternatives: stripRoutes(result?.alternatives || []).map(markBlocked),
+    scores_par_voie: stripRoutes(result?.scores_par_voie || []).map(markBlocked),
+    tableau_decision: stripRoutes(result?.tableau_decision || []).map(markBlocked),
+    classement_filieres: stripRoutes(result?.classement_filieres || []).map(markBlocked),
     options_bloquees: [
       ...(Array.isArray(result?.options_bloquees) ? result.options_bloquees : []),
       { filiere: "compostage", raison: blockedMessage, score: 0 },
