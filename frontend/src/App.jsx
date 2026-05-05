@@ -15,6 +15,7 @@ import PresentationSection from "./components/PresentationSection"
 import AnalysisForm from "./components/AnalysisForm"
 import ResultCard from "./components/ResultCard"
 import LocalChannelsSection from "./components/MarketplaceSection"
+import RecommendedChannelsSection from "./components/RecommendedChannelsSection"
 
 import Footer from "./components/Footer"
 import { FEATURES } from "./config/features"
@@ -703,7 +704,7 @@ export default function App() {
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyse</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃ©seau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃƒÂ©seau local</button>
         ) : null}
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
         <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>
@@ -714,6 +715,5 @@ export default function App() {
     </main>
   )
 }
-
 
 
