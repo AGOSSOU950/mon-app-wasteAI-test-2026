@@ -570,6 +570,10 @@ function candidateRoutesForCategory(category, payload) {
   const oilLike = ["huile usagee", "huile usee", "vidange", "lubrifiant", "waste oil", "used oil"].some((k) => merged.includes(k))
   const dryLignocellulosic = flags.dryLignocellulosic || (flags.lignocellulosic && lignin >= 20 && humidity <= 25)
 
+  if (dryLignocellulosic) {
+    return ["charbon_actif", "co_incineration_cimenterie", "elimination_securisee"]
+  }
+
   if (category === "plastique") {
     return ["recyclage_mecanique_plastique", "pyrolyse_plastique", "co_incineration_cimenterie", "elimination_securisee"]
   }
@@ -802,7 +806,7 @@ export function analyzeLocally(formData) {
   const second = engine.second
   const regs = buildRegulatoryContext(formData, engine.decisionKey)
 
-  return {
+  return sanitizeDryLignocellulosicRoutes(formData, primary?.filiere || "charbon actif", {
     decision: primary?.filiere || "Elimination securisee",
     decision_principale: primary?.filiere || "Elimination securisee",
     mode_valorisation_propose: primary?.filiere || "Elimination securisee",
@@ -831,6 +835,46 @@ export function analyzeLocally(formData) {
     note: "Analyse IA indisponible - resultat estime",
     impact_environnemental: buildEstimatedImpact(formData, engine.decisionKey, engine.primary ? [engine.primary, ...(engine.second ? [engine.second] : [])] : []),
     ...regs,
+  })
+}
+
+function sanitizeDryLignocellulosicRoutes(payload, result, forcedDecision = "charbon actif") {
+  if (!isDryLignocellulosicPayload(payload)) return result
+
+  const blockedRoutes = new Set(["methanisation_biogaz", "compostage", "epandage_agricole"])
+  const normalizeRouteName = (item) => normalizeText(item?.solution || item?.filiere || item?.nom || item?.route_key || "")
+  const blockedMessage = "Biomasse lignocellulosique seche: voie biologique de-priorisee au profit du biochar/thermique."
+
+  const stripRoutes = (list) => (Array.isArray(list) ? list.filter((item) => !blockedRoutes.has(normalizeRouteName(item))) : list)
+  const markBlocked = (item) => {
+    if (!item) return item
+    const routeName = normalizeRouteName(item)
+    if (!blockedRoutes.has(routeName)) return item
+    return {
+      ...item,
+      score: 0,
+      blocked: true,
+      blocked_reason: blockedMessage,
+      statut: "Non conforme",
+      compatible: false,
+    }
+  }
+
+  return {
+    ...result,
+    decision_principale: forcedDecision,
+    decision: forcedDecision,
+    mode_valorisation_propose: forcedDecision,
+    alternatives: stripRoutes(result?.alternatives).map(markBlocked),
+    scores_par_voie: stripRoutes(result?.scores_par_voie).map(markBlocked),
+    tableau_decision: stripRoutes(result?.tableau_decision).map(markBlocked),
+    classement_filieres: stripRoutes(result?.classement_filieres).map(markBlocked),
+    options_bloquees: [
+      ...(Array.isArray(result?.options_bloquees) ? result.options_bloquees : []),
+      { filiere: "compostage", raison: blockedMessage, score: 0 },
+      { filiere: "methanisation_biogaz", raison: blockedMessage, score: 0 },
+      { filiere: "epandage_agricole", raison: blockedMessage, score: 0 },
+    ],
   }
 }
 
@@ -864,7 +908,7 @@ function normalizeApiResult(payload, apiData) {
   const impactFromApi = apiData?.impact_environnemental?.bilan_net_recommande_kgco2e
   const estimatedImpact = buildEstimatedImpact(payload, engine.decisionKey, engine.primary ? [engine.primary, ...(engine.second ? [engine.second] : [])] : [])
 
-  return {
+  const normalized = sanitizeDryLignocellulosicRoutes(payload, finalDecision || primary?.filiere || "charbon actif", {
     ...apiData,
     decision: finalDecision,
     decision_principale: finalDecision,
@@ -893,7 +937,8 @@ function normalizeApiResult(payload, apiData) {
     impact_environnemental:
       typeof impactFromApi === "number" ? apiData.impact_environnemental : estimatedImpact,
     raw_api: apiData,
-  }
+  })
+  return normalized
 }
 
 function optionalNumber(value) {

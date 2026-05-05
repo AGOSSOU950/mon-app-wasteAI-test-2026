@@ -264,7 +264,7 @@ FAMILY_DECISION_MATRIX = {
             "note": "Elimination securisee utile comme filet de securite pour les flux dangereux.",
         },
         "reemploi": {"block_always": True, "block_reason": "Flux chimique incompatible avec le reemploi direct."},
-        "recyclage_matiere": {"penalty": -20.0, "note": "Flux chimique: recyclage matiere possible seulement apres depollution poussÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©e."},
+        "recyclage_matiere": {"penalty": -20.0, "note": "Flux chimique: recyclage matiere possible seulement apres depollution poussÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e."},
     },
     "metal": {
         "recyclage_matiere": {
@@ -1505,6 +1505,27 @@ def _is_dry_lignocellulosic_material(material: dict[str, Any]) -> bool:
     return lignocellulosic and lignine >= 20.0 and humidity <= 25.0 and pci >= 12.0
 
 
+_DRY_LIGNOCELLULOSIC_BLOCKED_ROUTES = {"methanisation_biogaz", "compostage", "epandage_agricole"}
+
+
+def _is_blocked_dry_lignocellulosic_route(route: dict[str, Any], wt: WasteType, material: dict[str, Any]) -> bool:
+    if wt != WasteType.BIOMASSE_LIGNOCELLULOSIQUE:
+        return False
+    if not _is_dry_lignocellulosic_material(material):
+        return False
+    return str(route.get("filiere") or "") in _DRY_LIGNOCELLULOSIC_BLOCKED_ROUTES
+
+
+def _sanitize_dry_lignocellulosic_routes(
+    routes: list[dict[str, Any]],
+    wt: WasteType,
+    material: dict[str, Any],
+) -> list[dict[str, Any]]:
+    if wt != WasteType.BIOMASSE_LIGNOCELLULOSIQUE or not _is_dry_lignocellulosic_material(material):
+        return routes
+    return [route for route in routes if not _is_blocked_dry_lignocellulosic_route(route, wt, material)]
+
+
 def _biological_routes_incompatible(material: dict[str, Any]) -> bool:
     if not material.get("reliable"):
         return False
@@ -2040,6 +2061,10 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
 
     material_profile = analyzeMaterialProperties(effective_waste, metrics)
     generic_scores = _score_generic_solutions(effective_waste, metrics)
+    visible_evald = _sanitize_dry_lignocellulosic_routes(evald, wt, material_profile)
+    visible_generic_scores = _sanitize_dry_lignocellulosic_routes(generic_scores, wt, material_profile)
+    if len(visible_evald) != len(evald) or len(visible_generic_scores) != len(generic_scores):
+        warnings.append("Voies biologiques incompatibles ecartees pour biomasse lignocellulosique seche.")
 
     chosen, hierarchy_reasons = _select(effective_waste, evald, generic_scores, material_profile)
     if material_profile.get("reliable") and _is_dry_lignocellulosic_material(material_profile):
@@ -2111,12 +2136,12 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
     classement_filieres = [
         {**_minimal_voie(x), "statut": ("Recommandee" if x.get("filiere") == chosen["filiere"] and x.get("feasible", True) else "Alternative recommandee" if x.get("feasible", True) and float(x.get("global_score", 0.0)) >= 70 else "Alternative" if x.get("feasible", True) else "Non conforme")}
         for x in sorted(
-            evald,
+            visible_evald,
             key=lambda z: (_hybrid_route_score(z, material_lookup, material_profile), float(z.get("technical_score", 0.0))),
             reverse=True,
         )
     ]
-    alternatives = [_minimal_voie(x) for x in generic_scores if str(x.get("solution") or "") != str(chosen.get("filiere") or "")][:4]
+    alternatives = [_minimal_voie(x) for x in visible_generic_scores if str(x.get("solution") or "") != str(chosen.get("filiere") or "")][:4]
 
     has_bamako_ref = any("bamako" in _n(ref) for ref in reg_refs)
     bamako_tag = " Accord de Bamako pris en compte." if has_bamako_ref else ""
@@ -2227,7 +2252,7 @@ def analyser_dechet(waste: WasteInput) -> DecisionResult:
         score_global=round(score_global, 2),
         alternatives=alternatives,
         classement_filieres=classement_filieres,
-        scores_par_voie=[_minimal_voie(x) for x in generic_scores],
+        scores_par_voie=[_minimal_voie(x) for x in visible_generic_scores],
         tableau_decision=[{**item, "filiere": item.get("solution")} for item in classement_filieres],
         conditions_requises=_req(chosen.get("conditions", [])),
         avertissements=(" | ".join(warnings) if warnings else "Aucun avertissement majeur."),
@@ -3129,8 +3154,6 @@ def _alternatives(chosen: dict[str, Any], evald: list[dict[str, Any]]) -> list[d
             "reglementaire": round(float(x.get("regulatory_score", 0.0)), 2),
         })
     return out
-
-
 
 
 

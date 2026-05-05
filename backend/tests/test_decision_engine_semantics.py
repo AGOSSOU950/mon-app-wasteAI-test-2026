@@ -1,4 +1,4 @@
-﻿import unittest
+import unittest
 
 from app.core.decision_engine import analyser_dechet
 from app.models.waste import DangerLevel, IndustryType, WasteCategory, WasteInput, WasteType
@@ -83,13 +83,13 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
 
     def test_abattoir_wet_organic_stream_keeps_three_routes_and_explains_costs(self) -> None:
         waste = WasteInput(
-            nom="DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©chets d'abattoir",
+            nom="DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©chets d'abattoir",
             categorie=WasteCategory.OTHER,
             type_dechet=WasteType.OTHER,
             type_industrie=IndustryType.AGROALIMENTAIRE,
             quantite_kg=1200,
             niveau_danger=DangerLevel.MEDIUM,
-            description="RÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sidus d'abattoir trÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s humides avec DBO ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©levÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e, DCO ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©levÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e et forte charge organique",
+            description="RÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©sidus d'abattoir trÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¨s humides avec DBO ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©levÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e, DCO ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©levÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©e et forte charge organique",
             contient_metaux=False,
             pays_cedeao="Benin",
             dbo_mg_l=1800,
@@ -173,8 +173,9 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
         result = analyser_dechet(waste)
         self.assertEqual(result.decision_principale, "biochar")
         self.assertTrue(any(item.get("solution") == "biochar" for item in (result.scores_par_voie or [])))
-        self.assertFalse(any(item.get("solution") == "methanisation" for item in (result.scores_par_voie or [])[:3]))
+        self.assertFalse(any(item.get("solution") in {"methanisation", "compostage", "epandage_agricole"} for item in (result.scores_par_voie or [])))
         self.assertIn("biochar", str(result.explication_detaillee or "").lower())
+
     def test_dry_lignocellulosic_biomass_blocks_biological_routes(self) -> None:
         waste = WasteInput(
             nom="coque de noix de coco",
@@ -192,14 +193,10 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
         )
         result = analyser_dechet(waste)
         self.assertEqual(result.decision_principale, "biochar")
-        meth = next((item for item in (result.scores_par_voie or []) if item.get("solution") == "methanisation"), None)
-        comp = next((item for item in (result.scores_par_voie or []) if item.get("solution") == "compostage"), None)
-        self.assertIsNotNone(meth)
-        self.assertIsNotNone(comp)
-        self.assertEqual(float(meth.get("score", -1)), 0.0)
-        self.assertEqual(float(comp.get("score", -1)), 0.0)
-        self.assertTrue(any(item.get("solution") == "methanisation_biogaz" and item.get("statut") == "Non conforme" for item in (result.classement_filieres or [])))
-        self.assertTrue(any(item.get("solution") == "compostage" and item.get("statut") == "Non conforme" for item in (result.classement_filieres or [])))
+        blocked_routes = {"methanisation", "compostage", "epandage_agricole"}
+        self.assertFalse(any(item.get("solution") in blocked_routes for item in (result.scores_par_voie or [])))
+        self.assertFalse(any(item.get("solution") in blocked_routes for item in (result.classement_filieres or [])))
+        self.assertFalse(any(item.get("solution") in blocked_routes for item in (result.tableau_decision or [])))
 
     def test_wet_organic_stream_prioritizes_methanisation_over_compostage(self) -> None:
         waste = WasteInput(
@@ -362,8 +359,6 @@ class DecisionEngineSemanticRoutingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
-
 
 
 
