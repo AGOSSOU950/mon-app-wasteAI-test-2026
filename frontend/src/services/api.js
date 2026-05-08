@@ -1,4 +1,4 @@
-import axios from "axios"
+﻿import axios from "axios"
 import regulatoryProfiles from "../data/regulatory_profiles.json"
 
 const HAS_EXPLICIT_API_URL = Boolean(import.meta.env.VITE_API_URL)
@@ -60,7 +60,7 @@ const DEFAULT_COUNTRY_POLICY = {
   benin: {
     regulatoryDelta: { energetic: -2, material: 4, reuse_sale: 2, specialized: 0 },
     economicFactor: { energetic: 1.0, material: 1.02, reuse_sale: 1.0, specialized: 1.0 },
-    refs: ["Benin: Decret sur la gestion des dechets et autorisations des filieres de traitement."],
+    refs: ["Bénin: Décret sur la gestion des déchets et autorisations des filières de traitement."],
   },
   togo: {
     regulatoryDelta: { energetic: -4, material: 3, reuse_sale: 2, specialized: 0 },
@@ -70,7 +70,7 @@ const DEFAULT_COUNTRY_POLICY = {
   cote_divoire: {
     regulatoryDelta: { energetic: -1, material: 4, reuse_sale: 2, specialized: 0 },
     economicFactor: { energetic: 1.05, material: 1.08, reuse_sale: 1.04, specialized: 1.0 },
-    refs: ["Cote d'Ivoire: Code de l'environnement et filieres agreees de valorisation."],
+    refs: ["Côte d'Ivoire: Code de l'environnement et filières agréées de valorisation."],
   },
   ghana: {
     regulatoryDelta: { energetic: 2, material: 3, reuse_sale: 2, specialized: 0 },
@@ -146,24 +146,38 @@ const TYPE_ECONOMIC_MULTIPLIERS = regulatoryProfiles?.type_economic_multipliers 
 
 function inferWasteFlags(payload) {
   const type = normalizeText(payload?.type_dechet)
+  const category = normalizeText(payload?.categorie)
+  const name = normalizeText(payload?.nom)
+  const desc = normalizeText(payload?.description)
+  const merged = `${type} ${category} ${name} ${desc}`
   const plasticType = normalizeText(payload?.type_plastique)
   const chlorine = payload?.presence_chlore === true
   const contamination = Number(payload?.taux_contamination_pct || 0)
   const lignin = Number(payload?.taux_lignine_pct || 0)
+  const humidity = Number(payload?.taux_humidite_pct || 0)
+  const pci = Number(payload?.pci_mj_kg || 0)
   const heavyMetals = payload?.presence_metaux_lourds === true
 
   const pvcOrChlorinated = chlorine || plasticType.includes("pvc")
-  const name = normalizeText(payload?.nom)
-  const desc = normalizeText(payload?.description)
   const wasteOilOrSolvent = type.includes("huile") || type.includes("solvant") || name.includes("huile") || desc.includes("huile") || desc.includes("solvant")
-  const ligninHigh = lignin >= 30
+  const lignocellulosic = type.includes("biomasse_lignocellulosique") || category.includes("biomasse_lignocellulosique") || BIOMASS_LIGNOCELLULOSIC_HINTS.some((hint) => merged.includes(hint))
+  const animalByproducts = ["abattoir", "abattage", "tripes", "visceres", "sang animal", "sous produit animal", "dechet animal", "poisson", "piscicole", "volaille", "poulet", "poultry", "graisse animale", "restes de cuisine animale", "dechet de cuisine animale", "boues animales", "boues d abattoir"].some((hint) => merged.includes(hint))
+  const dryLignocellulosic = Boolean(
+    lignocellulosic &&
+    lignin >= 20 &&
+    humidity <= 10 &&
+    pci >= 15
+  )
 
   return {
     pvcOrChlorinated,
     wasteOilOrSolvent,
     heavyMetals,
-    ligninHigh,
+    ligninHigh: lignin >= 20,
     contamination,
+    lignocellulosic,
+    dryLignocellulosic,
+    animalByproducts,
   }
 }
 
@@ -380,6 +394,8 @@ function isDryLignocellulosicPayload(payload) {
   const lignin = Number(payload?.taux_lignine_pct || 0)
   const humidity = Number(payload?.taux_humidite_pct || 0)
   const pci = Number(payload?.pci_mj_kg || 0)
+  const type = normalizeText(payload?.type_dechet)
+  const category = normalizeText(payload?.categorie)
   const merged = normalizeText([
     payload?.nom,
     payload?.description,
@@ -388,11 +404,11 @@ function isDryLignocellulosicPayload(payload) {
     payload?.filiere,
   ].filter(Boolean).join(' '))
 
-  const explicitHints = BIOMASS_LIGNOCELLULOSIC_HINTS.some((hint) => merged.includes(hint))
+  const explicitHints = type.includes("biomasse_lignocellulosique") || category.includes("biomasse_lignocellulosique") || BIOMASS_LIGNOCELLULOSIC_HINTS.some((hint) => merged.includes(hint))
   return Boolean(
     explicitHints ||
-    (lignin >= 20 && humidity <= 35 && pci >= 12) ||
-    (lignin >= 18 && humidity <= 25 && /coco|coque|palme|bagasse|bois|sciure|paille/.test(merged))
+    (lignin >= 20 && humidity <= 10 && pci >= 15) ||
+    ((type.includes("biomasse") || category.includes("biomasse") || /coco|coque|palme|bagasse|bois|sciure|paille/.test(merged)) && lignin >= 20 && humidity <= 10 && pci >= 15)
   )
 }
 
@@ -416,10 +432,10 @@ function guessCategory(payload) {
   const lignin = Number(payload?.taux_lignine_pct || 0)
   const humidity = Number(payload?.taux_humidite_pct || 0)
   const pci = Number(payload?.pci_mj_kg || 0)
-  if (biomassHints || (lignin >= 20 && humidity <= 35 && pci >= 12)) return "biomasse"
+  if (biomassHints || type.includes("biomasse_lignocellulosique") || category.includes("biomasse_lignocellulosique") || (lignin >= 20 && humidity <= 10 && pci >= 15)) return "biomasse"
 
-  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "excrement", "dejection", "fumier", "fiente", "lisier", "dechet animal", "organique", "biodÃƒÂ©chet", "biodechet", "biodÃƒÂ©chets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
-  if (organicHints.some((k) => merged.includes(k))) return "organique"
+  const organicHints = ["abattoir", "abattage", "residus animaux", "tripes", "visceres", "sang animal", "sous produit animal", "dechet animal", "poisson", "piscicole", "volaille", "poulet", "poultry", "graisse animale", "restes de cuisine", "restes de cuisine animale", "dechet de cuisine animale", "excrement", "dejection", "fumier", "fiente", "lisier", "organique", "biodéchet", "biodechet", "biodéchets", "biodechats", "alimentaire", "aliment", "cuisine", "cantine", "restaurant", "marche", "menager"]
+  if (organicHints.some((hint) => merged.includes(hint))) return "organic"
 
   if (merged.includes("metal") || merged.includes("ferraille") || merged.includes("alu")) return "metal"
   if (merged.includes("textile") || merged.includes("fibre")) return "textile"
@@ -565,10 +581,11 @@ function candidateRoutesForCategory(category, payload) {
   const flags = inferWasteFlags(payload)
   const lignin = Number(payload?.taux_lignine_pct || 0)
   const humidity = Number(payload?.taux_humidite_pct || 0)
+  const pci = Number(payload?.pci_mj_kg || 0)
   const merged = normalizeText(`${payload?.nom || ""} ${payload?.description || ""} ${payload?.type_dechet || ""} ${payload?.categorie || ""}`)
   const paintLike = ["peinture", "paint", "vernis", "coating", "laque", "encre", "resine", "pigment"].some((k) => merged.includes(k))
   const oilLike = ["huile usagee", "huile usee", "vidange", "lubrifiant", "waste oil", "used oil"].some((k) => merged.includes(k))
-  const dryLignocellulosic = flags.dryLignocellulosic || (flags.lignocellulosic && lignin >= 20 && humidity <= 25)
+  const dryLignocellulosic = flags.dryLignocellulosic || (flags.lignocellulosic && lignin >= 20 && humidity <= 10 && pci >= 15)
 
   if (dryLignocellulosic) {
     return ["charbon_actif", "co_incineration_cimenterie", "elimination_securisee"]
@@ -584,14 +601,13 @@ function candidateRoutesForCategory(category, payload) {
     return ["refonte_metaux", "reemploi_pieces_metalliques", "elimination_securisee"]
   }
   if (category === "papier") {
-    return ["recyclage_papetier", "compostage", "co_incineration_cimenterie", "elimination_securisee"]
+    return ["recyclage_papetier", "co_incineration_cimenterie", "elimination_securisee"]
   }
-  if (category === "biomasse" || category === "organique") {
-    return dryLignocellulosic
-      ? ["charbon_actif", "co_incineration_cimenterie", "elimination_securisee"]
-      : lignin >= 30
-        ? ["charbon_actif", "methanisation_biogaz", "compostage", "elimination_securisee"]
-        : ["methanisation_biogaz", "compostage", "epandage_agricole", "elimination_securisee"]
+  if (category === "biomasse" || category === "organic") {
+    if (flags.animalByproducts) {
+      return ["co_incineration_cimenterie", "methanisation_biogaz", "elimination_securisee"]
+    }
+    return ["methanisation_biogaz", "compostage", "elimination_securisee", "co_incineration_cimenterie"]
   }
   if (category === "chimique") {
     if (paintLike) return ["neutralisation_chimique", "co_incineration_cimenterie", "elimination_securisee"]
@@ -606,7 +622,7 @@ function candidateRoutesForCategory(category, payload) {
   }
   return dryLignocellulosic
     ? ["charbon_actif", "co_incineration_cimenterie", "elimination_securisee"]
-    : ["methanisation_biogaz", "recyclage_papetier", "elimination_securisee", "co_incineration_cimenterie"]
+    : ["methanisation_biogaz", "elimination_securisee", "co_incineration_cimenterie"]
 }
 
 function scoreRoute(payload, routeKey) {
@@ -650,6 +666,20 @@ function scoreRoute(payload, routeKey) {
     if (routeKey === "co_incineration_cimenterie") {
       technique += 12
       economique += 4
+    }
+  } else if (flags.animalByproducts) {
+    if (routeKey === "compostage" || routeKey === "epandage_agricole") {
+      technique = 0
+      gate.blocked = true
+      gate.warnings = [...gate.warnings, "Sous-produits animaux: compostage et epandage agricole exclus pour motif sanitaire."]
+    }
+    if (routeKey === "co_incineration_cimenterie") {
+      technique += 40
+      economique += 20
+    }
+    if (routeKey === "methanisation_biogaz") {
+      technique -= 30
+      economique -= 8
     }
   } else if (routeKey === "charbon_actif") {
     if (lignin >= 35) technique += 12
@@ -727,7 +757,7 @@ function buildPathwayEngine(payload, suggestedDecisionRaw) {
     : ""
 
   const alternatives = allowed
-    .filter((r) => r.route_key !== primary?.route_key)
+    .filter((r) => r.route_key !== primary?.route_key && r.route_key !== second?.route_key && r.filiere !== second?.filiere)
     .slice(0, 2)
     .map((route) => ({
       filiere: route.filiere,
@@ -768,6 +798,54 @@ function buildPathwayEngine(payload, suggestedDecisionRaw) {
   }
 }
 
+function buildTableauDecision(engine, primaryRoute) {
+  const primaryKey = primaryRoute?.route_key || ""
+  return (Array.isArray(engine?.scoresParVoie) ? engine.scoresParVoie : []).map((route) => ({
+    famille: route.route_key,
+    solution: route.filiere,
+    filiere: route.filiere,
+    score: route.score,
+    conforme: !route.blocked,
+    statut: route.blocked ? "Non conforme" : route.route_key === primaryKey ? "Recommandée" : "Alternative",
+    conditions: route.blocked_reason ? [route.blocked_reason] : [],
+    justification: `Technique ${route.technique ?? route.details_scores?.technique ?? "N/R"}/100, environnement ${route.environnement ?? route.details_scores?.environnement ?? "N/R"}/100, reglementaire ${route.reglementaire ?? route.details_scores?.reglementaire ?? "N/R"}/100, economique ${route.economique ?? route.details_scores?.economique ?? "N/R"}/100.`,
+    seuils: {
+      technique: route.details_scores?.technique,
+      environnement: route.details_scores?.environnement,
+      reglementaire: route.details_scores?.reglementaire,
+      economique: route.details_scores?.economique,
+    },
+  }))
+}
+
+function buildVisibleRouteRows(engine) {
+  const routes = [engine?.primary, engine?.second, ...(Array.isArray(engine?.alternatives) ? engine.alternatives : [])].filter(Boolean)
+  const uniqueRoutes = routes.reduce((acc, route) => {
+    const key = route.route_key || route.filiere || route.solution || `route_${acc.length}`
+    if (!acc.some((item) => (item.route_key || item.filiere || item.solution) === key)) acc.push({ ...route, route_key: key })
+    return acc
+  }, [])
+
+  return uniqueRoutes.map((route, idx) => ({
+    route_key: route.route_key || route.filiere || route.solution || `route_${idx}`,
+    famille: route.route_key || route.filiere || route.solution || `route_${idx}`,
+    solution: route.filiere || route.solution || route.route_key || `voie_${idx}`,
+    filiere: route.filiere || route.solution || route.route_key || `voie_${idx}`,
+    score: route.score,
+    blocked: Boolean(route.blocked),
+    blocked_reason: route.blocked_reason || "",
+    conforme: !route.blocked,
+    statut: route.blocked ? "Non conforme" : idx === 0 ? "Recommandée" : "Alternative",
+    conditions: route.blocked_reason ? [route.blocked_reason] : [],
+    justification: route.description || `Technique ${route.details_scores?.technique ?? "N/R"}/100, environnement ${route.details_scores?.environnement ?? "N/R"}/100, reglementaire ${route.details_scores?.reglementaire ?? "N/R"}/100, economique ${route.details_scores?.economique ?? "N/R"}/100.`,
+    details_scores: route.details_scores || {},
+    technique: route.details_scores?.technique,
+    environnement: route.details_scores?.environnement,
+    reglementaire: route.details_scores?.reglementaire,
+    economique: route.details_scores?.economique,
+    social: route.details_scores?.social,
+  }))
+}
 function buildEstimatedImpact(payload, primaryDecisionKey, evaluatedRoutes = []) {
   const primaryImpact = estimateImpactKg(payload, primaryDecisionKey)
   const parVoie = {}
@@ -801,12 +879,13 @@ function buildEstimatedImpact(payload, primaryDecisionKey, evaluatedRoutes = [])
 }
 
 export function analyzeLocally(formData) {
-  const engine = buildPathwayEngine(formData, "")
+  const engine = buildPathwayEngine(formData, "charbon actif")
   const primary = engine.primary
   const second = engine.second
   const regs = buildRegulatoryContext(formData, engine.decisionKey)
+  const visibleRows = buildVisibleRouteRows(engine)
 
-  return sanitizeDryLignocellulosicRoutes(formData, primary?.filiere || "charbon actif", {
+  return {
     decision: primary?.filiere || "Elimination securisee",
     decision_principale: primary?.filiere || "Elimination securisee",
     mode_valorisation_propose: primary?.filiere || "Elimination securisee",
@@ -829,23 +908,25 @@ export function analyzeLocally(formData) {
     alternatives: engine.alternatives,
     options_bloquees: engine.optionsBloquees,
     details_scores: primary?.details_scores || {},
-    scores_par_voie: engine.scoresParVoie,
+    scores_par_voie: visibleRows,
+    tableau_decision: visibleRows,
     explication: engine.resumeChoix,
     source: "local",
-    note: "Analyse IA indisponible - resultat estime",
+    note: "Analyse IA indisponible - résultat estimé",
     impact_environnemental: buildEstimatedImpact(formData, engine.decisionKey, engine.primary ? [engine.primary, ...(engine.second ? [engine.second] : [])] : []),
     ...regs,
-  })
+  }
 }
 
 function sanitizeDryLignocellulosicRoutes(payload, result, forcedDecision = "charbon actif") {
   if (!isDryLignocellulosicPayload(payload)) return result
 
-  const blockedRoutes = new Set(["methanisation_biogaz", "compostage", "epandage_agricole"])
-  const normalizeRouteName = (item) => normalizeText(item?.solution || item?.filiere || item?.nom || item?.route_key || "")
+  const source = result && typeof result === "object" ? result : {}
+  const blockedRoutes = new Set(["methanisation_biogaz", "compostage", "epandage_agricole", "methanisation", "epandage"])
+  const normalizeRouteName = (item) => normalizeText([item?.route_key, item?.solution, item?.filiere, item?.nom].filter(Boolean).join(" "))
   const blockedMessage = "Biomasse lignocellulosique seche: voie biologique de-priorisee au profit du biochar/thermique."
 
-  const stripRoutes = (list) => (Array.isArray(list) ? list.filter((item) => !blockedRoutes.has(normalizeRouteName(item))) : [])
+  const stripRoutes = (list) => (Array.isArray(list) ? list.filter((item) => { const routeName = normalizeRouteName(item); return !(blockedRoutes.has(routeName) || routeName.includes("methan") || routeName.includes("compost") || routeName.includes("epandag")); }) : [])
   const markBlocked = (item) => {
     if (!item) return item
     const routeName = normalizeRouteName(item)
@@ -860,17 +941,39 @@ function sanitizeDryLignocellulosicRoutes(payload, result, forcedDecision = "cha
     }
   }
 
+  const safeAlternatives = stripRoutes(source.alternatives).map(markBlocked)
+  const safeScores = stripRoutes(source.scores_par_voie).map(markBlocked)
+  const safeTableau = stripRoutes(source.tableau_decision).map(markBlocked)
+  const safeRanking = stripRoutes(source.classement_filieres).map(markBlocked)
+  const nextAlternative = safeAlternatives[0] || safeScores.find((item) => !item?.blocked) || null
+
   return {
-    ...result,
+    ...source,
     decision_principale: forcedDecision,
     decision: forcedDecision,
     mode_valorisation_propose: forcedDecision,
-    alternatives: stripRoutes(result?.alternatives || []).map(markBlocked),
-    scores_par_voie: stripRoutes(result?.scores_par_voie || []).map(markBlocked),
-    tableau_decision: stripRoutes(result?.tableau_decision || []).map(markBlocked),
-    classement_filieres: stripRoutes(result?.classement_filieres || []).map(markBlocked),
+    valorisation_1: {
+      ...(source.valorisation_1 || {}),
+      methode: forcedDecision,
+      description: source.valorisation_1?.description || "Valorisation prioritaire en biochar ou voie thermique.",
+    },
+    valorisation_2: nextAlternative
+      ? {
+          methode: nextAlternative.filiere || nextAlternative.solution || nextAlternative.route_key || "Alternative thermique",
+          description: nextAlternative.description || "Alternative énergétique ou thermochimique conforme.",
+          valeur_fcfa_tonne: Number(nextAlternative.valeur_fcfa_tonne || 0),
+        }
+      : {
+          methode: "Co-incinération / valorisation thermique",
+          description: "Alternative énergétique conforme pour biomasse sèche.",
+          valeur_fcfa_tonne: 0,
+        },
+    alternatives: safeAlternatives,
+    scores_par_voie: safeScores,
+    tableau_decision: safeTableau,
+    classement_filieres: safeRanking,
     options_bloquees: [
-      ...(Array.isArray(result?.options_bloquees) ? result.options_bloquees : []),
+      ...(Array.isArray(source.options_bloquees) ? source.options_bloquees : []),
       { filiere: "compostage", raison: blockedMessage, score: 0 },
       { filiere: "methanisation_biogaz", raison: blockedMessage, score: 0 },
       { filiere: "epandage_agricole", raison: blockedMessage, score: 0 },
@@ -908,8 +1011,8 @@ function normalizeApiResult(payload, apiData) {
   const impactFromApi = apiData?.impact_environnemental?.bilan_net_recommande_kgco2e
   const estimatedImpact = buildEstimatedImpact(payload, engine.decisionKey, engine.primary ? [engine.primary, ...(engine.second ? [engine.second] : [])] : [])
 
-  const normalized = sanitizeDryLignocellulosicRoutes(payload, finalDecision || primary?.filiere || "charbon actif", {
-    ...apiData,
+  const visibleRows = buildVisibleRouteRows(engine)
+  const normalized = sanitizeDryLignocellulosicRoutes(payload, {
     decision: finalDecision,
     decision_principale: finalDecision,
     mode_valorisation_propose: String(apiData?.mode_valorisation_propose || finalDecision),
@@ -919,7 +1022,7 @@ function normalizeApiResult(payload, apiData) {
     explication: apiData?.explication || engine.resumeChoix,
     valorisation_1: apiData?.valorisation_1 || {
       methode: finalDecision,
-      description: primary?.description || "Voie proposee apres scoring multicritere.",
+      description: primary?.description || "Voie proposée après scoring multicritère.",
       valeur_fcfa_tonne: Number(primary?.valeur_fcfa_tonne || 0),
     },
     valorisation_2: apiData?.valorisation_2 || {
@@ -931,7 +1034,9 @@ function normalizeApiResult(payload, apiData) {
     alternatives: Array.isArray(apiData?.alternatives) && apiData.alternatives.length ? apiData.alternatives : engine.alternatives,
     options_bloquees: Array.isArray(apiData?.options_bloquees) && apiData.options_bloquees.length ? apiData.options_bloquees : engine.optionsBloquees,
     details_scores: apiData?.details_scores || primary?.details_scores || {},
-    scores_par_voie: Array.isArray(apiData?.scores_par_voie) && apiData.scores_par_voie.length ? apiData.scores_par_voie : engine.scoresParVoie,
+    scores_par_voie: Array.isArray(apiData?.scores_par_voie) && apiData.scores_par_voie.length ? apiData.scores_par_voie : visibleRows,
+    tableau_decision: Array.isArray(apiData?.tableau_decision) && apiData.tableau_decision.length ? apiData.tableau_decision : visibleRows,
+    classement_filieres: Array.isArray(apiData?.classement_filieres) && apiData.classement_filieres.length ? apiData.classement_filieres : engine.alternatives,
     conformite_reglementaire: apiData?.conformite_reglementaire || finalRegs.conformite_reglementaire,
     references_reglementaires: Array.from(new Set([...(apiData?.references_reglementaires || []), ...(finalRegs.references_reglementaires || [])])),
     impact_environnemental:
@@ -1008,18 +1113,28 @@ export async function analyzeWaste(payload) {
     }
   }
 
-  const response = await requestWithFallback({
-    method: "post",
-    url: "/api/waste/analyze",
-    data: payload,
-    timeout: 60000,
-  })
+  try {
+    const response = await requestWithFallback({
+      method: "post",
+      url: "/api/waste/analyze",
+      data: payload,
+      timeout: 60000,
+    })
 
-  return {
-    source: "api",
-    data: normalizeApiResult(payload, response.data || {}),
-    apiBase: API_BASE,
-    warning: "Format API compact detecte: enrichissement local applique pour detail operationnel.",
+    return {
+      source: "api",
+      data: normalizeApiResult(payload, response.data || {}),
+      apiBase: API_BASE,
+      warning: "Format API compact detecte: enrichissement local applique pour detail operationnel.",
+    }
+  } catch (error) {
+    const localResult = analyzeLocally(payload)
+    return {
+      source: "local_fallback",
+      data: normalizeApiResult(payload, localResult),
+      apiBase: API_BASE,
+      warning: `Analyse locale utilisee: ${String(error?.message || "service indisponible")}.`,
+    }
   }
 }
 
@@ -1220,3 +1335,27 @@ export async function matchLocalActors(payload) {
   })
   return response.data || []
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
+﻿import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react"
 import "./App.css"
 import {
   analyzeWaste,
@@ -34,7 +34,7 @@ const INITIAL_FORM = {
   niveau_danger: "faible",
   description: "Lot plastique industriel a valoriser",
   contient_metaux: false,
-  pays_cedeao: "Benin",
+  pays_cedeao: "Bénin",
   filiere: "plastique",
   pci_mj_kg: "",
   dbo_mg_l: "",
@@ -154,6 +154,27 @@ function firstNonEmptyText(...values) {
   return ""
 }
 
+function displayText(value, fallback = "") {
+  if (value === null || value === undefined) return fallback
+  if (typeof value === "string") return value.trim() || fallback
+  if (typeof value === "number" || typeof value === "boolean") return String(value)
+  if (Array.isArray(value)) return firstNonEmptyText(...value, fallback)
+  if (typeof value === "object") {
+    return firstNonEmptyText(
+      value.methode,
+      value.label,
+      value.nom,
+      value.filiere,
+      value.solution,
+      value.decision_principale,
+      value.decision,
+      value.mode_valorisation_propose,
+      fallback,
+    )
+  }
+  return fallback
+}
+
 function normalizeResultToCard(result) {
   if (!result) return null
   return {
@@ -199,12 +220,12 @@ function normalizeResultToCard(result) {
     conseil_stockage: result.conseil_stockage || "Stocker en zone seche, ventilee et tracee.",
     niveau_danger: result.niveau_danger || "faible",
     hypotheses: result.hypotheses || [],
-    explication: result.explication || result.description_estimee || "",
-    explication_detaillee: result.explication_detaillee || result.explication || result.justification_technique || "",
+    explication: displayText(result.explication || result.description_estimee, ""),
+    explication_detaillee: displayText(result.explication_detaillee || result.explication || result.justification_technique, ""),
     description_estimee: result.description_estimee || "",
-    decision: result.decision || "",
-    decision_principale: result.decision_principale || result.mode_valorisation_propose || result.decision || "",
-    resume_choix: result.resume_choix || "",
+    decision: displayText(result.decision, ""),
+    decision_principale: displayText(result.decision_principale || result.mode_valorisation_propose || result.decision, ""),
+    resume_choix: displayText(result.resume_choix, ""),
     alternatives: Array.isArray(result.alternatives) ? result.alternatives : [],
     classement_filieres: Array.isArray(result.classement_filieres) ? result.classement_filieres : [],
     scores_par_voie: Array.isArray(result.scores_par_voie) ? result.scores_par_voie : [],
@@ -704,7 +725,7 @@ export default function App() {
         <button className={view === "presentation" ? "active" : ""} onClick={() => setView("presentation")}>Accueil</button>
         <button className={view === "analyse" ? "active" : ""} onClick={() => setView("analyse")}>Analyse</button>
         {FEATURES.marketplace ? (
-          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>RÃƒÂ©seau local</button>
+          <button className={view === "marketplace" ? "active" : ""} onClick={() => setView("marketplace")}>Réseau local</button>
         ) : null}
         <button className={view === "pilotage" ? "active" : ""} onClick={() => setView("pilotage")}>Pilotage</button>
         <button className={view === "admin" ? "active" : ""} onClick={() => setView("admin")}>Admin</button>
@@ -715,5 +736,4 @@ export default function App() {
     </main>
   )
 }
-
 

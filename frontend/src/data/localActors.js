@@ -1,7 +1,7 @@
-export const LOCAL_ACTORS = [
+﻿export const LOCAL_ACTORS = [
   {
     id: "biogaz-benin",
-    name: "Biogaz Benin",
+    name: "Biogaz Bénin",
     type: "methanisation",
     technologies: ["biogaz", "compostage", "digestion anaerobie"],
     specialties: ["methanisation", "biogaz"],
@@ -90,3 +90,4 @@ export const LOCAL_ACTORS = [
     priority: 9,
   },
 ]
+

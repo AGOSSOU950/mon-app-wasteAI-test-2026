@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf"
+﻿import { jsPDF } from "jspdf"
 import { CHANNELS, rankChannels } from "../services/localChannelsEngine.js"
 
 function formatDate(value = new Date()) {
@@ -50,12 +50,10 @@ function formatPdfNumber(value, unit = "") {
 
 function pdfSafeText(value) {
   return String(value || "")
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[’]/g, "'")
+    .replace(/[“”]/g, '"')
+    .replace(/[–—]/g, "-")
     .replace(/[\u202f\u00a0]/g, " ")
-    .replace(/[â€™â€˜]/g, "'")
-    .replace(/[â€œâ€]/g, '"')
-    .replace(/[â€“â€”]/g, "-")
     .replace(/\s+/g, " ")
     .trim()
 }
@@ -150,8 +148,8 @@ function buildWasteProfile(result = {}, form = {}) {
   const source = result || {}
   const input = form || {}
   return {
-    name: firstText(input.nom, source.nom_exact, source.nom, source.name, "DÃ©chet non prÃ©cisÃ©"),
-    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, "Non prÃ©cisÃ©"),
+    name: firstText(input.nom, source.nom_exact, source.nom, source.name, "Déchet non précisé"),
+    type: firstText(input.type_dechet, input.categorie, source.type_dechet, source.type, source.categorie, source.filiere, "Non précisé"),
     quantityKg: firstOptionalNumber(input.quantite_kg, source.quantite_kg, source.quantity_kg, source.quantity),
     humidity: firstOptionalNumber(input.taux_humidite_pct, source.taux_humidite_pct, source.humidity),
     pci: firstOptionalNumber(input.pci_mj_kg, source.pci_mj_kg, source.PCI),
@@ -251,25 +249,25 @@ function rankActors(profile, solutions) {
 
 function formatRouteLabel(route) {
   const normalized = normalizeRoute(route)
-  if (normalized === "methanisation") return "MÃ©thanisation"
+  if (normalized === "methanisation") return "Méthanisation"
   if (normalized === "compostage") return "Compostage"
-  if (normalized === "valorisation energetique") return "Valorisation Ã©nergÃ©tique"
-  if (normalized === "recyclage matiere") return "Recyclage matiÃ¨re"
-  if (normalized === "elimination securisee") return "Ã‰limination sÃ©curisÃ©e"
+  if (normalized === "valorisation energetique") return "Valorisation énergétique"
+  if (normalized === "recyclage matiere") return "Recyclage matière"
+  if (normalized === "elimination securisee") return "Élimination sécurisée"
   return route
 }
 
 function confidenceStatus(confidence) {
   const c = Number(confidence || 0)
-  if (c < 40) return { label: "Identification faible", message: "Image difficile Ã  analyser. Essayez une photo plus nette." }
+  if (c < 40) return { label: "Identification faible", message: "Image difficile à analyser. Essayez une photo plus nette." }
   if (c < 60) return { label: "Identification probable", message: "Proposition plausible. Merci de valider ou corriger." }
   if (c <= 80) return { label: "Identification correcte", message: "Bonne identification. Merci de valider." }
-  return { label: "Identification certaine", message: "Identification trÃ¨s probable. Merci de confirmer." }
+  return { label: "Identification certaine", message: "Identification très probable. Merci de confirmer." }
 }
 
 export function exportWasteResultPdf({ sourceId = "results", result, form, filename = "wasteai-resultats.pdf" } = {}) {
   if (!document.getElementById(sourceId) && !result && !form) {
-    throw new Error("Aucun rÃ©sultat Ã  exporter.")
+    throw new Error("Aucun résultat à exporter.")
   }
 
   const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true })
@@ -277,10 +275,10 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   const profile = buildWasteProfile(result || {}, form || {})
   const solutions = extractSolutions(result || {})
   const actors = rankActors(profile, solutions)
-  const actorRows = actors.length ? actors : [{ name: "OpÃ©rateur Ã  confirmer", score: 0, justification: "Flux Ã  caractÃ©riser plus finement." }]
+  const actorRows = actors.length ? actors : [{ name: "Opérateur à confirmer", score: 0, justification: "Flux à caractériser plus finement." }]
   const confidenceInfo = confidenceStatus(result?.confiance_identification)
   const whyPriority = String(result?.explication_detaillee || result?.explication || result?.justification_technique || result?.resume_choix || "").trim()
-  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || "voie non spÃ©cifiÃ©e").trim()
+  const selectedRoute = String(result?.decision_principale || result?.decision || solutions[0] || "voie non spécifiée").trim()
   const routeList = Array.isArray(result?.scores_par_voie) ? result.scores_par_voie : []
   const tableauDecision = Array.isArray(result?.tableau_decision) ? result.tableau_decision : Array.isArray(result?.tableauDecision) ? result.tableauDecision : routeList
   const warnings = listText([
@@ -422,14 +420,14 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   setText(colors.muted, "bold", 8)
   doc.text(pdfSafeText("WasteAI - Fiche de synthese"), margin + 4, heroY + 8)
   setText(colors.text, "bold", 15)
-  doc.text(wrap(profile.name || "Dechet non precise", 92).slice(0, 2), margin + 4, heroY + 16, { lineHeightFactor: 1.05 })
+  doc.text(wrap(profile.name || "Dechet non précisé", 92).slice(0, 2), margin + 4, heroY + 16, { lineHeightFactor: 1.05 })
   paragraph(clampText(whyPriority || "Analyse technique du flux et de ses voies de valorisation.", 3), margin + 4, heroY + 24, 88, { color: colors.muted, size: 8.5, maxLines: 3 })
 
   let chipX = margin + 4
   const chipY = heroY + 35
-  chipX += chip(`Voie recommandÃ©e: ${formatRouteLabel(selectedRoute)}`, chipX, chipY, 88) + 2
-  chipX += chip(profile.type || "Type non prÃ©cisÃ©", chipX, chipY, 40) + 2
-  chip(`QuantitÃ© ${formatPdfNumber(profile.quantityKg, "kg") || "non precise"}`, chipX, chipY, 44)
+  chipX += chip(`Voie recommandée: ${formatRouteLabel(selectedRoute)}`, chipX, chipY, 88) + 2
+  chipX += chip(profile.type || "Type non précisé", chipX, chipY, 40) + 2
+  chip(`Quantité ${formatPdfNumber(profile.quantityKg, "kg") || "non précisé"}`, chipX, chipY, 44)
 
   const scoreX = margin + contentWidth * 0.69
   panel(scoreX, heroY + 4, contentWidth * 0.27, heroH - 8, colors.surfaceSoft, colors.border, 4)
@@ -493,8 +491,8 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   routeList.slice(0, 3).forEach((item, idx) => {
     const title = formatRouteLabel(item?.solution || item?.filiere || item?.nom || "voie")
     const score = Number(item?.score ?? item?.global_score ?? item?.technical_score ?? 0)
-    const status = String(item?.statut || item?.status || (idx === 0 ? "RecommandÃ©e" : "Alternative")).trim()
-    const explanation = clampText(String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || "").trim() || "Aucune justification dÃ©taillÃ©e disponible.", 2)
+    const status = String(item?.statut || item?.status || (idx === 0 ? "Recommandée" : "Alternative")).trim()
+    const explanation = clampText(String(item?.explication || item?.pourquoi_pas_prioritaire || item?.justification || item?.technical_reason || "").trim() || "Aucune justification détaillée disponible.", 2)
     const conditionsText = Array.isArray(item?.conditions) ? item.conditions.join(" ; ") : String(item?.conditions || "")
 
     panel(margin + 4, routeCursor - 3, columnWidth - 8, 28, colors.surfaceSoft, colors.border, 3)
@@ -537,7 +535,7 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
   bulletList(margin + 4, bottomY + 16, contentWidth - 8, decisionSummary.length ? decisionSummary : ["Aucune matrice explicite disponible"], 3)
   sectionTitle("Hypotheses et avertissements", margin + 4, bottomY + 40, 54)
   setText(colors.text, "normal", 8)
-  bulletList(margin + 4, bottomY + 48, contentWidth / 2 - 6, assumptions.length ? assumptions : ["Aucune hypothÃ¨se majeure"], 2)
+  bulletList(margin + 4, bottomY + 48, contentWidth / 2 - 6, assumptions.length ? assumptions : ["Aucune hypothèse majeure"], 2)
   bulletList(margin + contentWidth / 2 + 2, bottomY + 48, contentWidth / 2 - 6, warnings.length ? warnings : ["Aucun avertissement majeur"], 2)
   setText(colors.muted, "normal", 7)
   doc.text(pdfSafeText(`Gain/t: ${formatPdfMoney(industrialGainTon)}`), margin + 4, bottomY + 69)
@@ -564,6 +562,10 @@ export function exportWasteResultPdf({ sourceId = "results", result, form, filen
     if (error) void error
   }
 }
+
+
+
+
 
 
 

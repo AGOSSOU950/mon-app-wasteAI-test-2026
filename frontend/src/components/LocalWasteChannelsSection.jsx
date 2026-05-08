@@ -138,7 +138,7 @@ export default function LocalWasteChannelsSection({ result, form }) {
           </div>
           <div>
             <span>Voie</span>
-            <strong>{context.recommendation || "Canal local"}</strong>
+            <strong>{String(context.recommendation || "Canal local")}</strong>
           </div>
         </div>
       </div>
@@ -157,10 +157,10 @@ export default function LocalWasteChannelsSection({ result, form }) {
             <div key={`${item.name}-${index}`} className={`local-channel-card ${index === 0 ? "is-best" : ""}`}>
               <div className="local-channel-head">
                 <div>
-                  <p>{item.name}</p>
-                  <span>{item.justification}</span>
+                  <p>{String(item?.name || "Opérateur local")}</p>
+                  <span>{String(item?.justification || "Compatible avec le flux")}</span>
                 </div>
-                <strong>{item.score}/100</strong>
+                <strong>{String(Math.round(Number(item?.score || 0)))} /100</strong>
               </div>
             </div>
           ))}
@@ -177,3 +177,5 @@ export default function LocalWasteChannelsSection({ result, form }) {
     </section>
   )
 }
+
+

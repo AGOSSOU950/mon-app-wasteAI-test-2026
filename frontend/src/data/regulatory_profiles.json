@@ -1,9 +1,9 @@
-{
+﻿{
   "country_policy": {
     "benin": {
       "regulatoryDelta": { "energetic": -2, "material": 4, "reuse_sale": 2, "specialized": 0 },
       "economicFactor": { "energetic": 1.0, "material": 1.02, "reuse_sale": 1.0, "specialized": 1.0 },
-      "refs": ["Benin: Decret sur la gestion des dechets et autorisations des filieres de traitement."]
+      "refs": ["Bénin: Décret sur la gestion des déchets et autorisations des filières de traitement."]
     },
     "togo": {
       "regulatoryDelta": { "energetic": -4, "material": 3, "reuse_sale": 2, "specialized": 0 },
@@ -13,7 +13,7 @@
     "cote_divoire": {
       "regulatoryDelta": { "energetic": -1, "material": 4, "reuse_sale": 2, "specialized": 0 },
       "economicFactor": { "energetic": 1.05, "material": 1.08, "reuse_sale": 1.04, "specialized": 1.0 },
-      "refs": ["Cote d'Ivoire: Code de l'environnement et filieres agreees de valorisation."]
+      "refs": ["Côte d'Ivoire: Code de l'environnement et filières agréées de valorisation."]
     },
     "ghana": {
       "regulatoryDelta": { "energetic": 2, "material": 3, "reuse_sale": 2, "specialized": 0 },

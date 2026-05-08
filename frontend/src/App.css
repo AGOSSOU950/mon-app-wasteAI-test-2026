@@ -1941,3 +1941,357 @@ img {
     grid-template-columns: 1fr;
   }
 }
+/* Premium refresh override */
+:root {
+  --container: 1248px;
+}
+
+[data-theme="dark"] {
+  --bg: #0f1318;
+  --bg-elevated: #151b23;
+  --surface: #171e27;
+  --surface-2: #1b2430;
+  --surface-3: #243042;
+  --text: #f4f7fb;
+  --muted: #b6c0cc;
+  --line: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(255, 255, 255, 0.14);
+  --brand: #6fd1a5;
+  --brand-strong: #38aa76;
+  --brand-soft: rgba(111, 209, 165, 0.1);
+  --warn: #d1ad62;
+  --danger: #d87d74;
+  --shadow: 0 24px 70px rgba(5, 10, 15, 0.34);
+  --shadow-soft: 0 12px 28px rgba(5, 10, 15, 0.18);
+}
+
+[data-theme="light"] {
+  --bg: #f4f6f8;
+  --bg-elevated: #ffffff;
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #e7edf3;
+  --text: #111827;
+  --muted: #5f6b77;
+  --line: rgba(17, 24, 39, 0.09);
+  --line-strong: rgba(17, 24, 39, 0.14);
+  --brand: #0f6b4a;
+  --brand-strong: #0b5a3e;
+  --brand-soft: rgba(15, 107, 74, 0.08);
+  --warn: #9b6e1c;
+  --danger: #a4493e;
+  --shadow: 0 22px 60px rgba(15, 23, 42, 0.08);
+  --shadow-soft: 0 10px 26px rgba(15, 23, 42, 0.05);
+}
+
+body {
+  background:
+    radial-gradient(900px 520px at 10% 0%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 58%),
+    radial-gradient(700px 400px at 90% 10%, color-mix(in srgb, var(--warn) 10%, transparent), transparent 52%),
+    linear-gradient(180deg, color-mix(in srgb, var(--bg) 92%, var(--bg-elevated)) 0%, var(--bg) 100%);
+}
+
+body::before {
+  opacity: 0.14;
+}
+
+body::after {
+  opacity: 0.18;
+}
+
+.top-header {
+  border-bottom-color: color-mix(in srgb, var(--line) 92%, transparent);
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+}
+
+.top-header .inner,
+.hero,
+.presentation-wrap,
+.analysis-wrap,
+.result-card,
+.market-wrap,
+.dashboard-wrap,
+.admin-wrap,
+.recommended-channels-intro,
+.local-channels-summary,
+.local-channels-match,
+.site-footer-inner,
+.card {
+  box-shadow: var(--shadow);
+}
+
+.card,
+.hero,
+.presentation-wrap,
+.analysis-wrap,
+.result-card,
+.market-wrap,
+.dashboard-wrap,
+.admin-wrap,
+.recommended-channels-intro,
+.local-channels-summary,
+.local-channels-match,
+.site-footer-inner,
+.chart-shell,
+.channel-panel,
+.recent-panel,
+.result-hero-copy,
+.result-score-block,
+.hero-card,
+.presentation-dashcard,
+.presentation-item,
+.channels-hero,
+.channels-alternatives,
+.channel-card,
+.channel-highlight,
+.recent-row {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 96%, var(--bg-elevated)), var(--surface));
+  border-color: color-mix(in srgb, var(--line) 94%, transparent);
+}
+
+.hero,
+.presentation-wrap,
+.analysis-wrap,
+.result-card,
+.market-wrap,
+.dashboard-wrap,
+.admin-wrap,
+.site-footer-inner {
+  border-radius: 28px;
+}
+
+.hero,
+.presentation-wrap,
+.analysis-wrap,
+.result-card,
+.market-wrap,
+.dashboard-wrap,
+.admin-wrap {
+  padding: 28px;
+}
+
+.hero-copy h2,
+.presentation-hero-copy h2,
+.analysis-header h2,
+.result-hero-copy h3,
+.channels-hero h2,
+.dashboard-wrap h2,
+.market-wrap h3 {
+  letter-spacing: -0.045em;
+}
+
+.hero-copy h2 {
+  max-width: 13ch;
+}
+
+.presentation-hero-copy h2 {
+  max-width: 14ch;
+}
+
+.presentation-topline,
+.analysis-subtitle,
+.result-subtitle,
+.channels-lead,
+.site-footer-tagline,
+.form-note,
+.muted-line,
+.channel-card-subtitle,
+.channel-card-grid p,
+.recent-copy span,
+.route-explanation,
+.result-footnote,
+.result-status,
+.presentation-item p,
+.graph-pane p,
+.kpi-card span,
+.admin-muted {
+  color: var(--muted);
+}
+
+.nav-tabs {
+  border-color: color-mix(in srgb, var(--line) 92%, transparent);
+  background: color-mix(in srgb, var(--surface) 96%, var(--bg-elevated));
+}
+
+.nav-tab.active {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 24%, transparent);
+}
+
+.btn,
+.nav-tab,
+.mobile-nav button,
+.whats-btn,
+.result-chip,
+.channel-card-pill,
+.chart-pill,
+.site-footer-meta span,
+.header-status,
+.badge {
+  border-radius: 16px;
+}
+
+.btn {
+  min-height: 48px;
+  padding-inline: 1rem;
+}
+
+.btn-primary {
+  box-shadow: 0 16px 32px color-mix(in srgb, var(--brand) 18%, transparent);
+}
+
+.field input,
+.field select,
+.field textarea,
+.market-toolbar input,
+.market-toolbar select,
+.admin-textarea,
+.admin-toolbar input,
+.dashboard-wrap select,
+.dashboard-wrap input,
+.local-channels input[type="text"],
+.local-channels input[type="range"] {
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--bg-elevated) 72%, var(--surface));
+}
+
+.field input::placeholder,
+.field textarea::placeholder,
+.market-toolbar input::placeholder,
+.admin-toolbar input::placeholder,
+.local-channels input[type="text"]::placeholder {
+  color: color-mix(in srgb, var(--muted) 78%, transparent);
+}
+
+.hero-stats,
+.presentation-grid,
+.presentation-metric-row,
+.form-grid,
+.result-grid,
+.result-details,
+.result-buyers-grid,
+.local-channels-facts,
+.dashboard-kpis,
+.dashboard-graphs,
+.channels-filters,
+.channel-grid,
+.channels-alternatives-grid,
+.market-toolbar,
+.footer-grid {
+  gap: 14px;
+}
+
+.hero-stat,
+.presentation-chip,
+.presentation-metric,
+.kpi-card,
+.local-channels-facts > div,
+.admin-filiere-card,
+.result-buyer-card,
+.graph-pane,
+.field,
+.upload-zone,
+.result-pane,
+.market-toolbar,
+.recommended-channels-intro,
+.local-channels-summary,
+.local-channels-match,
+.chart-shell,
+.channel-panel,
+.recent-panel,
+.channel-card,
+.channel-highlight,
+.recent-row {
+  border-radius: 18px;
+}
+
+.result-card .result-hero,
+.presentation-hero,
+.hero {
+  gap: 20px;
+}
+
+.result-hero-copy,
+.result-score-block,
+.presentation-dashcard,
+.hero-card,
+.presentation-item,
+.channel-card,
+.channel-highlight,
+.channels-best,
+.channels-warning-panel,
+.channels-alt-card,
+.recent-row {
+  box-shadow: var(--shadow-soft);
+}
+
+.result-score-block p,
+.result-section-title,
+.result-pane h4,
+.step-title,
+.presentation-dashheader span,
+.presentation-dashstep strong,
+.presentation-chip span,
+.presentation-metric span,
+.local-channels-summary .eyebrow,
+.local-channels-match .eyebrow,
+.recommended-channels-intro .eyebrow,
+.dashboard-wrap .eyebrow,
+.market-wrap .eyebrow,
+.admin-header h2,
+.market-wrap h3,
+.channels-best-kicker,
+.channel-card-label,
+.channel-highlight .eyebrow {
+  letter-spacing: 0.18em;
+}
+
+.result-chip-strong {
+  background: color-mix(in srgb, var(--brand) 14%, var(--surface));
+}
+
+.result-details .result-pane,
+.result-summary,
+.result-buyers,
+.channels-hero,
+.channels-alternatives,
+.dashboard-filters,
+.chart-shell,
+.channel-panel,
+.recent-panel {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 94%, var(--bg-elevated)), color-mix(in srgb, var(--surface-2) 90%, var(--bg-elevated)));
+}
+
+.toast {
+  backdrop-filter: blur(20px);
+}
+
+.mobile-nav {
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  border-top-color: color-mix(in srgb, var(--line) 92%, transparent);
+}
+
+.mobile-nav button.active {
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+}
+
+.fab {
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--brand) 22%, transparent);
+}
+
+@media (max-width: 760px) {
+  .hero,
+  .presentation-wrap,
+  .analysis-wrap,
+  .result-card,
+  .market-wrap,
+  .dashboard-wrap,
+  .admin-wrap,
+  .site-footer-inner {
+    padding: 18px;
+    border-radius: 24px;
+  }
+
+  .top-header .inner {
+    padding: 14px 0;
+  }
+}
